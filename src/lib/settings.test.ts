@@ -18,6 +18,7 @@ import {
   loadResetTimerDisplayMode,
   loadStartOnLogin,
   migrateLegacyTraySettings,
+  migratePluginProfileInstancesEnabled,
   loadThemeMode,
   normalizePluginSettings,
   saveAutoUpdateInterval,
@@ -102,6 +103,19 @@ describe("settings", () => {
     expect(result.disabled).toEqual(["copilot", "windsurf"])
   })
 
+  it("inherits default-enabled status for profile-instance ids (e.g. claude:work)", () => {
+    const plugins: PluginMeta[] = [
+      { id: "claude", name: "Claude", iconUrl: "", lines: [], primaryCandidates: [] },
+      { id: "claude:work", name: "Claude · work", iconUrl: "", lines: [], primaryCandidates: [] },
+      { id: "claude:personal", name: "Claude · personal", iconUrl: "", lines: [], primaryCandidates: [] },
+      { id: "copilot:acme", name: "Copilot · acme", iconUrl: "", lines: [], primaryCandidates: [] },
+    ]
+    const result = normalizePluginSettings({ order: [], disabled: [] }, plugins)
+    expect(result.order).toEqual(["claude", "claude:work", "claude:personal", "copilot:acme"])
+    // Claude family enabled (claude is in DEFAULT_ENABLED_PLUGINS); copilot:acme not.
+    expect(result.disabled).toEqual(["copilot:acme"])
+  })
+
   it("compares settings equality", () => {
     const a = { order: ["a"], disabled: [] }
     const b = { order: ["a"], disabled: [] }
@@ -112,6 +126,47 @@ describe("settings", () => {
 
   it("returns enabled plugin ids", () => {
     expect(getEnabledPluginIds({ order: ["a", "b"], disabled: ["b"] })).toEqual(["a"])
+  })
+
+  describe("migratePluginProfileInstancesEnabled", () => {
+    it("removes profile-instance ids of default-enabled plugins from disabled list", async () => {
+      storeState.set("plugins", {
+        order: ["claude", "claude:work", "claude:personal", "copilot:acme"],
+        disabled: ["claude:work", "claude:personal", "copilot:acme"],
+      })
+
+      await migratePluginProfileInstancesEnabled()
+
+      const after = storeState.get("plugins") as { order: string[]; disabled: string[] }
+      expect(after.disabled).toEqual(["copilot:acme"])
+      expect(storeState.get("migrations.pluginProfilesAutoEnabled")).toBe(true)
+    })
+
+    it("is idempotent — does not re-enable disabled profile ids on subsequent runs", async () => {
+      storeState.set("migrations.pluginProfilesAutoEnabled", true)
+      storeState.set("plugins", {
+        order: ["claude", "claude:work"],
+        disabled: ["claude:work"],
+      })
+
+      await migratePluginProfileInstancesEnabled()
+
+      const after = storeState.get("plugins") as { order: string[]; disabled: string[] }
+      // User explicitly disabled claude:work after the first migration; respect that.
+      expect(after.disabled).toEqual(["claude:work"])
+    })
+
+    it("leaves bare plugin ids in disabled untouched", async () => {
+      storeState.set("plugins", {
+        order: ["claude", "copilot"],
+        disabled: ["copilot"],
+      })
+
+      await migratePluginProfileInstancesEnabled()
+
+      const after = storeState.get("plugins") as { order: string[]; disabled: string[] }
+      expect(after.disabled).toEqual(["copilot"])
+    })
   })
 
   it("loads default auto-update interval when missing", async () => {

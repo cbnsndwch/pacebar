@@ -80,6 +80,15 @@ All windows are enforced simultaneously — hitting any limit throttles the user
 
 **Fallback:** macOS Keychain, service name `Claude Code-credentials` (same JSON structure).
 
+### Multiple profiles
+
+If [`claude-code-profiles`](https://github.com/quinnjr/claude-code-profiles) (`claudep`) is installed, OpenUsage discovers each profile directory and shows a separate card per profile. Each probe runs the Claude plugin with `CLAUDE_CONFIG_DIR` set to the profile's path.
+
+- **Windows:** `%LOCALAPPDATA%\claude-profiles\<name>\`
+- **macOS / Linux:** `$XDG_DATA_HOME/claude-profiles/<name>/` (default `~/.local/share/claude-profiles/`)
+
+The default `~/.claude` config is always shown alongside discovered profiles.
+
 ### Token Refresh
 
 Access tokens are short-lived JWTs. Refreshed proactively 5 minutes before expiration, or reactively on 401/403.

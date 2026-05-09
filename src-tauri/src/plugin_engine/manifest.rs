@@ -2,6 +2,8 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 
+use crate::plugin_engine::profile_discovery::{self, ProfileInstance};
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestLine {
@@ -23,6 +25,12 @@ pub struct PluginLink {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct PluginProfilesConfig {
+    pub discovery: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PluginManifest {
     pub schema_version: u32,
     pub id: String,
@@ -34,6 +42,8 @@ pub struct PluginManifest {
     pub lines: Vec<ManifestLine>,
     #[serde(default)]
     pub links: Vec<PluginLink>,
+    #[serde(default)]
+    pub profiles: Option<PluginProfilesConfig>,
 }
 
 #[derive(Debug, Clone)]
@@ -42,6 +52,9 @@ pub struct LoadedPlugin {
     pub plugin_dir: PathBuf,
     pub entry_script: String,
     pub icon_data_url: String,
+    /// Always non-empty: `[ProfileInstance::anonymous()]` for plugins without
+    /// a `profiles` config, otherwise the result of the named discoverer.
+    pub instances: Vec<ProfileInstance>,
 }
 
 pub fn load_plugins_from_dir(plugins_dir: &std::path::Path) -> Vec<LoadedPlugin> {
@@ -112,11 +125,24 @@ fn load_single_plugin(
     let icon_bytes = std::fs::read(&icon_file)?;
     let icon_data_url = format!("data:image/svg+xml;base64,{}", STANDARD.encode(&icon_bytes));
 
+    let instances = match &manifest.profiles {
+        Some(cfg) => {
+            let discovered = profile_discovery::discover(&cfg.discovery);
+            if discovered.is_empty() {
+                vec![ProfileInstance::anonymous()]
+            } else {
+                discovered
+            }
+        }
+        None => vec![ProfileInstance::anonymous()],
+    };
+
     Ok(LoadedPlugin {
         manifest,
         plugin_dir: plugin_dir.to_path_buf(),
         entry_script,
         icon_data_url,
+        instances,
     })
 }
 

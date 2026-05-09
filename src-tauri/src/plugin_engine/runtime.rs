@@ -1,5 +1,6 @@
 use crate::plugin_engine::host_api;
 use crate::plugin_engine::manifest::LoadedPlugin;
+use crate::plugin_engine::profile_discovery::{self, ProfileInstance};
 use rquickjs::{Array, Context, Ctx, Error, Object, Promise, Runtime, Value};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -50,55 +51,74 @@ pub struct PluginOutput {
     pub icon_url: String,
 }
 
-pub fn run_probe(plugin: &LoadedPlugin, app_data_dir: &PathBuf, app_version: &str) -> PluginOutput {
-    let fallback = error_output(plugin, "runtime error".to_string());
+pub fn run_probe(
+    plugin: &LoadedPlugin,
+    instance: &ProfileInstance,
+    app_data_dir: &PathBuf,
+    app_version: &str,
+) -> PluginOutput {
+    let provider_id =
+        profile_discovery::full_provider_id(&plugin.manifest.id, &instance.id_suffix);
+    let display_name = profile_discovery::full_display_name(
+        &plugin.manifest.name,
+        instance.display_label.as_deref(),
+    );
+    let entry_script = plugin.entry_script.clone();
+    let icon_url = plugin.icon_data_url.clone();
+    let app_data = app_data_dir.clone();
+    let env_overrides = instance.env_overrides.clone();
+    let plugin_id = plugin.manifest.id.clone();
+
+    let mk_error = |message: String| PluginOutput {
+        provider_id: provider_id.clone(),
+        display_name: display_name.clone(),
+        plan: None,
+        lines: vec![error_line(message)],
+        icon_url: icon_url.clone(),
+    };
 
     let rt = match Runtime::new() {
         Ok(rt) => rt,
-        Err(_) => return fallback,
+        Err(_) => return mk_error("runtime error".to_string()),
     };
 
     let ctx = match Context::full(&rt) {
         Ok(ctx) => ctx,
-        Err(_) => return fallback,
+        Err(_) => return mk_error("runtime error".to_string()),
     };
 
-    let plugin_id = plugin.manifest.id.clone();
-    let display_name = plugin.manifest.name.clone();
-    let entry_script = plugin.entry_script.clone();
-    let icon_url = plugin.icon_data_url.clone();
-    let app_data = app_data_dir.clone();
-
     ctx.with(|ctx| {
-        if host_api::inject_host_api(&ctx, &plugin_id, &app_data, app_version).is_err() {
-            return error_output(plugin, "host api injection failed".to_string());
+        if host_api::inject_host_api(&ctx, &plugin_id, &app_data, app_version, &env_overrides)
+            .is_err()
+        {
+            return mk_error("host api injection failed".to_string());
         }
         if host_api::patch_http_wrapper(&ctx).is_err() {
-            return error_output(plugin, "http wrapper patch failed".to_string());
+            return mk_error("http wrapper patch failed".to_string());
         }
         if host_api::patch_ls_wrapper(&ctx).is_err() {
-            return error_output(plugin, "ls wrapper patch failed".to_string());
+            return mk_error("ls wrapper patch failed".to_string());
         }
         if host_api::patch_ccusage_wrapper(&ctx).is_err() {
-            return error_output(plugin, "ccusage wrapper patch failed".to_string());
+            return mk_error("ccusage wrapper patch failed".to_string());
         }
         if host_api::inject_utils(&ctx).is_err() {
-            return error_output(plugin, "utils injection failed".to_string());
+            return mk_error("utils injection failed".to_string());
         }
 
         if ctx.eval::<(), _>(entry_script.as_bytes()).is_err() {
-            return error_output(plugin, "script eval failed".to_string());
+            return mk_error("script eval failed".to_string());
         }
 
         let globals = ctx.globals();
         let plugin_obj: Object = match globals.get("__openusage_plugin") {
             Ok(obj) => obj,
-            Err(_) => return error_output(plugin, "missing __openusage_plugin".to_string()),
+            Err(_) => return mk_error("missing __openusage_plugin".to_string()),
         };
 
         let probe_fn: rquickjs::Function = match plugin_obj.get("probe") {
             Ok(f) => f,
-            Err(_) => return error_output(plugin, "missing probe()".to_string()),
+            Err(_) => return mk_error("missing probe()".to_string()),
         };
 
         let probe_ctx: Value = globals
@@ -107,26 +127,26 @@ pub fn run_probe(plugin: &LoadedPlugin, app_data_dir: &PathBuf, app_version: &st
 
         let result_value: Value = match probe_fn.call((probe_ctx,)) {
             Ok(r) => r,
-            Err(_) => return error_output(plugin, extract_error_string(&ctx)),
+            Err(_) => return mk_error(extract_error_string(&ctx)),
         };
         let result: Object = if result_value.is_promise() {
             let promise: Promise = match result_value.into_promise() {
                 Some(promise) => promise,
                 None => {
-                    return error_output(plugin, "probe() returned invalid promise".to_string());
+                    return mk_error("probe() returned invalid promise".to_string());
                 }
             };
             match promise.finish::<Object>() {
                 Ok(obj) => obj,
                 Err(Error::WouldBlock) => {
-                    return error_output(plugin, "probe() returned unresolved promise".to_string());
+                    return mk_error("probe() returned unresolved promise".to_string());
                 }
-                Err(_) => return error_output(plugin, extract_error_string(&ctx)),
+                Err(_) => return mk_error(extract_error_string(&ctx)),
             }
         } else {
             match result_value.into_object() {
                 Some(obj) => obj,
-                None => return error_output(plugin, "probe() returned non-object".to_string()),
+                None => return mk_error("probe() returned non-object".to_string()),
             }
         };
 
@@ -142,11 +162,11 @@ pub fn run_probe(plugin: &LoadedPlugin, app_data_dir: &PathBuf, app_version: &st
         };
 
         PluginOutput {
-            provider_id: plugin_id,
-            display_name,
+            provider_id: provider_id.clone(),
+            display_name: display_name.clone(),
             plan,
             lines,
-            icon_url,
+            icon_url: icon_url.clone(),
         }
     })
 }
@@ -434,16 +454,6 @@ fn parse_lines(result: &Object) -> Result<Vec<MetricLine>, String> {
     Ok(out)
 }
 
-fn error_output(plugin: &LoadedPlugin, message: String) -> PluginOutput {
-    PluginOutput {
-        provider_id: plugin.manifest.id.clone(),
-        display_name: plugin.manifest.name.clone(),
-        plan: None,
-        lines: vec![error_line(message)],
-        icon_url: plugin.icon_data_url.clone(),
-    }
-}
-
 fn extract_error_string(ctx: &Ctx<'_>) -> String {
     let exc = ctx.catch();
     if exc.is_null() || exc.is_undefined() {
@@ -488,10 +498,12 @@ mod tests {
                 brand_color: None,
                 lines: vec![],
                 links: vec![],
+                profiles: None,
             },
             plugin_dir: PathBuf::from("."),
             entry_script: entry_script.to_string(),
             icon_data_url: "data:image/svg+xml;base64,".to_string(),
+            instances: vec![ProfileInstance::anonymous()],
         }
     }
 
@@ -521,7 +533,7 @@ mod tests {
             };
             "#,
         );
-        let output = run_probe(&plugin, &temp_app_dir("sync"), "0.0.0");
+        let output = run_probe(&plugin, &ProfileInstance::anonymous(), &temp_app_dir("sync"), "0.0.0");
         assert_eq!(error_text(output), "boom");
     }
 
@@ -536,7 +548,7 @@ mod tests {
             };
             "#,
         );
-        let output = run_probe(&plugin, &temp_app_dir("async"), "0.0.0");
+        let output = run_probe(&plugin, &ProfileInstance::anonymous(), &temp_app_dir("async"), "0.0.0");
         assert_eq!(error_text(output), "boom");
     }
 

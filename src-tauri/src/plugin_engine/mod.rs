@@ -1,5 +1,6 @@
 pub mod host_api;
 pub mod manifest;
+pub mod profile_discovery;
 pub mod runtime;
 
 use manifest::LoadedPlugin;

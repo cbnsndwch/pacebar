@@ -516,6 +516,7 @@ pub fn inject_host_api<'js>(
     plugin_id: &str,
     app_data_dir: &PathBuf,
     app_version: &str,
+    env_overrides: &HashMap<String, String>,
 ) -> rquickjs::Result<()> {
     let globals = ctx.globals();
     let probe_ctx = Object::new(ctx.clone())?;
@@ -544,7 +545,7 @@ pub fn inject_host_api<'js>(
     inject_log(ctx, &host, plugin_id)?;
     inject_fs(ctx, &host)?;
     inject_crypto(ctx, &host)?;
-    inject_env(ctx, &host, plugin_id)?;
+    inject_env(ctx, &host, plugin_id, env_overrides)?;
     inject_http(ctx, &host, plugin_id)?;
     inject_keychain(ctx, &host, plugin_id)?;
     inject_sqlite(ctx, &host)?;
@@ -704,15 +705,26 @@ fn inject_crypto<'js>(ctx: &Ctx<'js>, host: &Object<'js>) -> rquickjs::Result<()
     Ok(())
 }
 
-fn inject_env<'js>(ctx: &Ctx<'js>, host: &Object<'js>, _plugin_id: &str) -> rquickjs::Result<()> {
+fn inject_env<'js>(
+    ctx: &Ctx<'js>,
+    host: &Object<'js>,
+    _plugin_id: &str,
+    env_overrides: &HashMap<String, String>,
+) -> rquickjs::Result<()> {
     let env_obj = Object::new(ctx.clone())?;
+    let overrides = env_overrides.clone();
     env_obj.set(
         "get",
         Function::new(ctx.clone(), move |name: String| -> Option<String> {
             if !WHITELISTED_ENV_VARS.contains(&name.as_str()) {
                 return None;
             }
-
+            // Per-instance overrides win over the process environment so that
+            // multi-profile plugins (e.g., Claude with claude-profiles) can
+            // probe each profile by injecting CLAUDE_CONFIG_DIR per call.
+            if let Some(value) = overrides.get(&name) {
+                return Some(value.clone());
+            }
             resolve_env_value(&name)
         })?,
     )?;
@@ -2735,7 +2747,7 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0").expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
             let globals = ctx.globals();
             let probe_ctx: Object = globals.get("__openusage_ctx").expect("probe ctx");
             let host: Object = probe_ctx.get("host").expect("host");
@@ -2752,7 +2764,7 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0").expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
             let js_expr = format!(
                 r#"__openusage_ctx.host.crypto.decryptAes256Gcm("{}", "{}")"#,
                 envelope, key_b64
@@ -2768,7 +2780,7 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0").expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
             // Vector: `printf '%s' 'hello' | shasum -a 256`
             let result: String = ctx
                 .eval(r#"__openusage_ctx.host.crypto.sha256Hex("hello")"#)
@@ -2794,7 +2806,7 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0").expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
             let globals = ctx.globals();
             let probe_ctx: Object = globals.get("__openusage_ctx").expect("probe ctx");
             let host: Object = probe_ctx.get("host").expect("host");
@@ -2838,7 +2850,7 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0").expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
             let globals = ctx.globals();
             let probe_ctx: Object = globals.get("__openusage_ctx").expect("probe ctx");
             let host: Object = probe_ctx.get("host").expect("host");
@@ -2906,7 +2918,7 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0").expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
             let globals = ctx.globals();
             let probe_ctx: Object = globals.get("__openusage_ctx").expect("probe ctx");
             let host: Object = probe_ctx.get("host").expect("host");

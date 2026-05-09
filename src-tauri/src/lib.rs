@@ -240,11 +240,36 @@ async fn start_probe_batch(
         )
     };
 
-    let selected_plugins = match plugin_ids {
+    // Materialize every (plugin, instance) pair into a probe target so that
+    // multi-profile plugins (e.g., Claude with claude-profiles) are probed once
+    // per profile without leaking the concept up to the frontend.
+    let all_targets: Vec<(plugin_engine::manifest::LoadedPlugin, plugin_engine::profile_discovery::ProfileInstance)> = plugins
+        .iter()
+        .flat_map(|plugin| {
+            plugin
+                .instances
+                .iter()
+                .map(|inst| (plugin.clone(), inst.clone()))
+        })
+        .collect();
+
+    let selected_targets = match plugin_ids {
         Some(ids) => {
-            let mut by_id: HashMap<String, plugin_engine::manifest::LoadedPlugin> = plugins
+            let mut by_id: HashMap<
+                String,
+                (
+                    plugin_engine::manifest::LoadedPlugin,
+                    plugin_engine::profile_discovery::ProfileInstance,
+                ),
+            > = all_targets
                 .into_iter()
-                .map(|plugin| (plugin.manifest.id.clone(), plugin))
+                .map(|(plugin, inst)| {
+                    let pid = plugin_engine::profile_discovery::full_provider_id(
+                        &plugin.manifest.id,
+                        &inst.id_suffix,
+                    );
+                    (pid, (plugin, inst))
+                })
                 .collect();
             let mut seen = HashSet::new();
             ids.into_iter()
@@ -254,14 +279,19 @@ async fn start_probe_batch(
                     }
                     by_id.remove(&id)
                 })
-                .collect()
+                .collect::<Vec<_>>()
         }
-        None => plugins,
+        None => all_targets,
     };
 
-    let response_plugin_ids: Vec<String> = selected_plugins
+    let response_plugin_ids: Vec<String> = selected_targets
         .iter()
-        .map(|plugin| plugin.manifest.id.clone())
+        .map(|(plugin, inst)| {
+            plugin_engine::profile_discovery::full_provider_id(
+                &plugin.manifest.id,
+                &inst.id_suffix,
+            )
+        })
         .collect();
 
     log::info!(
@@ -270,7 +300,7 @@ async fn start_probe_batch(
         response_plugin_ids
     );
 
-    if selected_plugins.is_empty() {
+    if selected_targets.is_empty() {
         let _ = app_handle.emit(
             "probe:batch-complete",
             ProbeBatchComplete {
@@ -283,8 +313,8 @@ async fn start_probe_batch(
         });
     }
 
-    let remaining = Arc::new(AtomicUsize::new(selected_plugins.len()));
-    for plugin in selected_plugins {
+    let remaining = Arc::new(AtomicUsize::new(selected_targets.len()));
+    for (plugin, instance) in selected_targets {
         let handle = app_handle.clone();
         let completion_handle = app_handle.clone();
         let bid = batch_id.clone();
@@ -292,11 +322,14 @@ async fn start_probe_batch(
         let data_dir = app_data_dir.clone();
         let version = app_version.clone();
         let counter = Arc::clone(&remaining);
+        let log_id = plugin_engine::profile_discovery::full_provider_id(
+            &plugin.manifest.id,
+            &instance.id_suffix,
+        );
 
         tauri::async_runtime::spawn_blocking(move || {
-            let plugin_id = plugin.manifest.id.clone();
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                plugin_engine::runtime::run_probe(&plugin, &data_dir, &version)
+                plugin_engine::runtime::run_probe(&plugin, &instance, &data_dir, &version)
             }));
 
             match result {
@@ -305,11 +338,11 @@ async fn start_probe_batch(
                         matches!(line, plugin_engine::runtime::MetricLine::Badge { label, .. } if label == "Error")
                     });
                     if has_error {
-                        log::warn!("probe {} completed with error", plugin_id);
+                        log::warn!("probe {} completed with error", log_id);
                     } else {
                         log::info!(
                             "probe {} completed ok ({} lines)",
-                            plugin_id,
+                            log_id,
                             output.lines.len()
                         );
                         local_http_api::cache_successful_output(&output);
@@ -323,7 +356,7 @@ async fn start_probe_batch(
                     );
                 }
                 Err(_) => {
-                    log::error!("probe {} panicked", plugin_id);
+                    log::error!("probe {} panicked", log_id);
                 }
             }
 
@@ -425,7 +458,7 @@ fn list_plugins(state: tauri::State<'_, Mutex<AppState>>) -> Vec<PluginMeta> {
 
     plugins
         .into_iter()
-        .map(|plugin| {
+        .flat_map(|plugin| {
             // Extract primary candidates: progress lines with primary_order, sorted by order
             let mut candidates: Vec<_> = plugin
                 .manifest
@@ -437,32 +470,48 @@ fn list_plugins(state: tauri::State<'_, Mutex<AppState>>) -> Vec<PluginMeta> {
             let primary_candidates: Vec<String> =
                 candidates.iter().map(|line| line.label.clone()).collect();
 
-            PluginMeta {
-                id: plugin.manifest.id,
-                name: plugin.manifest.name,
-                icon_url: plugin.icon_data_url,
-                brand_color: plugin.manifest.brand_color,
-                lines: plugin
-                    .manifest
-                    .lines
-                    .iter()
-                    .map(|line| ManifestLineDto {
-                        line_type: line.line_type.clone(),
-                        label: line.label.clone(),
-                        scope: line.scope.clone(),
-                    })
-                    .collect(),
-                links: plugin
-                    .manifest
-                    .links
-                    .iter()
-                    .map(|link| PluginLinkDto {
-                        label: link.label.clone(),
-                        url: link.url.clone(),
-                    })
-                    .collect(),
-                primary_candidates,
-            }
+            let lines: Vec<ManifestLineDto> = plugin
+                .manifest
+                .lines
+                .iter()
+                .map(|line| ManifestLineDto {
+                    line_type: line.line_type.clone(),
+                    label: line.label.clone(),
+                    scope: line.scope.clone(),
+                })
+                .collect();
+            let links: Vec<PluginLinkDto> = plugin
+                .manifest
+                .links
+                .iter()
+                .map(|link| PluginLinkDto {
+                    label: link.label.clone(),
+                    url: link.url.clone(),
+                })
+                .collect();
+
+            // One PluginMeta per discovered profile instance. Default instance
+            // (empty suffix) keeps the bare plugin id so existing snapshots and
+            // HTTP API consumers see no change for single-profile plugins.
+            plugin
+                .instances
+                .iter()
+                .map(|inst| PluginMeta {
+                    id: plugin_engine::profile_discovery::full_provider_id(
+                        &plugin.manifest.id,
+                        &inst.id_suffix,
+                    ),
+                    name: plugin_engine::profile_discovery::full_display_name(
+                        &plugin.manifest.name,
+                        inst.display_label.as_deref(),
+                    ),
+                    icon_url: plugin.icon_data_url.clone(),
+                    brand_color: plugin.manifest.brand_color.clone(),
+                    lines: lines.clone(),
+                    links: links.clone(),
+                    primary_candidates: primary_candidates.clone(),
+                })
+                .collect::<Vec<_>>()
         })
         .collect()
 }
@@ -544,8 +593,17 @@ pub fn run() {
             );
 
             let (_, plugins) = plugin_engine::initialize_plugins(&app_data_dir, &resource_dir);
-            let known_plugin_ids: Vec<String> =
-                plugins.iter().map(|p| p.manifest.id.clone()).collect();
+            let known_plugin_ids: Vec<String> = plugins
+                .iter()
+                .flat_map(|p| {
+                    p.instances.iter().map(move |inst| {
+                        plugin_engine::profile_discovery::full_provider_id(
+                            &p.manifest.id,
+                            &inst.id_suffix,
+                        )
+                    })
+                })
+                .collect();
             app.manage(Mutex::new(AppState {
                 plugins,
                 app_data_dir: app_data_dir.clone(),

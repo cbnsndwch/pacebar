@@ -80,10 +80,25 @@ const store = new LazyStore(SETTINGS_STORE_PATH);
 
 const DEFAULT_ENABLED_PLUGINS = new Set(["claude", "codex", "cursor"]);
 
+const PLUGIN_PROFILES_MIGRATION_KEY = "migrations.pluginProfilesAutoEnabled";
+
 export const DEFAULT_PLUGIN_SETTINGS: PluginSettings = {
   order: [],
   disabled: [],
 };
+
+/**
+ * Strip a profile-instance suffix from a provider id.
+ * `claude:work` → `claude`; `claude` → `claude`.
+ */
+function basePluginId(id: string): string {
+  const idx = id.indexOf(":");
+  return idx > 0 ? id.slice(0, idx) : id;
+}
+
+function isDefaultEnabled(id: string): boolean {
+  return DEFAULT_ENABLED_PLUGINS.has(basePluginId(id));
+}
 
 export async function loadPluginSettings(): Promise<PluginSettings> {
   const stored = await store.get<PluginSettings>(PLUGIN_SETTINGS_KEY);
@@ -144,7 +159,7 @@ export function normalizePluginSettings(
 
   const disabled = settings.disabled.filter((id) => knownSet.has(id));
   for (const id of newlyAdded) {
-    if (!DEFAULT_ENABLED_PLUGINS.has(id) && !disabled.includes(id)) {
+    if (!isDefaultEnabled(id) && !disabled.includes(id)) {
       disabled.push(id);
     }
   }
@@ -275,6 +290,30 @@ export async function migrateLegacyTraySettings(): Promise<void> {
 export function getEnabledPluginIds(settings: PluginSettings): string[] {
   const disabledSet = new Set(settings.disabled);
   return settings.order.filter((id) => !disabledSet.has(id));
+}
+
+/**
+ * One-shot cleanup for users who upgraded across the introduction of
+ * profile-instance ids (e.g. `claude:work`). The previous normalizePluginSettings
+ * would auto-disable those ids because `DEFAULT_ENABLED_PLUGINS` only knew the
+ * bare id. Clear them once so the user sees their profiles by default; once the
+ * migration flag is set, future explicit disables stick.
+ */
+export async function migratePluginProfileInstancesEnabled(): Promise<void> {
+  const done = await store.get<unknown>(PLUGIN_PROFILES_MIGRATION_KEY);
+  if (done === true) return;
+
+  const settings = await loadPluginSettings();
+  const cleaned = settings.disabled.filter((id) => {
+    if (!id.includes(":")) return true;
+    return !DEFAULT_ENABLED_PLUGINS.has(basePluginId(id));
+  });
+
+  if (cleaned.length !== settings.disabled.length) {
+    await savePluginSettings({ ...settings, disabled: cleaned });
+  }
+  await store.set(PLUGIN_PROFILES_MIGRATION_KEY, true);
+  await store.save();
 }
 
 function isGlobalShortcut(value: unknown): value is GlobalShortcut {

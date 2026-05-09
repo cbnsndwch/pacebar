@@ -25,6 +25,7 @@ import {
   loadResetTimerDisplayMode,
   loadStartOnLogin,
   loadThemeMode,
+  migratePluginProfileInstancesEnabled,
   normalizePluginSettings,
   savePluginSettings,
   type AutoUpdateIntervalMinutes,
@@ -86,6 +87,12 @@ export function useSettingsBootstrap({
         const availablePlugins = await invoke<PluginMeta[]>("list_plugins")
         if (!isMounted) return
         setPluginsMeta(availablePlugins)
+
+        try {
+          await migratePluginProfileInstancesEnabled()
+        } catch (error) {
+          console.error("Failed to migrate plugin profile instances:", error)
+        }
 
         const storedSettings = await loadPluginSettings()
         const normalized = normalizePluginSettings(storedSettings, availablePlugins)
