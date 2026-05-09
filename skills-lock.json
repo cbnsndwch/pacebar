@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "do-commits": {
+      "source": "cbnsndwch/skills",
+      "sourceType": "github",
+      "skillPath": "do-commits/SKILL.md",
+      "computedHash": "0dee47171970908145426fa64f0c66019a8e0c5e224149f5b40df06bddb86229"
+    },
+    "ncu": {
+      "source": "cbnsndwch/skills",
+      "sourceType": "github",
+      "skillPath": "ncu/SKILL.md",
+      "computedHash": "ad08593f337cdec0d25329b347005272acee956e44fbaec7c7a66db71270a36c"
+    },
+    "vercel-react-best-practices": {
+      "source": "cbnsndwch/skills",
+      "sourceType": "github",
+      "skillPath": "vercel-react-best-practices/SKILL.md",
+      "computedHash": "1be892a3ea68b74654326ef836a58dd528d99ae0ab8d879764e2519c39068e67"
+    },
+    "vite-8-upgrade": {
+      "source": "cbnsndwch/skills",
+      "sourceType": "github",
+      "skillPath": "vite-8-upgrade/SKILL.md",
+      "computedHash": "d4be49646efaee32bb9c38ee3ac31c6b9b085b6a349b90fe4977143cdc2ee9ef"
+    }
+  }
+}
