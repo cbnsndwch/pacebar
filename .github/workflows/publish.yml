@@ -17,8 +17,13 @@ jobs:
         include:
           - platform: macos-latest
             args: "--target aarch64-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
           - platform: macos-latest
             args: "--target x86_64-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+          - platform: windows-latest
+            args: ""
+            rust-targets: "x86_64-pc-windows-msvc"
     runs-on: ${{ matrix.platform }}
     env:
       RELEASE_TAG: ${{ github.ref_name }}
@@ -29,7 +34,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
+          targets: ${{ matrix.rust-targets }}
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"
@@ -41,6 +46,7 @@ jobs:
       - name: Bundle plugins
         run: bun run bundle:plugins
       - name: Verify bundled plugins
+        shell: bash
         run: |
           COUNT=$(find src-tauri/resources/bundled_plugins -maxdepth 2 -name plugin.json | wc -l | tr -d ' ')
           if [[ "$COUNT" -lt 1 ]]; then
@@ -48,7 +54,8 @@ jobs:
             exit 1
           fi
 
-      - name: Validate release tag
+      - name: Validate release tag (macOS)
+        if: runner.os == 'macOS'
         run: |
           if [[ -z "$RELEASE_TAG" ]]; then
             echo "Missing RELEASE_TAG (push a v* tag)."
@@ -59,7 +66,8 @@ jobs:
             exit 1
           fi
 
-      - name: Validate app version matches tag
+      - name: Validate app version matches tag (macOS)
+        if: runner.os == 'macOS'
         run: |
           TAG_VERSION="${RELEASE_TAG#v}"
 
@@ -81,6 +89,7 @@ jobs:
           fi
 
       - name: Import Apple Developer Certificate
+        if: runner.os == 'macOS'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -118,6 +127,7 @@ jobs:
           args: ${{ matrix.args }}
 
       - name: Verify updater assets uploaded
+        if: runner.os == 'macOS'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

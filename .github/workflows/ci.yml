@@ -10,7 +10,11 @@ permissions:
 jobs:
   check:
     name: Lint, Type-check, Build, Test
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,3 +29,22 @@ jobs:
 
       - name: Run tests
         run: bun run test
+
+  cargo-check:
+    name: Cargo check (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install
+      - name: Bundle plugins
+        run: bun run bundle:plugins
+      - name: Cargo check
+        working-directory: src-tauri
+        run: cargo check
