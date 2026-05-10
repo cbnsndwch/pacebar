@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Rebrand
+
+- **Renamed to PaceBar.** This project is now an independent fork; not endorsed by or affiliated with the upstream OpenUsage project by Robin Ebers.
+- **New bundle ID:** `dev.cbnsndwch.pacebar` (was `com.sunstory.openusage`). macOS log directory moved to `~/Library/Logs/dev.cbnsndwch.pacebar`.
+- **Plugin global renamed:** `globalThis.__openusage_plugin` → `globalThis.__pacebar_plugin`. Out-of-tree plugins must be updated.
+- **Manual reinstall required for users on 0.7.x.** Because the bundle ID changed, the new app installs alongside the old one rather than upgrading in place. Uninstall the previous version, then install PaceBar from the [latest release](https://github.com/cbnsndwch/pacebar/releases/latest). Settings and plugin data do not migrate automatically.
+- **Maintainer:** [@cbnsndwch](https://github.com/cbnsndwch).
+
+---
+
 ## v0.7.2
 
 ### Features

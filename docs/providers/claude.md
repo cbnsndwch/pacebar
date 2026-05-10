@@ -82,7 +82,7 @@ All windows are enforced simultaneously — hitting any limit throttles the user
 
 ### Multiple profiles
 
-If [`claude-code-profiles`](https://github.com/quinnjr/claude-code-profiles) (`claudep`) is installed, OpenUsage discovers each profile directory and shows a separate card per profile. Each probe runs the Claude plugin with `CLAUDE_CONFIG_DIR` set to the profile's path.
+If [`claude-code-profiles`](https://github.com/quinnjr/claude-code-profiles) (`claudep`) is installed, PaceBar discovers each profile directory and shows a separate card per profile. Each probe runs the Claude plugin with `CLAUDE_CONFIG_DIR` set to the profile's path.
 
 - **Windows:** `%LOCALAPPDATA%\claude-profiles\<name>\`
 - **macOS / Linux:** `$XDG_DATA_HOME/claude-profiles/<name>/` (default `~/.local/share/claude-profiles/`)

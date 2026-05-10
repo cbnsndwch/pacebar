@@ -73,14 +73,14 @@ Codex CLI supports multiple credential storage modes:
 
 For `keyring`/`auto`, Codex may not keep `auth.json` on disk. If keyring save succeeds, Codex removes the fallback `auth.json`.
 
-OpenUsage Codex plugin auth lookup order:
+PaceBar Codex plugin auth lookup order:
 
 1. `CODEX_HOME/auth.json` (when `CODEX_HOME` is set)
 2. `~/.config/codex/auth.json`
 3. `~/.codex/auth.json`
 4. macOS keychain service `Codex Auth` (fallback)
 
-If file-based OAuth credentials are missing, invalid, or fail with an auth/session error during refresh or usage lookup, OpenUsage tries the macOS keychain fallback. Non-auth usage failures, such as server errors or invalid responses, are shown directly.
+If file-based OAuth credentials are missing, invalid, or fail with an auth/session error during refresh or usage lookup, PaceBar tries the macOS keychain fallback. Non-auth usage failures, such as server errors or invalid responses, are shown directly.
 
 Keychain fallback is available on macOS only.
 
