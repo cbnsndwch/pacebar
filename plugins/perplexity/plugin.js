@@ -145,7 +145,7 @@
       const headers = {
         Authorization: "Bearer " + authToken,
         Accept: "application/json",
-        "User-Agent": "OpenUsage",
+        "User-Agent": "PaceBar",
       }
       if (extraHeaders && typeof extraHeaders === "object") for (const k in extraHeaders) headers[k] = extraHeaders[k]
       resp = ctx.util.request({ method: "GET", url: url, headers: headers, timeoutMs: 10000 })
@@ -418,5 +418,5 @@
     return plan ? { plan: plan, lines: lines } : { lines: lines }
   }
 
-  globalThis.__openusage_plugin = { id: "perplexity", probe: probe }
+  globalThis.__pacebar_plugin = { id: "perplexity", probe: probe }
 })()

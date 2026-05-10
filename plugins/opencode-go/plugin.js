@@ -283,5 +283,5 @@
     };
   }
 
-  globalThis.__openusage_plugin = { id: PROVIDER_ID, probe };
+  globalThis.__pacebar_plugin = { id: PROVIDER_ID, probe };
 })();

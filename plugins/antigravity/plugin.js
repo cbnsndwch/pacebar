@@ -509,5 +509,5 @@
     throw "Start Antigravity and try again."
   }
 
-  globalThis.__openusage_plugin = { id: "antigravity", probe: probe }
+  globalThis.__pacebar_plugin = { id: "antigravity", probe: probe }
 })()

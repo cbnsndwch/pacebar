@@ -77,7 +77,7 @@
       if (resp.status < 200 || resp.status >= 300) {
         ctx.host.log.warn("cloud request returned status " + resp.status + " for " + variant.marker)
         if (ctx.util && typeof ctx.util.isAuthStatus === "function" && ctx.util.isAuthStatus(resp.status)) {
-          return { __openusageAuthError: true }
+          return { __pacebarAuthError: true }
         }
         return null
       }
@@ -167,7 +167,7 @@
       sawApiKey = true
 
       var data = callCloud(ctx, apiKey, variant)
-      if (data && data.__openusageAuthError) {
+      if (data && data.__pacebarAuthError) {
         sawAuthFailure = true
         continue
       }
@@ -189,5 +189,5 @@
     throw LOGIN_HINT
   }
 
-  globalThis.__openusage_plugin = { id: "windsurf", probe: probe }
+  globalThis.__pacebar_plugin = { id: "windsurf", probe: probe }
 })()

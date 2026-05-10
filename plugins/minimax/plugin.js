@@ -384,5 +384,5 @@
     return result
   }
 
-  globalThis.__openusage_plugin = { id: "minimax", probe }
+  globalThis.__pacebar_plugin = { id: "minimax", probe }
 })()

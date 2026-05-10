@@ -321,7 +321,7 @@
         Authorization: "Bearer " + accessToken,
         "Content-Type": "application/json",
         Accept: "application/json",
-        "User-Agent": "OpenUsage",
+        "User-Agent": "PaceBar",
       },
       bodyText: JSON.stringify({ useCache: true }),
       timeoutMs: 10000,
@@ -334,7 +334,7 @@
         headers: {
           Authorization: "Bearer " + accessToken,
           Accept: "application/json",
-          "User-Agent": "OpenUsage",
+          "User-Agent": "PaceBar",
         },
         timeoutMs: 10000,
       })
@@ -483,5 +483,5 @@
     return { plan: plan, lines: lines }
   }
 
-  globalThis.__openusage_plugin = { id: "factory", probe }
+  globalThis.__pacebar_plugin = { id: "factory", probe }
 })()
