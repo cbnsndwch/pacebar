@@ -86,7 +86,7 @@ jobs:
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
-          packageManager: bun
+          tauriScript: bunx tauri
 
       - name: Verify updater assets uploaded
         shell: bash
