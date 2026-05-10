@@ -86,6 +86,7 @@ jobs:
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
+          packageManager: bun
 
       - name: Verify updater assets uploaded
         shell: bash
