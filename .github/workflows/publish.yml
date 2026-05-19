@@ -11,7 +11,20 @@ permissions:
 jobs:
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+          - platform: macos-latest
+            args: "--target x86_64-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+          - platform: windows-latest
+            args: ""
+            rust-targets: "x86_64-pc-windows-msvc"
+    runs-on: ${{ matrix.platform }}
     env:
       RELEASE_TAG: ${{ github.ref_name }}
     steps:
@@ -21,7 +34,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-pc-windows-msvc
+          targets: ${{ matrix.rust-targets }}
       - uses: swatinem/rust-cache@v2.9.1
         with:
           workspaces: "./src-tauri -> target"
@@ -75,11 +88,33 @@ jobs:
             exit 1
           fi
 
+      - name: Import Apple Developer Certificate
+        if: runner.os == 'macOS'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          rm certificate.p12
+
       - uses: tauri-apps/tauri-action@v0.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         with:
           tagName: ${{ env.RELEASE_TAG }}
           releaseName: ${{ env.RELEASE_TAG }}
@@ -87,8 +122,10 @@ jobs:
           prerelease: false
           includeUpdaterJson: true
           tauriScript: bunx tauri
+          args: ${{ matrix.args }}
 
       - name: Verify updater assets uploaded
+        if: runner.os == 'macOS'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
