@@ -11,7 +11,20 @@ permissions:
 jobs:
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+          - platform: macos-latest
+            args: "--target x86_64-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+          - platform: windows-latest
+            args: ""
+            rust-targets: "x86_64-pc-windows-msvc"
+    runs-on: ${{ matrix.platform }}
     env:
       RELEASE_TAG: ${{ github.ref_name }}
     steps:
@@ -21,7 +34,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-pc-windows-msvc
+          targets: ${{ matrix.rust-targets }}
       - uses: swatinem/rust-cache@v2.9.1
         with:
           workspaces: "./src-tauri -> target"
@@ -87,8 +100,10 @@ jobs:
           prerelease: false
           includeUpdaterJson: true
           tauriScript: bunx tauri
+          args: ${{ matrix.args }}
 
       - name: Verify updater assets uploaded
+        if: runner.os == 'macOS'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

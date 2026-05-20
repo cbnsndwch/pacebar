@@ -85,8 +85,6 @@ macro_rules! get_or_init_panel {
     };
 }
 
-// Export macro for use in other modules
-pub(crate) use get_or_init_panel;
 
 /// Retrieve the tray icon rect and position the panel beneath it.
 /// No-ops gracefully if the tray icon or its rect is unavailable.
@@ -123,6 +121,7 @@ pub fn hide_panel(app_handle: &AppHandle) {
     }
 }
 
+#[allow(dead_code)]
 pub fn is_visible(app_handle: &AppHandle) -> bool {
     app_handle
         .get_webview_panel("main")
