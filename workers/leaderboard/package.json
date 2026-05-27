@@ -1,0 +1,17 @@
+{
+  "name": "pacebar-leaderboard-worker",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create pacebar-leaderboard",
+    "db:migrate": "wrangler d1 execute pacebar-leaderboard --file schema.sql",
+    "db:migrate:local": "wrangler d1 execute pacebar-leaderboard --local --file schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241224.0",
+    "typescript": "~6.0.2",
+    "wrangler": "^3.99.0"
+  }
+}

@@ -30,6 +30,9 @@ import {
   type AutoUpdateIntervalMinutes,
   type DisplayMode,
   type GlobalShortcut,
+  type LeaderboardHandle,
+  type LeaderboardToken,
+  type LeaderboardWorkerUrl,
   type MenubarIconStyle,
   type ResetTimerDisplayMode,
   type ThemeMode,
@@ -336,6 +339,17 @@ interface SettingsPageProps {
   onGlobalShortcutChange: (value: GlobalShortcut) => void;
   startOnLogin: boolean;
   onStartOnLoginChange: (value: boolean) => void;
+  // Leaderboard
+  leaderboardHandle:       LeaderboardHandle;
+  leaderboardToken:        LeaderboardToken;
+  leaderboardWorkerUrl:    LeaderboardWorkerUrl;
+  leaderboardOptIn:        boolean;
+  leaderboardShareList:    string[];
+  onLeaderboardHandleChange:    (value: LeaderboardHandle)    => void;
+  onLeaderboardTokenChange:     (value: LeaderboardToken)     => void;
+  onLeaderboardWorkerUrlChange: (value: LeaderboardWorkerUrl) => void;
+  onLeaderboardOptInChange:     (value: boolean)              => void;
+  onLeaderboardShareListChange: (value: string[])             => void;
 }
 
 export function SettingsPage({
@@ -358,6 +372,16 @@ export function SettingsPage({
   onGlobalShortcutChange,
   startOnLogin,
   onStartOnLoginChange,
+  leaderboardHandle,
+  leaderboardToken,
+  leaderboardWorkerUrl,
+  leaderboardOptIn,
+  leaderboardShareList,
+  onLeaderboardHandleChange,
+  onLeaderboardTokenChange,
+  onLeaderboardWorkerUrlChange,
+  onLeaderboardOptInChange,
+  onLeaderboardShareListChange,
 }: SettingsPageProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -550,6 +574,88 @@ export function SettingsPage({
           />
           Start on login
         </label>
+      </section>
+      <section>
+        <h3 className="text-lg font-semibold mb-0">Leaderboard</h3>
+        <p className="text-sm text-muted-foreground mb-2">
+          Hack Night standings powered by your usage
+        </p>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Display Name
+            </label>
+            <input
+              type="text"
+              value={leaderboardHandle ?? ""}
+              onChange={(e) => onLeaderboardHandleChange(e.target.value || null)}
+              placeholder="alie"
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Worker URL
+            </label>
+            <input
+              type="text"
+              value={leaderboardWorkerUrl ?? ""}
+              onChange={(e) => onLeaderboardWorkerUrlChange(e.target.value || null)}
+              placeholder="https://leaderboard.your-subdomain.workers.dev"
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Invite Token
+            </label>
+            <input
+              type="password"
+              value={leaderboardToken ?? ""}
+              onChange={(e) => onLeaderboardTokenChange(e.target.value || null)}
+              placeholder="Paste token from organizer"
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm select-none text-foreground">
+            <Checkbox
+              key={`leaderboard-opt-in-${leaderboardOptIn}`}
+              checked={leaderboardOptIn}
+              onCheckedChange={(checked) => onLeaderboardOptInChange(checked === true)}
+            />
+            Share my usage during hack nights
+          </label>
+          {plugins.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Providers to Share
+              </label>
+              <div className="space-y-1">
+                {plugins.map((plugin) => {
+                  const isShared = leaderboardShareList.includes(plugin.id)
+                  return (
+                    <label
+                      key={plugin.id}
+                      className="flex items-center gap-2 text-sm select-none text-foreground"
+                    >
+                      <Checkbox
+                        checked={isShared}
+                        onCheckedChange={(checked) => {
+                          if (checked === true) {
+                            onLeaderboardShareListChange([...leaderboardShareList, plugin.id])
+                          } else {
+                            onLeaderboardShareListChange(leaderboardShareList.filter((id) => id !== plugin.id))
+                          }
+                        }}
+                      />
+                      {plugin.name}
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </section>
       <section>
         <h3 className="text-lg font-semibold mb-0">Plugins</h3>

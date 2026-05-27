@@ -6,6 +6,7 @@ import { useAppPluginViews } from "@/hooks/app/use-app-plugin-views"
 import { useProbe } from "@/hooks/app/use-probe"
 import { useSettingsBootstrap } from "@/hooks/app/use-settings-bootstrap"
 import { useSettingsDisplayActions } from "@/hooks/app/use-settings-display-actions"
+import { useSettingsLeaderboardActions } from "@/hooks/app/use-settings-leaderboard-actions"
 import { useSettingsPluginActions } from "@/hooks/app/use-settings-plugin-actions"
 import { useSettingsPluginList } from "@/hooks/app/use-settings-plugin-list"
 import { useSettingsSystemActions } from "@/hooks/app/use-settings-system-actions"
@@ -58,6 +59,16 @@ function App() {
     setResetTimerDisplayMode,
     setGlobalShortcut,
     setStartOnLogin,
+    leaderboardHandle,
+    leaderboardToken,
+    leaderboardWorkerUrl,
+    leaderboardOptIn,
+    leaderboardShareList,
+    setLeaderboardHandle,
+    setLeaderboardToken,
+    setLeaderboardWorkerUrl,
+    setLeaderboardOptIn,
+    setLeaderboardShareList,
   } = useAppPreferencesStore(
     useShallow((state) => ({
       autoUpdateInterval: state.autoUpdateInterval,
@@ -72,6 +83,16 @@ function App() {
       setResetTimerDisplayMode: state.setResetTimerDisplayMode,
       setGlobalShortcut: state.setGlobalShortcut,
       setStartOnLogin: state.setStartOnLogin,
+      leaderboardHandle: state.leaderboardHandle,
+      leaderboardToken: state.leaderboardToken,
+      leaderboardWorkerUrl: state.leaderboardWorkerUrl,
+      leaderboardOptIn: state.leaderboardOptIn,
+      leaderboardShareList: state.leaderboardShareList,
+      setLeaderboardHandle: state.setLeaderboardHandle,
+      setLeaderboardToken: state.setLeaderboardToken,
+      setLeaderboardWorkerUrl: state.setLeaderboardWorkerUrl,
+      setLeaderboardOptIn: state.setLeaderboardOptIn,
+      setLeaderboardShareList: state.setLeaderboardShareList,
     }))
   )
 
@@ -123,6 +144,11 @@ function App() {
     setLoadingForPlugins,
     setErrorForPlugins,
     startBatch,
+    setLeaderboardHandle,
+    setLeaderboardToken,
+    setLeaderboardWorkerUrl,
+    setLeaderboardOptIn,
+    setLeaderboardShareList,
   })
 
   useSettingsTheme(themeMode)
@@ -140,6 +166,25 @@ function App() {
     setResetTimerDisplayMode,
     setMenubarIconStyle,
     scheduleTrayIconUpdate,
+  })
+
+  const {
+    handleLeaderboardHandleChange,
+    handleLeaderboardTokenChange,
+    handleLeaderboardWorkerUrlChange,
+    handleLeaderboardOptInChange,
+    handleLeaderboardShareListChange,
+  } = useSettingsLeaderboardActions({
+    leaderboardHandle,
+    leaderboardToken,
+    leaderboardWorkerUrl,
+    leaderboardOptIn,
+    leaderboardShareList,
+    setLeaderboardHandle,
+    setLeaderboardToken,
+    setLeaderboardWorkerUrl,
+    setLeaderboardOptIn,
+    setLeaderboardShareList,
   })
 
   const {
@@ -284,6 +329,11 @@ function App() {
         onGlobalShortcutChange: handleGlobalShortcutChange,
         onStartOnLoginChange: handleStartOnLoginChange,
         onAvatarChange: handleAvatarChange,
+        onLeaderboardHandleChange: handleLeaderboardHandleChange,
+        onLeaderboardTokenChange: handleLeaderboardTokenChange,
+        onLeaderboardWorkerUrlChange: handleLeaderboardWorkerUrlChange,
+        onLeaderboardOptInChange: handleLeaderboardOptInChange,
+        onLeaderboardShareListChange: handleLeaderboardShareListChange,
       }}
     />
   )

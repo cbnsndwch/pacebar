@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import { CircleHelp, Settings } from "lucide-react"
+import { CircleHelp, Settings, Trophy } from "lucide-react"
 import { openUrl } from "@tauri-apps/plugin-opener"
 import { invoke } from "@tauri-apps/api/core"
 import { Menu, MenuItem, PredefinedMenuItem } from "@tauri-apps/api/menu"
@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils"
 import { getRelativeLuminance } from "@/lib/color"
 import { useDarkMode } from "@/hooks/use-dark-mode"
 
-type ActiveView = "home" | "settings" | string
+type ActiveView = "home" | "settings" | "leaderboard" | string
 
 type PluginContextAction = "reload" | "remove"
 
@@ -253,6 +253,15 @@ export function SideNav({
         aria-label="Home"
       >
         <GaugeIcon className="size-6 dark:text-page-accent" />
+      </NavButton>
+
+      {/* Leaderboard */}
+      <NavButton
+        isActive={activeView === "leaderboard"}
+        onClick={() => onViewChange("leaderboard")}
+        aria-label="Leaderboard"
+      >
+        <Trophy className="size-6" />
       </NavButton>
 
       {/* Plugin icons */}

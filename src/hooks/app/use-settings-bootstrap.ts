@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from "react"
 import { invoke, isTauri } from "@tauri-apps/api/core"
+import { appDataDir } from "@tauri-apps/api/path"
 import {
   disable as disableAutostart,
   enable as enableAutostart,
@@ -11,6 +12,11 @@ import {
   DEFAULT_AUTO_UPDATE_INTERVAL,
   DEFAULT_DISPLAY_MODE,
   DEFAULT_GLOBAL_SHORTCUT,
+  DEFAULT_LEADERBOARD_HANDLE,
+  DEFAULT_LEADERBOARD_OPT_IN,
+  DEFAULT_LEADERBOARD_SHARE_LIST,
+  DEFAULT_LEADERBOARD_TOKEN,
+  DEFAULT_LEADERBOARD_WORKER_URL,
   DEFAULT_MENUBAR_ICON_STYLE,
   DEFAULT_RESET_TIMER_DISPLAY_MODE,
   DEFAULT_START_ON_LOGIN,
@@ -19,6 +25,11 @@ import {
   loadAutoUpdateInterval,
   loadDisplayMode,
   loadGlobalShortcut,
+  loadLeaderboardHandle,
+  loadLeaderboardOptIn,
+  loadLeaderboardShareList,
+  loadLeaderboardToken,
+  loadLeaderboardWorkerUrl,
   loadMenubarIconStyle,
   migrateLegacyTraySettings,
   loadPluginSettings,
@@ -28,9 +39,13 @@ import {
   migratePluginProfileInstancesEnabled,
   normalizePluginSettings,
   savePluginSettings,
+  syncLeaderboardPrefsToPlugin,
   type AutoUpdateIntervalMinutes,
   type DisplayMode,
   type GlobalShortcut,
+  type LeaderboardHandle,
+  type LeaderboardToken,
+  type LeaderboardWorkerUrl,
   type MenubarIconStyle,
   type PluginSettings,
   type ResetTimerDisplayMode,
@@ -50,6 +65,12 @@ type UseSettingsBootstrapArgs = {
   setLoadingForPlugins: (ids: string[]) => void
   setErrorForPlugins: (ids: string[], error: string) => void
   startBatch: (pluginIds?: string[]) => Promise<string[] | undefined>
+  // Leaderboard
+  setLeaderboardHandle:    (value: LeaderboardHandle)    => void
+  setLeaderboardToken:     (value: LeaderboardToken)     => void
+  setLeaderboardWorkerUrl: (value: LeaderboardWorkerUrl) => void
+  setLeaderboardOptIn:     (value: boolean)              => void
+  setLeaderboardShareList: (value: string[])             => void
 }
 
 export function useSettingsBootstrap({
@@ -65,6 +86,11 @@ export function useSettingsBootstrap({
   setLoadingForPlugins,
   setErrorForPlugins,
   startBatch,
+  setLeaderboardHandle,
+  setLeaderboardToken,
+  setLeaderboardWorkerUrl,
+  setLeaderboardOptIn,
+  setLeaderboardShareList,
 }: UseSettingsBootstrapArgs) {
   const applyStartOnLogin = useCallback(async (value: boolean) => {
     if (!isTauri()) return
@@ -160,6 +186,41 @@ export function useSettingsBootstrap({
           console.error("Failed to load menubar icon style:", error)
         }
 
+        let storedLeaderboardHandle = DEFAULT_LEADERBOARD_HANDLE
+        try {
+          storedLeaderboardHandle = await loadLeaderboardHandle()
+        } catch (error) {
+          console.error("Failed to load leaderboard handle:", error)
+        }
+
+        let storedLeaderboardToken = DEFAULT_LEADERBOARD_TOKEN
+        try {
+          storedLeaderboardToken = await loadLeaderboardToken()
+        } catch (error) {
+          console.error("Failed to load leaderboard token:", error)
+        }
+
+        let storedLeaderboardWorkerUrl = DEFAULT_LEADERBOARD_WORKER_URL
+        try {
+          storedLeaderboardWorkerUrl = await loadLeaderboardWorkerUrl()
+        } catch (error) {
+          console.error("Failed to load leaderboard worker URL:", error)
+        }
+
+        let storedLeaderboardOptIn = DEFAULT_LEADERBOARD_OPT_IN
+        try {
+          storedLeaderboardOptIn = await loadLeaderboardOptIn()
+        } catch (error) {
+          console.error("Failed to load leaderboard opt-in:", error)
+        }
+
+        let storedLeaderboardShareList = DEFAULT_LEADERBOARD_SHARE_LIST
+        try {
+          storedLeaderboardShareList = await loadLeaderboardShareList()
+        } catch (error) {
+          console.error("Failed to load leaderboard share list:", error)
+        }
+
         if (isMounted) {
           setPluginSettings(normalized)
           setAutoUpdateInterval(storedInterval)
@@ -169,6 +230,25 @@ export function useSettingsBootstrap({
           setGlobalShortcut(storedGlobalShortcut)
           setStartOnLogin(storedStartOnLogin)
           setMenubarIconStyle(storedMenubarIconStyle)
+          setLeaderboardHandle(storedLeaderboardHandle)
+          setLeaderboardToken(storedLeaderboardToken)
+          setLeaderboardWorkerUrl(storedLeaderboardWorkerUrl)
+          setLeaderboardOptIn(storedLeaderboardOptIn)
+          setLeaderboardShareList(storedLeaderboardShareList)
+
+          // Sync leaderboard prefs to the plugin file so plugin.js can read them
+          try {
+            const dir = await appDataDir()
+            await syncLeaderboardPrefsToPlugin(dir, {
+              handle:    storedLeaderboardHandle,
+              token:     storedLeaderboardToken,
+              workerUrl: storedLeaderboardWorkerUrl,
+              optIn:     storedLeaderboardOptIn,
+              shareList: storedLeaderboardShareList,
+            })
+          } catch (error) {
+            console.error("Failed to sync leaderboard prefs to plugin on startup:", error)
+          }
 
           const enabledIds = getEnabledPluginIds(normalized)
           setLoadingForPlugins(enabledIds)
@@ -197,6 +277,11 @@ export function useSettingsBootstrap({
     setDisplayMode,
     setErrorForPlugins,
     setGlobalShortcut,
+    setLeaderboardHandle,
+    setLeaderboardOptIn,
+    setLeaderboardShareList,
+    setLeaderboardToken,
+    setLeaderboardWorkerUrl,
     setLoadingForPlugins,
     setMenubarIconStyle,
     migrateLegacyTraySettings,

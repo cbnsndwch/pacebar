@@ -605,6 +605,26 @@ fn set_profile_avatar(
     Ok(())
 }
 
+/// Write leaderboard preferences to `{app_data_dir}/leaderboard-prefs.json`
+/// so the leaderboard plugin.js can read them from the QuickJS sandbox.
+#[tauri::command]
+fn write_leaderboard_prefs(
+    app_handle: tauri::AppHandle,
+    data: String,
+) -> Result<(), String> {
+    use tauri::Manager;
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("failed to get app data dir: {}", e))?;
+    std::fs::create_dir_all(&app_data_dir)
+        .map_err(|e| format!("failed to create app data dir: {}", e))?;
+    let path = app_data_dir.join("leaderboard-prefs.json");
+    std::fs::write(&path, data.as_bytes())
+        .map_err(|e| format!("failed to write leaderboard prefs: {}", e))?;
+    Ok(())
+}
+
 /// Remove the avatar image for a profile instance.
 #[tauri::command]
 fn remove_profile_avatar(
@@ -667,6 +687,7 @@ pub fn run() {
             update_global_shortcut,
             set_profile_avatar,
             remove_profile_avatar,
+            write_leaderboard_prefs,
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

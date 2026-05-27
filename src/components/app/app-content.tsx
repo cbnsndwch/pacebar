@@ -1,4 +1,5 @@
 import { useShallow } from "zustand/react/shallow"
+import { LeaderboardPage } from "@/pages/leaderboard"
 import { OverviewPage } from "@/pages/overview"
 import { ProviderDetailPage } from "@/pages/provider-detail"
 import { SettingsPage } from "@/pages/settings"
@@ -11,6 +12,9 @@ import type {
   AutoUpdateIntervalMinutes,
   DisplayMode,
   GlobalShortcut,
+  LeaderboardHandle,
+  LeaderboardToken,
+  LeaderboardWorkerUrl,
   MenubarIconStyle,
   ResetTimerDisplayMode,
   ThemeMode,
@@ -36,6 +40,12 @@ export type AppContentActionProps = {
   onGlobalShortcutChange: (value: GlobalShortcut) => void
   onStartOnLoginChange: (value: boolean) => void
   onAvatarChange: (pluginId: string, dataUrl: string | null) => void
+  // Leaderboard
+  onLeaderboardHandleChange:    (value: LeaderboardHandle)    => void
+  onLeaderboardTokenChange:     (value: LeaderboardToken)     => void
+  onLeaderboardWorkerUrlChange: (value: LeaderboardWorkerUrl) => void
+  onLeaderboardOptInChange:     (value: boolean)              => void
+  onLeaderboardShareListChange: (value: string[])             => void
 }
 
 export type AppContentProps = AppContentDerivedProps & AppContentActionProps
@@ -57,6 +67,11 @@ export function AppContent({
   onGlobalShortcutChange,
   onStartOnLoginChange,
   onAvatarChange,
+  onLeaderboardHandleChange,
+  onLeaderboardTokenChange,
+  onLeaderboardWorkerUrlChange,
+  onLeaderboardOptInChange,
+  onLeaderboardShareListChange,
 }: AppContentProps) {
   const { activeView } = useAppUiStore(
     useShallow((state) => ({
@@ -72,6 +87,11 @@ export function AppContent({
     globalShortcut,
     themeMode,
     startOnLogin,
+    leaderboardHandle,
+    leaderboardToken,
+    leaderboardWorkerUrl,
+    leaderboardOptIn,
+    leaderboardShareList,
   } = useAppPreferencesStore(
     useShallow((state) => ({
       displayMode: state.displayMode,
@@ -81,6 +101,11 @@ export function AppContent({
       globalShortcut: state.globalShortcut,
       themeMode: state.themeMode,
       startOnLogin: state.startOnLogin,
+      leaderboardHandle: state.leaderboardHandle,
+      leaderboardToken: state.leaderboardToken,
+      leaderboardWorkerUrl: state.leaderboardWorkerUrl,
+      leaderboardOptIn: state.leaderboardOptIn,
+      leaderboardShareList: state.leaderboardShareList,
     }))
   )
 
@@ -118,8 +143,22 @@ export function AppContent({
         onGlobalShortcutChange={onGlobalShortcutChange}
         startOnLogin={startOnLogin}
         onStartOnLoginChange={onStartOnLoginChange}
+        leaderboardHandle={leaderboardHandle}
+        leaderboardToken={leaderboardToken}
+        leaderboardWorkerUrl={leaderboardWorkerUrl}
+        leaderboardOptIn={leaderboardOptIn}
+        leaderboardShareList={leaderboardShareList}
+        onLeaderboardHandleChange={onLeaderboardHandleChange}
+        onLeaderboardTokenChange={onLeaderboardTokenChange}
+        onLeaderboardWorkerUrlChange={onLeaderboardWorkerUrlChange}
+        onLeaderboardOptInChange={onLeaderboardOptInChange}
+        onLeaderboardShareListChange={onLeaderboardShareListChange}
       />
     )
+  }
+
+  if (activeView === "leaderboard") {
+    return <LeaderboardPage />
   }
 
   const handleRetry = selectedPlugin
