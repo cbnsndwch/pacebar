@@ -14,15 +14,15 @@ export const makeCtx = () => {
     },
     host: {
       fs: {
-        exists: (path) => {
+        exists: vi.fn((path) => {
           if (files.has(path)) return true
           const base = String(path).replace(/\/+$/, "")
           for (const filePath of files.keys()) {
             if (String(filePath).startsWith(base + "/")) return true
           }
           return false
-        },
-        readText: (path) => files.get(path),
+        }),
+        readText: vi.fn((path) => files.get(path)),
         writeText: vi.fn((path, text) => files.set(path, text)),
         listDir: (path) => {
           const base = String(path).replace(/\/+$/, "")

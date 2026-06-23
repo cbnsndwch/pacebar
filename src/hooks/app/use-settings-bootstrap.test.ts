@@ -18,8 +18,16 @@ const {
   loadStartOnLoginMock,
   loadThemeModeMock,
   migrateLegacyTraySettingsMock,
+  migratePluginProfileInstancesEnabledMock,
   normalizePluginSettingsMock,
   savePluginSettingsMock,
+  loadLeaderboardHandleMock,
+  loadLeaderboardTokenMock,
+  loadLeaderboardWorkerUrlMock,
+  loadLeaderboardOptInMock,
+  loadLeaderboardShareListMock,
+  syncLeaderboardPrefsToPluginMock,
+  appDataDirMock,
 } = vi.hoisted(() => ({
   invokeMock: vi.fn(),
   isTauriMock: vi.fn(),
@@ -37,8 +45,20 @@ const {
   loadStartOnLoginMock: vi.fn(),
   loadThemeModeMock: vi.fn(),
   migrateLegacyTraySettingsMock: vi.fn(),
+  migratePluginProfileInstancesEnabledMock: vi.fn(),
   normalizePluginSettingsMock: vi.fn(),
   savePluginSettingsMock: vi.fn(),
+  loadLeaderboardHandleMock: vi.fn(),
+  loadLeaderboardTokenMock: vi.fn(),
+  loadLeaderboardWorkerUrlMock: vi.fn(),
+  loadLeaderboardOptInMock: vi.fn(),
+  loadLeaderboardShareListMock: vi.fn(),
+  syncLeaderboardPrefsToPluginMock: vi.fn(),
+  appDataDirMock: vi.fn(),
+}))
+
+vi.mock("@tauri-apps/api/path", () => ({
+  appDataDir: appDataDirMock,
 }))
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -61,6 +81,11 @@ vi.mock("@/lib/settings", () => ({
   DEFAULT_RESET_TIMER_DISPLAY_MODE: "relative",
   DEFAULT_START_ON_LOGIN: false,
   DEFAULT_THEME_MODE: "system",
+  DEFAULT_LEADERBOARD_HANDLE: null,
+  DEFAULT_LEADERBOARD_TOKEN: null,
+  DEFAULT_LEADERBOARD_WORKER_URL: null,
+  DEFAULT_LEADERBOARD_OPT_IN: false,
+  DEFAULT_LEADERBOARD_SHARE_LIST: [],
   getEnabledPluginIds: getEnabledPluginIdsMock,
   loadAutoUpdateInterval: loadAutoUpdateIntervalMock,
   loadDisplayMode: loadDisplayModeMock,
@@ -70,7 +95,14 @@ vi.mock("@/lib/settings", () => ({
   loadResetTimerDisplayMode: loadResetTimerDisplayModeMock,
   loadStartOnLogin: loadStartOnLoginMock,
   loadThemeMode: loadThemeModeMock,
+  loadLeaderboardHandle: loadLeaderboardHandleMock,
+  loadLeaderboardToken: loadLeaderboardTokenMock,
+  loadLeaderboardWorkerUrl: loadLeaderboardWorkerUrlMock,
+  loadLeaderboardOptIn: loadLeaderboardOptInMock,
+  loadLeaderboardShareList: loadLeaderboardShareListMock,
+  syncLeaderboardPrefsToPlugin: syncLeaderboardPrefsToPluginMock,
   migrateLegacyTraySettings: migrateLegacyTraySettingsMock,
+  migratePluginProfileInstancesEnabled: migratePluginProfileInstancesEnabledMock,
   normalizePluginSettings: normalizePluginSettingsMock,
   savePluginSettings: savePluginSettingsMock,
 }))
@@ -91,6 +123,11 @@ function createArgs() {
     setLoadingForPlugins: vi.fn(),
     setErrorForPlugins: vi.fn(),
     startBatch: vi.fn().mockResolvedValue(undefined),
+    setLeaderboardHandle: vi.fn(),
+    setLeaderboardToken: vi.fn(),
+    setLeaderboardWorkerUrl: vi.fn(),
+    setLeaderboardOptIn: vi.fn(),
+    setLeaderboardShareList: vi.fn(),
   }
 }
 
@@ -112,8 +149,16 @@ describe("useSettingsBootstrap", () => {
     loadStartOnLoginMock.mockReset()
     loadThemeModeMock.mockReset()
     migrateLegacyTraySettingsMock.mockReset()
+    migratePluginProfileInstancesEnabledMock.mockReset()
     normalizePluginSettingsMock.mockReset()
     savePluginSettingsMock.mockReset()
+    loadLeaderboardHandleMock.mockReset()
+    loadLeaderboardTokenMock.mockReset()
+    loadLeaderboardWorkerUrlMock.mockReset()
+    loadLeaderboardOptInMock.mockReset()
+    loadLeaderboardShareListMock.mockReset()
+    syncLeaderboardPrefsToPluginMock.mockReset()
+    appDataDirMock.mockReset()
 
     isTauriMock.mockReturnValue(true)
     isAutostartEnabledMock.mockResolvedValue(true)
@@ -138,8 +183,16 @@ describe("useSettingsBootstrap", () => {
     loadMenubarIconStyleMock.mockResolvedValue("provider")
     loadStartOnLoginMock.mockResolvedValue(true)
     migrateLegacyTraySettingsMock.mockResolvedValue(undefined)
+    migratePluginProfileInstancesEnabledMock.mockResolvedValue(undefined)
     savePluginSettingsMock.mockResolvedValue(undefined)
     getEnabledPluginIdsMock.mockReturnValue(["codex"])
+    loadLeaderboardHandleMock.mockResolvedValue(null)
+    loadLeaderboardTokenMock.mockResolvedValue(null)
+    loadLeaderboardWorkerUrlMock.mockResolvedValue(null)
+    loadLeaderboardOptInMock.mockResolvedValue(false)
+    loadLeaderboardShareListMock.mockResolvedValue([])
+    syncLeaderboardPrefsToPluginMock.mockResolvedValue(undefined)
+    appDataDirMock.mockResolvedValue("/tmp/appdata")
   })
 
   it("disables autostart when applyStartOnLogin receives false", async () => {

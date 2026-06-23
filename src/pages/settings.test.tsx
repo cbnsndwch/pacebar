@@ -67,6 +67,16 @@ const defaultProps = {
   onGlobalShortcutChange: vi.fn(),
   startOnLogin: false,
   onStartOnLoginChange: vi.fn(),
+  leaderboardHandle: null,
+  leaderboardToken: null,
+  leaderboardWorkerUrl: null,
+  leaderboardOptIn: false,
+  leaderboardShareList: [],
+  onLeaderboardHandleChange: vi.fn(),
+  onLeaderboardTokenChange: vi.fn(),
+  onLeaderboardWorkerUrlChange: vi.fn(),
+  onLeaderboardOptInChange: vi.fn(),
+  onLeaderboardShareListChange: vi.fn(),
 }
 
 afterEach(() => {
