@@ -1,7 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
 import { upsertReport, getHacknightForTime } from "../lib/db";
-import { standardWindows, hacknightWindowKey, isoDay } from "../lib/windows";
+import { standardWindows } from "../lib/windows";
 
 interface ProviderPayload {
   id: string;
@@ -82,18 +82,17 @@ export async function handleReport(req: Request, db: D1Database): Promise<Respon
     }),
   );
 
-  // Check for an active hack night window
-  const hnSlot = hacknightWindowKey(nowMs);
-  if (hnSlot) {
-    const hn = await getHacknightForTime(db, submittedAt);
-    const hnKey = hn ? `hn-${hn.number}` : `hn-${isoDay(new Date(nowMs))}-${hnSlot}`;
+  // Record a hack night window only if the report falls inside a published
+  // session (the source of truth is the Luma calendar synced into D1).
+  const hn = await getHacknightForTime(db, submittedAt);
+  if (hn) {
     upserts.push(
       upsertReport(db, {
         handle: cleanHandle,
         submitted_at: submittedAt,
         window_type: "hacknight",
-        hacknight_id: hn?.id ?? null,
-        window_key: hnKey,
+        hacknight_id: hn.id,
+        window_key: `hn-${hn.number}`,
         tokens_used: tokensUsed,
         dollars_spent: dollarsSpent,
         providers_active: providersActive,
@@ -107,7 +106,7 @@ export async function handleReport(req: Request, db: D1Database): Promise<Respon
 
   return json({
     ok: true,
-    windows: standard.map((w) => w.key).concat(hnSlot ? ["hacknight"] : []),
+    windows: standard.map((w) => w.key).concat(hn ? ["hacknight"] : []),
   });
 }
 

@@ -1,23 +1,24 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
-import { getHacknightForTime, listHacknights, getHacknightByNumber } from "../lib/db";
-import { hacknightWindowKey } from "../lib/windows";
+import {
+  getHacknightForTime,
+  getUpcomingHacknights,
+  listHacknights,
+  getHacknightByNumber,
+} from "../lib/db";
 
 export async function handleHacknightCurrent(_req: Request, db: D1Database): Promise<Response> {
   const now = new Date().toISOString();
-  const slot = hacknightWindowKey(Date.now());
 
-  if (!slot) {
-    // Not in a hack night window right now — return next upcoming one
-    const upcoming = await db
-      .prepare("SELECT * FROM hacknights WHERE starts_at > ? ORDER BY starts_at ASC LIMIT 1")
-      .bind(now)
-      .first();
-    return json({ active: false, upcoming: upcoming ?? null });
+  // A session is active iff `now` falls within a published event's window.
+  const current = await getHacknightForTime(db, now);
+  if (current) {
+    return json({ active: true, hacknight: current });
   }
 
-  const current = await getHacknightForTime(db, now);
-  return json({ active: true, slot, hacknight: current ?? null });
+  // Otherwise return the upcoming published sessions (soonest first).
+  const upcoming = await getUpcomingHacknights(db, now, 5);
+  return json({ active: false, upcoming });
 }
 
 export async function handleHacknightList(_req: Request, db: D1Database): Promise<Response> {

@@ -12,7 +12,6 @@ import {
   type LeaderboardMetric,
   type LeaderboardWindow,
 } from "@/lib/leaderboard-api";
-import { isInHacknightWindow } from "@/lib/hacknight-windows";
 import { cn } from "@/lib/utils";
 import { useAppPreferencesStore } from "@/stores/app-preferences-store";
 
@@ -31,6 +30,8 @@ const METRIC_OPTIONS: { value: LeaderboardMetric; label: string }[] = [
 ];
 
 const REFRESH_INTERVAL_MS = 60_000;
+// While no session is live, poll less often just to notice one starting.
+const IDLE_REFRESH_INTERVAL_MS = 5 * 60_000;
 
 export function LeaderboardPage() {
   const { leaderboardWorkerUrl, leaderboardToken, leaderboardHandle, leaderboardOptIn } =
@@ -50,9 +51,14 @@ export function LeaderboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Tick every 60s when a hack night is active so the display stays fresh
-  const inSession = isInHacknightWindow();
-  const tick = useNowTicker({ enabled: inSession, intervalMs: REFRESH_INTERVAL_MS });
+  // Whether a session is live comes from the published calendar (the worker's
+  // /hacknight/current), not a local clock. Refresh quickly during a session,
+  // slowly otherwise so a session starting is still picked up while open.
+  const inSession = hacknight?.active ?? false;
+  const tick = useNowTicker({
+    enabled: true,
+    intervalMs: inSession ? REFRESH_INTERVAL_MS : IDLE_REFRESH_INTERVAL_MS,
+  });
 
   // Also track when the user changes the window/metric tabs
   const fetchKey = `${selectedWindow}:${selectedMetric}:${tick}`;
@@ -133,13 +139,46 @@ export function LeaderboardPage() {
   function renderHeader() {
     if (!hacknight) return null;
     if (!hacknight.active || !hacknight.hacknight) {
-      const next = hacknight.upcoming;
+      const upcoming = hacknight.upcoming ?? [];
+      const dateFmt = new Intl.DateTimeFormat(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+      const timeFmt = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
       return (
-        <div className="flex items-center gap-2 px-1 pb-2">
-          <Trophy className="size-4 text-muted-foreground shrink-0" />
-          <span className="text-sm text-muted-foreground">
-            {next ? `Next: Hack Night #${next.number}` : "No session active"}
-          </span>
+        <div className="px-1 pb-2 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Trophy className="size-4 text-muted-foreground shrink-0" />
+            <span className="text-sm text-muted-foreground">
+              {upcoming.length > 0 ? "Upcoming sessions" : "No session active"}
+            </span>
+          </div>
+          {upcoming.length > 0 && (
+            <ul className="space-y-1 pl-6">
+              {upcoming.map((s) => {
+                const start = new Date(s.starts_at);
+                return (
+                  <li
+                    key={s.number}
+                    className="flex items-center justify-between gap-2 text-xs"
+                  >
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <span className="font-medium truncate">Hack Night #{s.number}</span>
+                      {s.is_special && (
+                        <span className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 px-1 py-px rounded-full font-medium shrink-0">
+                          Special 🏆
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-muted-foreground shrink-0">
+                      {dateFmt.format(start)} · {timeFmt.format(start)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       );
     }

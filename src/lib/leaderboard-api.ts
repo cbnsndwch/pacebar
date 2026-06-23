@@ -28,9 +28,9 @@ export interface HacknightInfo {
 
 export interface HacknightCurrentResponse {
   active: boolean;
-  slot?: string;
   hacknight?: HacknightInfo;
-  upcoming?: { number: number; starts_at: string };
+  /** Upcoming published sessions (soonest first); present when no session is active. */
+  upcoming?: HacknightInfo[];
 }
 
 function makeHeaders(token: string | null): HeadersInit {
