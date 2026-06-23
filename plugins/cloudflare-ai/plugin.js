@@ -221,17 +221,13 @@
 
       const lines = []
 
-      // Primary: spend progress
+      // Spend amount (as text since % bar is meaningless at low usage)
       const cap = Number(data.cap_usd) || 0
       const spent = Number(data.spent_usd) || 0
-      if (cap > 0) {
-        lines.push(ctx.line.progress({
-          label: "Spend",
-          used: spent,
-          limit: cap,
-          format: { kind: "dollars" }
-        }))
-      }
+      lines.push(ctx.line.text({
+        label: "Spend",
+        value: fmtDollars(spent) + " of " + fmtDollars(cap)
+      }))
 
       // Daily burn rate
       const burn = Number(data.burn_per_day_usd) || 0
