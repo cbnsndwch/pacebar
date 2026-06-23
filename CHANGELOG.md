@@ -15,47 +15,54 @@
 ## v0.7.2
 
 ### Features
+
 - feat(avatar): add profile avatar picker with set/remove commands and side nav display
 - feat(plugin-types): add `avatarUrl` and `supportsAvatar` to `PluginMeta`
 - feat(profile-discovery): load avatar image from profile directory
 
 ### Chores
+
 - chore(deps): update Tauri, Vite 8, React, Tailwind CSS, and testing packages
 - feat: add npm-check-updates configuration for package management
 
 ---
 
-**Full Changelog**: [v0.7.1...v0.7.2](https://github.com/cbnsndwch/openusage/compare/v0.7.1...v0.7.2)
+**Full Changelog**: [v0.7.1...v0.7.2](https://github.com/cbnsndwch/pacebar/compare/v0.7.1...v0.7.2)
 
 ## v0.7.1
 
 ### Chores
+
 - ci: update Tauri updater signing config and endpoints for fork
 
 ---
 
-**Full Changelog**: [v0.7.0...v0.7.1](https://github.com/cbnsndwch/openusage/compare/v0.7.0...v0.7.1)
+**Full Changelog**: [v0.7.0...v0.7.1](https://github.com/cbnsndwch/pacebar/compare/v0.7.0...v0.7.1)
 
 ## v0.7.0
 
 ### Features
+
 - feat: Windows support — tray panel, NSIS/MSI bundling, WebView2 backend
 - feat(claude): multi-profile discovery and per-instance settings migration
 
 ### CI
+
 - ci: drop macOS publish matrix, go Windows-only
 
 ---
 
-**Full Changelog**: [v0.6.23...v0.7.0](https://github.com/cbnsndwch/openusage/compare/v0.6.23...v0.7.0)
+**Full Changelog**: [v0.6.23...v0.7.0](https://github.com/cbnsndwch/pacebar/compare/v0.6.23...v0.7.0)
 
 ## v0.6.23
 
 ### Bug Fixes
+
 - fix(claude): remove peak hours indicator integration ([#447](https://github.com/robinebers/openusage/pull/447)) by @validatedev
 - fix(codex): correct usage dashboard URL to ChatGPT Codex settings ([#436](https://github.com/robinebers/openusage/pull/436)) by @devKagan
 
 ### Chores
+
 - chore(analytics): drop UI-side Aptabase events ([#449](https://github.com/robinebers/openusage/pull/449)) by @robinebers
 
 ---
@@ -71,10 +78,12 @@
 ## v0.6.22
 
 ### Bug Fixes
+
 - fix(ccusage): kill timed-out process groups ([#433](https://github.com/robinebers/openusage/pull/433)) by @robinebers
 - fix(claude): support hashed macOS keychain service name (closes #423) ([#424](https://github.com/robinebers/openusage/pull/424)) by @robinebers
 
 ### Chores
+
 - chore(deps): bump tauri from 2.10.3 to 2.11.0 in /src-tauri ([#429](https://github.com/robinebers/openusage/pull/429)) by @dependabot
 - chore(deps): bump reqwest from 0.13.2 to 0.13.3 in /src-tauri ([#428](https://github.com/robinebers/openusage/pull/428)) by @dependabot
 
@@ -93,9 +102,11 @@
 ## v0.6.21
 
 ### Bug Fixes
+
 - fix(codex): lazy-load keychain auth fallback ([#419](https://github.com/robinebers/openusage/pull/419)) by @validatedev
 
 ### Chores
+
 - docs(codex): clarify file-based OAuth credentials description ([#419](https://github.com/robinebers/openusage/pull/419)) by @validatedev
 - docs(agents): replace internal HQ header with OpenUsage title by @robinebers
 
@@ -112,10 +123,12 @@
 ## v0.6.20
 
 ### New Features
+
 - feat: preserve usage data during refresh (stale-while-revalidate) ([#386](https://github.com/robinebers/openusage/pull/386)) by @DoozyX
 - Add agent worktree setup by @robinebers
 
 ### Bug Fixes
+
 - fix(factory): retry with GET when usage endpoint returns HTTP 405 ([#390](https://github.com/robinebers/openusage/pull/390)) by @allensama0403
 - fix: read OAuth tokens from unified state key ([#392](https://github.com/robinebers/openusage/pull/392)) by @validatedev
 - fix: only refresh Antigravity OAuth on auth failure ([#392](https://github.com/robinebers/openusage/pull/392)) by @validatedev
@@ -128,9 +141,11 @@
 - Fix Codex auth fallback ([#413](https://github.com/robinebers/openusage/pull/413)) by @robinebers
 
 ### Refactor
+
 - refactor: rename probe()'s `proto` var to `dbTokens` ([#392](https://github.com/robinebers/openusage/pull/392)) by @validatedev
 
 ### Chores
+
 - chore(gemini): clarify OAuth candidate warn message ([#401](https://github.com/robinebers/openusage/pull/401)) by @Rich627
 - chore(deps): bump uuid from 1.23.0 to 1.23.1 in /src-tauri ([#405](https://github.com/robinebers/openusage/pull/405)) by @dependabot[bot]
 - chore(deps): bump tokio from 1.51.1 to 1.52.1 in /src-tauri ([#406](https://github.com/robinebers/openusage/pull/406)) by @dependabot[bot]
@@ -170,11 +185,13 @@
 ## v0.6.15
 
 ### New Features
+
 - feat(claude): add Claude Design weekly detail metric ([#388](https://github.com/robinebers/openusage/pull/388)) by @robinebers
 - Add CLAUDE.md by @robinebers
 - Add Codex environment config by @robinebers
 
 ### Bug Fixes
+
 - fix(codex): map Codex plan labels to Pro 5x and Pro 10x ([#380](https://github.com/robinebers/openusage/pull/380)) by @arrowarcher1
 - fix(claude): graceful 429 rate limit handling with Retry-After support ([#378](https://github.com/robinebers/openusage/pull/378)) by @zergzorg
 - Update AGENTS.md by @robinebers
@@ -197,11 +214,13 @@
 ## v0.6.14
 
 ### New Features
+
 - Clickable provider rows + session/weekly labels by @robinebers
 - Integrate PromoClock peak/off-peak status ([#364](https://github.com/robinebers/openusage/pull/364)) by @validatedev
 - Add cmd-arrow tab navigation by @robinebers
 
 ### Bug Fixes
+
 - Session expired ([#363](https://github.com/robinebers/openusage/pull/363)) by @yhunko
 - Prefer userTier.name over legacy planInfo.planName by @n3wr1ch
 - Show panel before tray reposition by @robinebers
@@ -209,10 +228,12 @@
 - Position panel under tray icon on all entry paths without flicker by @robinebers
 
 ### Refactor
+
 - Apply Copilot review — add typeof/trim guards, remove duplicate assertion by @n3wr1ch
 - Dedupe panel focus helper by @robinebers
 
 ### Chores
+
 - Bump tauri-plugin-updater in /src-tauri by @dependabot[bot]
 - Bump tokio from 1.51.0 to 1.51.1 in /src-tauri by @dependabot[bot]
 
@@ -238,12 +259,14 @@
 ## v0.6.13
 
 ### New Features
+
 - Add Kiro plugin for usage tracking and management by @sayuru-akash
 - add Synthetic provider plugin by @ben-vargas
 - add SOCKS5/HTTP proxy support via ~/.openusage/config.json by @zergzorg
 - Support custom Claude OAuth config and credentials by @robinebers
 
 ### Bug Fixes
+
 - address synthetic plugin review feedback by @ben-vargas
 - scope keychain user lookup by @robinebers
 - address PR 331 review comments by @robinebers
@@ -257,9 +280,11 @@
 - Handle missing Windsurf extra usage balance so quota still loads by @prayzey
 
 ### Refactor
+
 - update release process to push commits and tags before creating GitHub releases by @robinebers
 
 ### Chores
+
 - bump tokio from 1.50.0 to 1.51.0 in /src-tauri by @dependabot[bot]
 - add proxy configuration guide by @robinebers
 
@@ -291,15 +316,18 @@
 ## v0.6.12
 
 ### New Features
+
 - Add local HTTP API for usage data ([#319](https://github.com/robinebers/openusage/pull/319)) by @robinebers
 - Dynamic tray tooltip with usage percentages ([#314](https://github.com/robinebers/openusage/pull/314)) by @hearsilent
 - Add release-tag skill for automated versioning and changelog generation by @robinebers
 
 ### Bug Fixes
+
 - Fix new typescript v6 requirement by @robinebers
 - Add runtime macOS version check for WKPreferences.inactiveSchedulingPolicy ([#322](https://github.com/robinebers/openusage/pull/322)) by @beznazwiska
 
 ### Chores
+
 - Bump lucide-react from 0.577.0 to 1.7.0 ([#324](https://github.com/robinebers/openusage/pull/324)) by @dependabot
 - Bump typescript from 5.9.3 to 6.0.2 ([#325](https://github.com/robinebers/openusage/pull/325)) by @dependabot
 - Bump uuid from 1.22.0 to 1.23.0 in /src-tauri ([#323](https://github.com/robinebers/openusage/pull/323)) by @dependabot
@@ -322,10 +350,12 @@
 ## 0.6.11
 
 ### New Features
+
 - Add in-app changelog ([#309](https://github.com/robinebers/openusage/pull/309)) by @hearsilent
 - Add drag-to-reorder plugin icons in sidebar by @hearsilent
 
 ### Bug Fixes
+
 - Refresh Windsurf quota cloud plugin ([#313](https://github.com/robinebers/openusage/pull/313)) by @robinebers
 - Send real app version to credits API by @robinebers
 - Fix reset tooltips to mirror display mode ([#297](https://github.com/robinebers/openusage/pull/297)) by @robinebers
@@ -334,6 +364,7 @@
 - Fix test issue by @hearsilent
 
 ### Chores
+
 - Update bun.lock by @robinebers
 - Bump jsdom from 28.1.0 to 29.0.1 ([#312](https://github.com/robinebers/openusage/pull/312)) by @dependabot
 - Bump tauri-nspanel in /src-tauri ([#311](https://github.com/robinebers/openusage/pull/311)) by @dependabot
@@ -365,16 +396,19 @@
 ## 0.6.10
 
 ### New Features
+
 - Add OpenCode Go plugin with tracking and limits ([#270](https://github.com/robinebers/openusage/pull/270)) by @praveenjuge
 - Show Max 5x/20x tier in plan badge (claude) ([#284](https://github.com/robinebers/openusage/pull/284)) by @DiogoDuart3
 
 ### Bug Fixes
+
 - Bump ccusage to v18.0.10 ([#295](https://github.com/robinebers/openusage/pull/295)) by @robinebers
 - Count daily active usage more accurately ([#294](https://github.com/robinebers/openusage/pull/294)) by @robinebers
 - Accept percent-only free usage payloads (cursor) ([#269](https://github.com/robinebers/openusage/pull/269)) by @davidarny
 - Prefer auth.encrypted over auth.json (factory) ([#268](https://github.com/robinebers/openusage/pull/268)) by @sudoanmol
 
 ### Chores
+
 - Bump lucide-react from 0.575.0 to 0.577.0 ([#276](https://github.com/robinebers/openusage/pull/276)) by @dependabot
 - Bump @vitejs/plugin-react from 5.2.0 to 6.0.1 ([#290](https://github.com/robinebers/openusage/pull/290)) by @dependabot
 - Bump uuid from 1.21.0 to 1.22.0 in /src-tauri ([#275](https://github.com/robinebers/openusage/pull/275)) by @dependabot
@@ -402,11 +436,13 @@
 ## 0.6.8
 
 ### New Features
+
 - Auto-detect MiniMax CN/global endpoint and show region label ([#230](https://github.com/robinebers/openusage/pull/230)) by @FrankieeW
 - Add Total usage, Auto usage, API usage metrics for Cursor ([#226](https://github.com/robinebers/openusage/pull/226)) by @robinebers
 - Restore bars mode and simplify menubar options ([#234](https://github.com/robinebers/openusage/pull/234)) by @robinebers
 
 ### Bug Fixes
+
 - Update About dialog with contributor credits and green icon ([#240](https://github.com/robinebers/openusage/pull/240)) by @robinebers
 - Clarify Claude extra usage metric by renaming label to "Extra usage spent" ([#239](https://github.com/robinebers/openusage/pull/239)) by @app/copilot-swe-agent
 - Centralize ccusage version pinning and add bump command ([#238](https://github.com/robinebers/openusage/pull/238)) by @robinebers
@@ -414,6 +450,7 @@
 - Harden PATH enrichment and add regression tests ([#220](https://github.com/robinebers/openusage/pull/220)) by @robinebers
 
 ### Chores
+
 - Remove outdated note about Windows/Linux testing from README by @robinebers
 - Update .gitignore to include .vscode and .conductor directories by @robinebers
 - Remove deprecated VSCode extensions configuration file by @robinebers
@@ -439,19 +476,23 @@
 ## 0.6.7
 
 ### New Features
+
 - Add right-click context menu to sidebar plugin icons to remove a provider without going to settings ([#197](https://github.com/robinebers/openusage/pull/197)) by @MariosPapadakis
 - Simplify menubar icon to provider + percentage ([#215](https://github.com/robinebers/openusage/pull/215)) by @robinebers
 - Show deficit percentage and runs-out ETA below progress bars ([#212](https://github.com/robinebers/openusage/pull/212)) by @robinebers
 - Add sqlite-first auth with keychain fallback for Cursor ([#210](https://github.com/robinebers/openusage/pull/210)) by @robinebers
 
 ### Bug Fixes
+
 - Bump ccusage to v18.0.6 for GPT 5.3 Codex pricing fix ([#218](https://github.com/robinebers/openusage/pull/218)) by @robinebers
 - Correct MiniMax API endpoint and treat usage_count as remaining prompts ([#217](https://github.com/robinebers/openusage/pull/217)) by @davidarny
 
 ### Refactor
+
 - Split monolithic App into focused hooks and atomic stores ([#209](https://github.com/robinebers/openusage/pull/209)) by @davidarny
 
 ### Chores
+
 - Add test cases for handling tiny deficits in formatting and display ([#216](https://github.com/robinebers/openusage/pull/216)) by @validatedev
 - Compact token usage text lines (Today/Yesterday/Last 30 Days) ([#211](https://github.com/robinebers/openusage/pull/211)) by @davidarny
 - Increase test coverage back to over 90% ([#207](https://github.com/robinebers/openusage/pull/207)) by @robinebers
@@ -476,13 +517,16 @@
 ## 0.6.6
 
 ### New Features
+
 - Add local Claude/Codex usage tracking (via ccusage) ([#193](https://github.com/robinebers/openusage/pull/193)) by @validatedev
 - Add MiniMax provider support ([#168](https://github.com/robinebers/openusage/pull/168)) by @davidarny
 
 ### Bug Fixes
+
 - Show drained models + consolidate quota pools in antigravity ([#204](https://github.com/robinebers/openusage/pull/204)) by @validatedev
 
 ### Chores
+
 - Bump version to 0.6.6 by @robinebers
 - Add Factory/Droid to supported providers ([#205](https://github.com/robinebers/openusage/pull/205)) by @davidarny
 - Add non-technical log capture guide by @davidarny
@@ -509,9 +553,11 @@
 ## 0.6.5
 
 ### New Features
+
 - add Gemini provider plugin (oauth-personal, pro/flash usage) ([#189](https://github.com/robinebers/openusage/pull/189)) by @Rich627
 
 ### Bug Fixes
+
 - improve tray icon positioning logic for macOS ([#154](https://github.com/robinebers/openusage/pull/154)) by @MuhammadAli511
 - Merge pull request #188 from AdamAmr05/fix-panel-active-space by @validatedev
 - Merge branch 'main' into fix-panel-active-space by @validatedev
@@ -520,6 +566,7 @@
 - update model versions and improve filtering logic ([#186](https://github.com/robinebers/openusage/pull/186)) by @validatedev
 
 ### Chores
+
 - bump version to 0.6.5 by @robinebers
 - update README to improve clarity and formatting by @robinebers
 - update release tag management in publish workflow and clarify CONTRIBUTING.md guidelines by @robinebers
@@ -552,9 +599,11 @@
 ## 0.6.4
 
 ### Bug Fixes
+
 - Resolve env vars for GUI launches (fish/zsh) ([#183](https://github.com/robinebers/openusage/pull/183)) by @davidarny
 
 ### Refactor
+
 - Remove provider_fetch_error deduplication logic by @robinebers
 
 ---
@@ -569,13 +618,16 @@
 ## v0.6.3
 
 ### New Features
+
 - Surface GPT-5.3-Codex-Spark per-model rate limits in Codex plugin ([#176](https://github.com/robinebers/openusage/pull/176)) by @robinebers
 
 ### Bug Fixes
+
 - Reduce noisy analytics event volume with dedupe guards ([#172](https://github.com/robinebers/openusage/pull/172)) by @robinebers
 - Replace `var` with `const`/`let` in Codex rate-limit loop by @robinebers
 
 ### Chores
+
 - Bump version to 0.6.3 by @robinebers
 
 ---
@@ -592,9 +644,11 @@
 ## v0.6.2
 
 ### New Features
+
 - Implement Tauri runtime check for event tracking by @robinebers
 
 ### Bug Fixes
+
 - Fix whitelisted env vars not being resolved from terminal zsh ([#167](https://github.com/robinebers/openusage/pull/167)) by @robinebers
 
 ---
@@ -609,11 +663,13 @@
 ## 0.6.0
 
 ### New Features
+
 - feat: add global shortcut to toggle panel ([#132](https://github.com/robinebers/openusage/pull/132)) by @MuhammadAli511
 - Feat/perplexity plugin ([#138](https://github.com/robinebers/openusage/pull/138)) by @garanda21
 - Add Factory/Droid plugin provider ([#130](https://github.com/robinebers/openusage/pull/130)) by @MuhammadAli511
 
 ### Bug Fixes
+
 - fix(provider-card): update progress marker logic to hide when pace is unavailable by @robinebers
 - fix: improve pace meter tooltip copy, marker logic, and styling ([#147](https://github.com/robinebers/openusage/pull/147)) by @robinebers
 - fix(provider-card): streamline reset label formatting by @robinebers
@@ -627,10 +683,12 @@
 - fix(update): soften transient update check error UX ([#139](https://github.com/robinebers/openusage/pull/139)) by @robinebers
 
 ### Refactor
+
 - Enhance redaction functionality and update AGENTS.md guidelines by @robinebers
 - feat(kimi, mock, perplexity, windsurf): enhance plugin tests and functionality by @robinebers
 
 ### Chores
+
 - chore: bump version to 0.6.0 by @robinebers
 - chore: bump version to 0.5.3 by @robinebers
 
@@ -662,13 +720,16 @@
 ## v0.5.2
 
 ### New Features
+
 - Add Aptabase analytics events for key user interactions ([#124](https://github.com/robinebers/openusage/pull/124)) by @robinebers
 - Antigravity OAuth fallback ([#128](https://github.com/robinebers/openusage/pull/128)) by @validatedev
 
 ### Bug Fixes
+
 - Added a little `pr-review` command for Cursor that makes reviewing PRs easier by @robinebers
 
 ### Chores
+
 - Update icon assets by replacing the main icon and removing outdated iOS icon exports ([#125](https://github.com/robinebers/openusage/pull/125)) by @robinebers
 - Bump version to 0.5.2 by @robinebers
 
@@ -687,16 +748,19 @@
 ## v0.5.1
 
 ### New Features
+
 - Add Amp provider plugin ([#111](https://github.com/robinebers/openusage/pull/111)) by @validatedev
 - Add Kimi provider plugin with full-color icon support ([#109](https://github.com/robinebers/openusage/pull/109)) by @Yan-Yu-Lin
 - Add Windsurf Next variant support ([#114](https://github.com/robinebers/openusage/pull/114)) by @robinebers
 - Add Applications drag target layout for macOS DMG ([#113](https://github.com/robinebers/openusage/pull/113)) by @daeshawnballard
 
 ### Bug Fixes
+
 - Stop showing billing cycle pacing for Windsurf flex credits ([#119](https://github.com/robinebers/openusage/pull/119)) by @robinebers
 - Support Cursor Enterprise accounts with request-based usage ([#118](https://github.com/robinebers/openusage/pull/118)) by @iicdii
 
 ### Chores
+
 - Update README.md to encourage community contributions by @robinebers
 - Update README.md to include Amp provider in supported providers list by @robinebers
 - Update AGENTS.md to include PR preparation guidelines by @robinebers
@@ -722,6 +786,7 @@
 ## v0.5.0
 
 ### New Features
+
 - Auto-disable new non-default plugins ([#105](https://github.com/robinebers/openusage/pull/105)) by @robinebers
 - Resolve auth path via CODEX_HOME and host env API ([#90](https://github.com/robinebers/openusage/pull/90)) by @igalarzab
 - Add name field to redaction logic and corresponding tests by @robinebers
@@ -729,12 +794,15 @@
 - Add Antigravity plugin provider ([#91](https://github.com/robinebers/openusage/pull/91)) by @robinebers
 
 ### Bug Fixes
+
 - Updated dark theme, scrollable panel, and sidebar refinements ([#88](https://github.com/robinebers/openusage/pull/88)) by @robinebers
 
 ### Refactor
+
 - Simplify HTTP request handling in probePort function by @robinebers
 
 ### Chores
+
 - Bump reqwest from 0.12.28 to 0.13.2 in /src-tauri ([#104](https://github.com/robinebers/openusage/pull/104)) by @dependabot
 - Bump tauri-plugin-updater in /src-tauri ([#99](https://github.com/robinebers/openusage/pull/99)) by @dependabot
 - Bump rquickjs from 0.10.0 to 0.11.0 in /src-tauri ([#98](https://github.com/robinebers/openusage/pull/98)) by @dependabot
@@ -775,11 +843,13 @@
 ## v0.4.2
 
 ### New Features
+
 - Add Help button to open GitHub issues page by @robinebers
 - Pacing tooltip projection and limit hit ETA ([#87](https://github.com/robinebers/openusage/pull/87)) by @marcjaner
 - Add provider icon style option to tray ([#81](https://github.com/robinebers/openusage/pull/81)) by @robinebers
 
 ### Chores
+
 - Bump version to 0.4.2
 - Bump version to 0.4.1
 
@@ -798,16 +868,20 @@
 ## v0.4.1
 
 ### New Features
+
 - Add provider icon style and enhance settings functionality by @robinebers
 
 ### Bug Fixes
+
 - Update references from "Claude" to "Provider" for consistency by @robinebers
 
 ### Refactor
+
 - Update section headings and descriptions for clarity by @robinebers
 - Update checkbox component to use new primitive and improve styling by @robinebers
 
 ### Chores
+
 - Update dark theme colors and enhance settings page text by @robinebers
 - Update SVG attributes for improved icon rendering by @robinebers
 
@@ -828,13 +902,16 @@
 ## v0.4.0
 
 ### New Features
+
 - Customizable tray icon styles and percentage text ([#78](https://github.com/robinebers/openusage/pull/78))
 
 ### Bug Fixes
+
 - Prevent background timer suspension on macOS ([#74](https://github.com/robinebers/openusage/pull/74))
 - Remove emdashes ([8d456f9](https://github.com/robinebers/openusage/commit/8d456f9))
 
 ### Chores
+
 - Update icon assets and icon configuration ([32948c9](https://github.com/robinebers/openusage/commit/32948c9))
 - Update README to enhance clarity and detail ([8e3a7e2](https://github.com/robinebers/openusage/commit/8e3a7e2))
 
@@ -854,6 +931,7 @@
 ## v0.3.1
 
 ### Bug Fixes
+
 - Prevent background timer suspension on macOS by disabling WebKit's `inactiveSchedulingPolicy` and App Nap at startup
 - Use `NSActivityUserInitiatedAllowingIdleSystemSleep` instead of `NSActivityBackground` to reliably prevent App Nap
 
@@ -870,11 +948,13 @@
 ## v0.3.0
 
 ### New Features
+
 - Add Copilot plugin and tests ([#69](https://github.com/robinebers/openusage/pull/69)) by @tomhhealy
 - Add pace tracking indicator for usage metrics ([#70](https://github.com/robinebers/openusage/pull/70)) by @robinebers
 - Enhance log redaction and add new sensitive keys ([#72](https://github.com/robinebers/openusage/pull/72)) by @robinebers
 
 ### Chores
+
 - Update progress line structure in Copilot plugin.json by @robinebers
 
 ---
@@ -892,6 +972,7 @@
 ## v0.2.2
 
 ### New Features
+
 - Conditional primary metrics + Cursor credits balance ([#68](https://github.com/robinebers/openusage/pull/68)) by @robinebers
 
 ---
@@ -906,9 +987,11 @@
 ## v0.2.1
 
 ### New Features
+
 - Add 15-minute auto-check interval for app updates ([#66](https://github.com/robinebers/openusage/pull/66)) by @robinebers
 
 ### Bug Fixes
+
 - Use immutable=1 to prevent WAL false negatives after sleep ([#65](https://github.com/robinebers/openusage/pull/65)) by @robinebers
 
 ---
@@ -924,12 +1007,14 @@
 ## v0.2.0
 
 ### New Features
+
 - **Usage display modes**: Show "used" or "left" with configurable default ([#60](https://github.com/robinebers/openusage/pull/60), [#63](https://github.com/robinebers/openusage/pull/63))
 - **Debug logging**: Tray menu option to set log level for troubleshooting ([#64](https://github.com/robinebers/openusage/pull/64))
 - **Escape to dismiss**: Press Escape to hide the panel
 - **Update button animation**: Animated border beam on available updates ([#58](https://github.com/robinebers/openusage/pull/58))
 
 ### Bug Fixes
+
 - Fix a keychain JSON storage causing credential read failures in Claude ([#61](https://github.com/robinebers/openusage/pull/61))
 - Exclude test files from production builds ([#62](https://github.com/robinebers/openusage/pull/62))
 - Adjust panel positioning on macOS ([#59](https://github.com/robinebers/openusage/pull/59))
@@ -941,20 +1026,24 @@
 ## 0.1.2
 
 ### New Features
+
 - Dynamic tray icon with primary progress bars + about dialog ([#51](https://github.com/robinebers/openusage/pull/51))
 - Add AboutDialog and enhance version display interaction ([#49](https://github.com/robinebers/openusage/pull/49))
 - Add settings button, plugins subtitle, and tray context menu ([#50](https://github.com/robinebers/openusage/pull/50))
 
 ### Bug Fixes
+
 - Update subtitle fallback for session status in Claude and Codex plugins and fix about plugin text, replaced home icon with OpenUsage logo ([#57](https://github.com/robinebers/openusage/pull/57))
 - Resolve gray border artifact on macOS transparent windows ([#53](https://github.com/robinebers/openusage/pull/53))
 - Handle hex-encoded keychain credentials ([#48](https://github.com/robinebers/openusage/pull/48))
 
 ### Refactor
+
 - Refactor plugins to use ctx.util helpers ([#54](https://github.com/robinebers/openusage/pull/54))
 - Standardize provider documentation to minimal format ([#52](https://github.com/robinebers/openusage/pull/52))
 
 ### Chores
+
 - Update AGENTS.md with new tauri-action parallel build information
 
 ---
@@ -976,15 +1065,18 @@
 ## v0.1.1
 
 ### New Features
+
 - Add line scope API for overview/detail filtering ([#44](https://github.com/robinebers/openusage/pull/44))
 - Add upward-pointing arrow to tray panel ([#43](https://github.com/robinebers/openusage/pull/43))
 - Replace refresh button with countdown timer ([#41](https://github.com/robinebers/openusage/pull/41))
 - fetch and display app version in footer
 
 ### Refactor
+
 - streamline update handling by removing download trigger
 
 ### Chores
+
 - enhance publish workflow and plugin initialization
 - update publish workflow and remove unused bundled_plugins directory
 - update documentation and .gitignore for auto-update interval feature ([#42](https://github.com/robinebers/openusage/pull/42))
@@ -1019,8 +1111,8 @@
 
 ## v0.0.2
 
-*No release notes*
+_No release notes_
 
 ## v0.0.1
 
-*No release notes*
+_No release notes_
