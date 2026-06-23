@@ -110,7 +110,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ASSETS=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | tr -d '\r')
+          # The macOS matrix jobs publish to the same release in parallel, and
+          # tauri-action briefly removes latest.json while re-uploading the
+          # merged manifest. Retry so a transient absence isn't a hard failure.
+          ASSETS=""
+          for attempt in $(seq 1 15); do
+            ASSETS=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | tr -d '\r')
+            if printf '%s\n' "$ASSETS" | grep -Fxq 'latest.json' \
+               && printf '%s\n' "$ASSETS" | grep -Eq '\.sig$'; then
+              echo "Updater assets present (attempt $attempt)."
+              exit 0
+            fi
+            echo "Updater assets not ready yet (attempt $attempt); retrying in 8s..."
+            sleep 8
+          done
 
-          printf '%s\n' "$ASSETS" | grep -Fxq 'latest.json' || { echo "Missing updater manifest: latest.json"; exit 1; }
-          printf '%s\n' "$ASSETS" | grep -Eq '\.sig$' || { echo "Missing updater signatures (.sig)"; exit 1; }
+          echo "Updater assets still missing after retries. Current assets:"
+          printf '%s\n' "$ASSETS"
+          exit 1
