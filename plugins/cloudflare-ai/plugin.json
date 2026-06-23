@@ -11,6 +11,7 @@
     { "label": "AI Gateway", "url": "https://developers.cloudflare.com/ai-gateway/" }
   ],
    "lines": [
+     { "type": "progress", "label": "Tokens", "scope": "overview", "primaryOrder": 1 },
      { "type": "text", "label": "Spend", "scope": "overview" },
      { "type": "text", "label": "Daily burn", "scope": "overview" },
     { "type": "text", "label": "Remaining", "scope": "detail" },

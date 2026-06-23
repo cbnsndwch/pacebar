@@ -2,11 +2,19 @@
   const CONFIG_PATH = "~/cloudflare-ai/opencode.json";
   const USAGE_PATH = "/api/stats";
 
+  const WINDOWS = { "1h": "last hour", "24h": "last 24h", "7d": "last 7 days" };
+
+  function normalizeWindow(value) {
+    const w = String(value || "").trim();
+    return WINDOWS[w] ? w : "24h";
+  }
+
   function getConfig(ctx) {
     const defaults = {
       display: "spent", // "spent" | "remaining" | "burn" | "percent"
       showLimit: false, // show "of $X" suffix?
       capOverride: null, // override gateway's cap_usd
+      window: "24h", // token window: "1h" | "24h" | "7d"
     };
     try {
       const configPath = ctx.app.pluginDataDir + "/config.json";
@@ -169,6 +177,7 @@
           display: "spent",
           showLimit: false,
           capOverride: null,
+          window: "24h",
         };
         ctx.host.fs.writeText(configPath, JSON.stringify(template, null, 2));
         ctx.host.log.info("Created template config: " + configPath);
@@ -221,7 +230,8 @@
         };
       }
 
-      const statsUrl = gatewayUrl + USAGE_PATH;
+      const window = normalizeWindow(cfg.window);
+      const statsUrl = gatewayUrl + USAGE_PATH + "?window=" + window;
       let resp;
       try {
         resp = ctx.host.http.request({
@@ -281,6 +291,21 @@
       const remaining = cap - spent;
       const burn = Number(data.burn_per_day_usd) || 0;
       const pct = cap > 0 ? (spent / cap) * 100 : 0;
+      const windowLabel = WINDOWS[window];
+      const tin = Number(data.total_tokens_in) || 0;
+      const tout = Number(data.total_tokens_out) || 0;
+      const totalTokens = tin + tout;
+
+      // Primary metric (drives the menu bar): windowed token count.
+      // Capless count line -> rendered as a plain value row, not a progress bar.
+      lines.push(
+        ctx.line.progress({
+          label: "Tokens",
+          used: totalTokens,
+          limit: 0,
+          format: { kind: "count", suffix: "tokens" },
+        }),
+      );
 
       // Main display line (configurable)
       let mainLabel = "Spend";
@@ -351,12 +376,11 @@
 
       const reqs = Number(data.total_requests);
       if (Number.isFinite(reqs) && reqs > 0) {
-        const tin = Number(data.total_tokens_in) || 0;
-        const tout = Number(data.total_tokens_out) || 0;
         lines.push(
           ctx.line.text({
             label: "Requests",
-            value: String(reqs) + " \u00b7 " + fmtTokens(tin + tout) + " tokens",
+            value: String(reqs) + " \u00b7 " + fmtTokens(totalTokens) + " tokens",
+            subtitle: windowLabel,
           }),
         );
       }
