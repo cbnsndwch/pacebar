@@ -1,7 +1,7 @@
 {
   "name": "pacebar",
-  "private": true,
   "version": "0.9.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,9 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage.enabled",
-    "lint": "pnpm lint:ts && pnpm lint:rust",
+    "format": "oxfmt \"src/**/*.{ts,tsx}\" \"plugins/**/*.js\" \"scripts/**/*.{js,mjs,cjs,ts}\" \"workers/**/*.{ts,tsx}\" \"*.{js,mjs,cjs,ts}\"",
+    "format:check": "oxfmt --check \"src/**/*.{ts,tsx}\" \"plugins/**/*.js\" \"scripts/**/*.{js,mjs,cjs,ts}\" \"workers/**/*.{ts,tsx}\" \"*.{js,mjs,cjs,ts}\"",
+    "lint": "bun run lint:ts && bun run lint:rust",
     "lint:ts": "oxlint",
     "lint:rust": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
     "tauri": "tauri"
@@ -55,11 +57,19 @@
     "@vitest/coverage-v8": "^4.1.5",
     "jsdom": "^29.1.1",
     "npm-check-updates": "^22.1.1",
+    "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
     "tw-animate-css": "^1.4.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.11",
     "vitest": "^4.1.5"
   },
-  "packageManager": "pnpm@11.0.9+sha512.34ce82e6780233cf9cad8685029a8f81d2e06196c5a9bad98879f7424940c6817c4e4524fb7d38b8553ceed48b9758b8ebaf1abd3600c232c4c8cf7366086f38"
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "version": ">=1.3.6",
+      "onFail": "error"
+    }
+  },
+  "packageManager": "bun@1.3.6"
 }
