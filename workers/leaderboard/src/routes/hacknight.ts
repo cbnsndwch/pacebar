@@ -1,4 +1,5 @@
 import type { D1Database } from "@cloudflare/workers-types"
+
 import { getHacknightForTime, listHacknights, getHacknightByNumber } from "../lib/db"
 import { hacknightWindowKey } from "../lib/windows"
 

@@ -1,4 +1,5 @@
 import type { D1Database } from "@cloudflare/workers-types"
+
 import { upsertReport, getHacknightForTime } from "../lib/db"
 import { standardWindows, hacknightWindowKey, isoDay } from "../lib/windows"
 

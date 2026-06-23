@@ -1,7 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types"
 
 import { getLeaderboard, type LeaderboardMetric } from "../lib/db"
-import { dailyWindow, weeklyWindow, monthlyWindow, } from "../lib/windows"
+import { dailyWindow, monthlyWindow, weeklyWindow, } from "../lib/windows"
 
 const VALID_METRICS: LeaderboardMetric[] = ["tokens", "dollars", "providers", "score"]
 
