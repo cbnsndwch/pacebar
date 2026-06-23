@@ -24,7 +24,9 @@ export function useCloudflareAISettings() {
     async function load() {
       try {
         const { invoke } = await import("@tauri-apps/api/core");
-        const raw = await invoke<string | null>("read_plugin_config", { pluginId: "cloudflare-ai" });
+        const raw = await invoke<string | null>("read_plugin_config", {
+          pluginId: "cloudflare-ai",
+        });
         if (cancelled) return;
         if (raw) {
           const parsed = JSON.parse(raw);
@@ -42,7 +44,9 @@ export function useCloudflareAISettings() {
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const save = async (next: CloudflareAISettings) => {

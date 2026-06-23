@@ -110,10 +110,7 @@ export function AppContent({
     })),
   );
 
-  const {
-    settings: cfAISettings,
-    save: saveCfAISettings,
-  } = useCloudflareAISettings()
+  const { settings: cfAISettings, save: saveCfAISettings } = useCloudflareAISettings();
 
   if (activeView === "home") {
     return (
@@ -164,7 +161,9 @@ export function AppContent({
         cloudflareAICapOverride={cfAISettings.capOverride}
         onCloudflareAIDisplayChange={(v) => saveCfAISettings({ ...cfAISettings, display: v })}
         onCloudflareAIShowLimitChange={(v) => saveCfAISettings({ ...cfAISettings, showLimit: v })}
-        onCloudflareAICapOverrideChange={(v) => saveCfAISettings({ ...cfAISettings, capOverride: v })}
+        onCloudflareAICapOverrideChange={(v) =>
+          saveCfAISettings({ ...cfAISettings, capOverride: v })
+        }
       />
     );
   }
