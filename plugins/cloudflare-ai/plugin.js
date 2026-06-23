@@ -3,52 +3,43 @@
   const USAGE_PATH = "/api/stats"
 
   function getGatewayUrl(ctx) {
-    // Preference 1: explicit env override (broadly useful)
+    // Preference 1: explicit env
     let url = null
     try {
       url = ctx.host.env.get("CF_GATEWAY_URL")
-    } catch (e) {
-      ctx.host.log.warn("env get failed: " + String(e))
-    }
-
+    } catch (e) {}
     if (url) {
       url = String(url).trim()
       if (url) return url.replace(/\/+$/, "")
     }
 
-    // Preference 2: local opencode.json (your specific setup)
+    // Preference 2: local opencode.json
     try {
       if (ctx.host.fs.exists(CONFIG_PATH)) {
         const raw = ctx.host.fs.readText(CONFIG_PATH)
         const config = ctx.util.tryParseJson(raw)
-        if (config && config.provider && config.provider["cf-gateway"] && config.provider["cf-gateway"].options && config.provider["cf-gateway"].options.baseURL) {
+        if (config && config.provider && config.provider["cf-gateway"] &&
+            config.provider["cf-gateway"].options && config.provider["cf-gateway"].options.baseURL) {
           let base = String(config.provider["cf-gateway"].options.baseURL).trim()
           base = base.replace(/\/+$/, "")
-          // Remove trailing /v1 if present since we want the gateway root
-          if (base.endsWith("/v1")) {
-            base = base.slice(0, -3)
-          }
+          if (base.endsWith("/v1")) base = base.slice(0, -3)
           if (base) return base
         }
       }
-    } catch (e) {
-      ctx.host.log.warn("opencode.json read failed: " + String(e))
-    }
+    } catch (e) {}
 
     return null
   }
 
   function getAuthToken(ctx) {
-    // Preference 1: env var (after PR is merged and app rebuilt)
+    // Preference 1: env var
     let token = null
     try {
       token = ctx.host.env.get("CF_ROUTER_KEY")
-    } catch (e) {
-      ctx.host.log.warn("env get failed: " + String(e))
-    }
+    } catch (e) {}
     if (token) return String(token).trim()
 
-    // Preference 2: plugin data dir config (works with current app installs)
+    // Preference 2: plugin data dir config
     try {
       const configPath = ctx.app.pluginDataDir + "/config.json"
       if (ctx.host.fs.exists(configPath)) {
@@ -58,9 +49,7 @@
           return String(config.routerKey).trim()
         }
       }
-    } catch (e) {
-      ctx.host.log.warn("config read failed: " + String(e))
-    }
+    } catch (e) {}
 
     return null
   }
@@ -82,17 +71,75 @@
     return String(Math.round(val))
   }
 
+  function ensureTemplateConfig(ctx) {
+    try {
+      const configPath = ctx.app.pluginDataDir + "/config.json"
+      if (!ctx.host.fs.exists(configPath)) {
+        const template = JSON.stringify({
+          routerKey: "your-router-secret-here",
+          gatewayUrl: "https://your-gateway.workers.dev"
+        }, null, 2)
+        ctx.host.fs.writeText(configPath, template)
+        ctx.host.log.info("Created template config: " + configPath)
+      }
+    } catch (e) {
+      ctx.host.log.warn("Failed to create template config: " + String(e))
+    }
+  }
+
   globalThis.__pacebar_plugin = {
     id: "cloudflare-ai",
     probe: function(ctx) {
       const gatewayUrl = getGatewayUrl(ctx)
+      const token = getAuthToken(ctx)
+
+      // Show setup UI if not configured
       if (!gatewayUrl) {
-        throw "Gateway URL not configured. Set CF_GATEWAY_URL or create ~/cloudflare-ai/opencode.json."
+        ensureTemplateConfig(ctx)
+        return {
+          lines: [
+            ctx.line.badge({
+              label: "Status",
+              text: "Needs Gateway",
+              color: "#f59e0b"
+            }),
+            ctx.line.text({
+              label: "Gateway URL",
+              value: "Not configured",
+              subtitle: "Requires self-hosted Worker with /api/stats"
+            }),
+            ctx.line.text({
+              label: "Setup",
+              value: "Set CF_GATEWAY_URL or edit config file"
+            }),
+            ctx.line.text({
+              label: "See docs",
+              value: "docs/providers/cloudflare-ai.md"
+            })
+          ]
+        }
       }
 
-      const token = getAuthToken(ctx)
       if (!token) {
-        throw "Auth key missing. Set CF_ROUTER_KEY environment variable."
+        ensureTemplateConfig(ctx)
+        return {
+          lines: [
+            ctx.line.badge({
+              label: "Status",
+              text: "Auth needed",
+              color: "#f59e0b"
+            }),
+            ctx.line.text({
+              label: "Router key",
+              value: "Missing",
+              subtitle: "Set CF_ROUTER_KEY env or edit config file"
+            }),
+            ctx.line.text({
+              label: "Config file",
+              value: ctx.app.pluginDataDir.replace(/^.*\//, ".../") + "/config.json"
+            })
+          ]
+        }
       }
 
       const statsUrl = gatewayUrl + USAGE_PATH
@@ -109,20 +156,67 @@
         })
       } catch (e) {
         ctx.host.log.error("stats request failed: " + String(e))
-        throw "Connection failed. Check your gateway and network."
+        return {
+          lines: [
+            ctx.line.badge({
+              label: "Status",
+              text: "Offline",
+              color: "#ef4444"
+            }),
+            ctx.line.text({
+              label: "Error",
+              value: "Connection failed",
+              subtitle: "Check gateway URL and network"
+            })
+          ]
+        }
       }
 
       if (resp.status === 401 || resp.status === 403) {
-        throw "Auth failed. Check your CF_ROUTER_KEY."
+        return {
+          lines: [
+            ctx.line.badge({
+              label: "Status",
+              text: "Auth failed",
+              color: "#ef4444"
+            }),
+            ctx.line.text({
+              label: "Error",
+              value: "Invalid router key",
+              subtitle: "Check CF_ROUTER_KEY or config file"
+            })
+          ]
+        }
       }
 
       if (resp.status < 200 || resp.status >= 300) {
-        throw "Gateway error (HTTP " + resp.status + "). Try again later."
+        return {
+          lines: [
+            ctx.line.badge({
+              label: "Status",
+              text: "Error",
+              color: "#ef4444"
+            }),
+            ctx.line.text({
+              label: "HTTP",
+              value: String(resp.status),
+              subtitle: "Gateway returned error"
+            })
+          ]
+        }
       }
 
       const data = ctx.util.tryParseJson(resp.bodyText)
       if (!data) {
-        throw "Invalid response from gateway."
+        return {
+          lines: [
+            ctx.line.badge({
+              label: "Status",
+              text: "Invalid data",
+              color: "#ef4444"
+            })
+          ]
+        }
       }
 
       const lines = []
@@ -178,7 +272,7 @@
         const tout = Number(data.total_tokens_out) || 0
         lines.push(ctx.line.text({
           label: "Requests",
-          value: String(reqs) + " · " + fmtTokens(tin + tout) + " tokens"
+          value: String(reqs) + " \u00b7 " + fmtTokens(tin + tout) + " tokens"
         }))
       }
 
