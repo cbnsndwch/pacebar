@@ -19,6 +19,7 @@ import type {
   ResetTimerDisplayMode,
   ThemeMode,
 } from "@/lib/settings"
+import { useCloudflareAISettings } from "@/hooks/use-cloudflare-ai-settings"
 
 type AppContentDerivedProps = {
   displayPlugins: DisplayPluginState[]
@@ -109,6 +110,11 @@ export function AppContent({
     }))
   )
 
+  const {
+    settings: cfAISettings,
+    save: saveCfAISettings,
+  } = useCloudflareAISettings()
+
   if (activeView === "home") {
     return (
       <OverviewPage
@@ -153,6 +159,12 @@ export function AppContent({
         onLeaderboardWorkerUrlChange={onLeaderboardWorkerUrlChange}
         onLeaderboardOptInChange={onLeaderboardOptInChange}
         onLeaderboardShareListChange={onLeaderboardShareListChange}
+        cloudflareAIDisplay={cfAISettings.display}
+        cloudflareAIShowLimit={cfAISettings.showLimit}
+        cloudflareAICapOverride={cfAISettings.capOverride}
+        onCloudflareAIDisplayChange={(v) => saveCfAISettings({ ...cfAISettings, display: v })}
+        onCloudflareAIShowLimitChange={(v) => saveCfAISettings({ ...cfAISettings, showLimit: v })}
+        onCloudflareAICapOverrideChange={(v) => saveCfAISettings({ ...cfAISettings, capOverride: v })}
       />
     )
   }
