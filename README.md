@@ -28,6 +28,7 @@ PaceBar lives in your menu bar and shows you how much of your AI coding subscrip
 
 - [**Amp**](docs/providers/amp.md) / free tier, bonus, credits
 - [**Antigravity**](docs/providers/antigravity.md) / all models
+- [**Cloudflare AI**](docs/providers/cloudflare-ai.md) / spend, daily burn, hosted-only model assertion
 - [**Claude**](docs/providers/claude.md) / session, weekly, extra usage, local token usage (ccusage); multi-profile via [claude-code-profiles](https://github.com/quinnjr/claude-code-profiles)
 - [**Codex**](docs/providers/codex.md) / session, weekly, reviews, credits
 - [**Copilot**](docs/providers/copilot.md) / premium, chat, completions

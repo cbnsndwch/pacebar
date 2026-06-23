@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "cloudflare-ai",
+  "name": "Cloudflare AI",
+  "version": "1.0.0",
+  "entry": "plugin.js",
+  "icon": "icon.svg",
+  "brandColor": "#F48120",
+  "links": [
+    { "label": "Dashboard", "url": "https://dash.cloudflare.com/" },
+    { "label": "AI Gateway", "url": "https://developers.cloudflare.com/ai-gateway/" }
+  ],
+  "lines": [
+    { "type": "progress", "label": "Spend", "scope": "overview", "primary": true },
+    { "type": "text", "label": "Daily burn", "scope": "overview" },
+    { "type": "text", "label": "Remaining", "scope": "detail" },
+    { "type": "badge", "label": "Models", "scope": "detail" },
+    { "type": "text", "label": "Requests", "scope": "detail" }
+  ]
+}
