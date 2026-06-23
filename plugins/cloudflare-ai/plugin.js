@@ -2,8 +2,33 @@
   const CONFIG_PATH = "~/cloudflare-ai/opencode.json"
   const USAGE_PATH = "/api/stats"
 
+  function getConfig(ctx) {
+    const defaults = {
+      display: "spent",      // "spent" | "remaining" | "burn" | "percent"
+      showLimit: false,      // show "of $X" suffix?
+      capOverride: null      // override gateway's cap_usd
+    }
+    try {
+      const configPath = ctx.app.pluginDataDir + "/config.json"
+      if (ctx.host.fs.exists(configPath)) {
+        const raw = ctx.host.fs.readText(configPath)
+        const user = ctx.util.tryParseJson(raw) || {}
+        return Object.assign({}, defaults, user)
+      }
+    } catch (e) {}
+    return defaults
+  }
+
+  function saveConfig(ctx, cfg) {
+    try {
+      const configPath = ctx.app.pluginDataDir + "/config.json"
+      ctx.host.fs.writeText(configPath, JSON.stringify(cfg, null, 2))
+    } catch (e) {
+      ctx.host.log.warn("Failed to save config: " + String(e))
+    }
+  }
+
   function getGatewayUrl(ctx) {
-    // Preference 1: explicit env
     let url = null
     try {
       url = ctx.host.env.get("CF_GATEWAY_URL")
@@ -13,7 +38,6 @@
       if (url) return url.replace(/\/+$/, "")
     }
 
-    // Preference 2: local opencode.json
     try {
       if (ctx.host.fs.exists(CONFIG_PATH)) {
         const raw = ctx.host.fs.readText(CONFIG_PATH)
@@ -32,14 +56,12 @@
   }
 
   function getAuthToken(ctx) {
-    // Preference 1: env var
     let token = null
     try {
       token = ctx.host.env.get("CF_ROUTER_KEY")
     } catch (e) {}
     if (token) return String(token).trim()
 
-    // Preference 2: plugin data dir config
     try {
       const configPath = ctx.app.pluginDataDir + "/config.json"
       if (ctx.host.fs.exists(configPath)) {
@@ -75,11 +97,14 @@
     try {
       const configPath = ctx.app.pluginDataDir + "/config.json"
       if (!ctx.host.fs.exists(configPath)) {
-        const template = JSON.stringify({
+        const template = {
           routerKey: "your-router-secret-here",
-          gatewayUrl: "https://your-gateway.workers.dev"
-        }, null, 2)
-        ctx.host.fs.writeText(configPath, template)
+          gatewayUrl: "https://your-gateway.workers.dev",
+          display: "spent",
+          showLimit: false,
+          capOverride: null
+        }
+        ctx.host.fs.writeText(configPath, JSON.stringify(template, null, 2))
         ctx.host.log.info("Created template config: " + configPath)
       }
     } catch (e) {
@@ -90,10 +115,10 @@
   globalThis.__pacebar_plugin = {
     id: "cloudflare-ai",
     probe: function(ctx) {
+      const cfg = getConfig(ctx)
       const gatewayUrl = getGatewayUrl(ctx)
       const token = getAuthToken(ctx)
 
-      // Show setup UI if not configured
       if (!gatewayUrl) {
         ensureTemplateConfig(ctx)
         return {
@@ -107,14 +132,6 @@
               label: "Gateway URL",
               value: "Not configured",
               subtitle: "Requires self-hosted Worker with /api/stats"
-            }),
-            ctx.line.text({
-              label: "Setup",
-              value: "Set CF_GATEWAY_URL or edit config file"
-            }),
-            ctx.line.text({
-              label: "See docs",
-              value: "docs/providers/cloudflare-ai.md"
             })
           ]
         }
@@ -132,11 +149,7 @@
             ctx.line.text({
               label: "Router key",
               value: "Missing",
-              subtitle: "Set CF_ROUTER_KEY env or edit config file"
-            }),
-            ctx.line.text({
-              label: "Config file",
-              value: ctx.app.pluginDataDir.replace(/^.*\//, ".../") + "/config.json"
+              subtitle: "Set CF_ROUTER_KEY or edit config"
             })
           ]
         }
@@ -155,19 +168,10 @@
           timeoutMs: 10000
         })
       } catch (e) {
-        ctx.host.log.error("stats request failed: " + String(e))
         return {
           lines: [
-            ctx.line.badge({
-              label: "Status",
-              text: "Offline",
-              color: "#ef4444"
-            }),
-            ctx.line.text({
-              label: "Error",
-              value: "Connection failed",
-              subtitle: "Check gateway URL and network"
-            })
+            ctx.line.badge({ label: "Status", text: "Offline", color: "#ef4444" }),
+            ctx.line.text({ label: "Error", value: "Connection failed", subtitle: "Check gateway URL" })
           ]
         }
       }
@@ -175,16 +179,8 @@
       if (resp.status === 401 || resp.status === 403) {
         return {
           lines: [
-            ctx.line.badge({
-              label: "Status",
-              text: "Auth failed",
-              color: "#ef4444"
-            }),
-            ctx.line.text({
-              label: "Error",
-              value: "Invalid router key",
-              subtitle: "Check CF_ROUTER_KEY or config file"
-            })
+            ctx.line.badge({ label: "Status", text: "Auth failed", color: "#ef4444" }),
+            ctx.line.text({ label: "Error", value: "Invalid key", subtitle: "Check CF_ROUTER_KEY" })
           ]
         }
       }
@@ -192,16 +188,8 @@
       if (resp.status < 200 || resp.status >= 300) {
         return {
           lines: [
-            ctx.line.badge({
-              label: "Status",
-              text: "Error",
-              color: "#ef4444"
-            }),
-            ctx.line.text({
-              label: "HTTP",
-              value: String(resp.status),
-              subtitle: "Gateway returned error"
-            })
+            ctx.line.badge({ label: "Status", text: "Error", color: "#ef4444" }),
+            ctx.line.text({ label: "HTTP", value: String(resp.status) })
           ]
         }
       }
@@ -210,43 +198,61 @@
       if (!data) {
         return {
           lines: [
-            ctx.line.badge({
-              label: "Status",
-              text: "Invalid data",
-              color: "#ef4444"
-            })
+            ctx.line.badge({ label: "Status", text: "Invalid data", color: "#ef4444" })
           ]
         }
       }
 
       const lines = []
-
-      // Spend amount (as text since % bar is meaningless at low usage)
-      const cap = Number(data.cap_usd) || 0
+      const cap = cfg.capOverride !== null ? Number(cfg.capOverride) : (Number(data.cap_usd) || 0)
       const spent = Number(data.spent_usd) || 0
-      lines.push(ctx.line.text({
-        label: "Spend",
-        value: fmtDollars(spent) + " of " + fmtDollars(cap)
-      }))
-
-      // Daily burn rate
+      const remaining = cap - spent
       const burn = Number(data.burn_per_day_usd) || 0
+      const pct = cap > 0 ? (spent / cap) * 100 : 0
+
+      // Main display line (configurable)
+      let mainLabel = "Spend"
+      let mainValue = fmtDollars(spent)
+      let mainSubtitle = null
+
+      if (cfg.display === "remaining") {
+        mainLabel = "Remaining"
+        mainValue = fmtDollars(remaining)
+      } else if (cfg.display === "burn") {
+        mainLabel = "Daily burn"
+        mainValue = fmtDollars(burn) + "/day"
+        mainSubtitle = "7-day average"
+      } else if (cfg.display === "percent") {
+        mainLabel = "Used"
+        mainValue = pct.toFixed(1) + "%"
+      }
+
+      if (cfg.showLimit && cfg.display !== "burn") {
+        mainValue += " of " + fmtDollars(cap)
+      }
+
       lines.push(ctx.line.text({
-        label: "Daily burn",
-        value: fmtDollars(burn) + "/day",
-        subtitle: "7-day average"
+        label: mainLabel,
+        value: mainValue,
+        subtitle: mainSubtitle
       }))
 
-      // Remaining
-      const remaining = Number(data.remaining_usd)
-      if (Number.isFinite(remaining)) {
+      // Details
+      if (cfg.display !== "burn") {
+        lines.push(ctx.line.text({
+          label: "Daily burn",
+          value: fmtDollars(burn) + "/day",
+          subtitle: "7-day average"
+        }))
+      }
+
+      if (cfg.display !== "remaining") {
         lines.push(ctx.line.text({
           label: "Remaining",
           value: fmtDollars(remaining)
         }))
       }
 
-      // Model hosting status
       if (data.hosted_only_ok === true) {
         lines.push(ctx.line.badge({
           label: "Models",
@@ -261,7 +267,6 @@
         }))
       }
 
-      // Request count
       const reqs = Number(data.total_requests)
       if (Number.isFinite(reqs) && reqs > 0) {
         const tin = Number(data.total_tokens_in) || 0
