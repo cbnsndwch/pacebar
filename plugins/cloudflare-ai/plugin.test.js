@@ -54,7 +54,7 @@ describe("cloudflare-ai plugin", () => {
     const result = plugin.probe(ctx);
     expect(ctx.host.http.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "https://my-gateway.example.com/api/stats",
+        url: "https://my-gateway.example.com/api/stats?window=24h",
         headers: expect.objectContaining({ Authorization: "Bearer secret-key" }),
       }),
     );
@@ -85,7 +85,7 @@ describe("cloudflare-ai plugin", () => {
     plugin.probe(ctx);
     expect(ctx.host.http.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "https://cf-ai-gateway.flux-505.workers.dev/api/stats",
+        url: "https://cf-ai-gateway.flux-505.workers.dev/api/stats?window=24h",
       }),
     );
   });
@@ -226,7 +226,7 @@ describe("cloudflare-ai plugin", () => {
     plugin.probe(ctx)
     expect(ctx.host.http.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "https://configured-gateway.workers.dev/api/stats",
+        url: "https://configured-gateway.workers.dev/api/stats?window=24h",
         headers: expect.objectContaining({ Authorization: "Bearer config-secret-key" }),
       })
     )
@@ -256,7 +256,7 @@ describe("cloudflare-ai plugin", () => {
     plugin.probe(ctx);
     expect(ctx.host.http.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "https://gateway.example.com/api/stats",
+        url: "https://gateway.example.com/api/stats?window=24h",
       }),
     );
   });
@@ -307,10 +307,80 @@ describe("cloudflare-ai plugin", () => {
     plugin.probe(ctx);
     expect(ctx.host.http.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "https://configured-gateway.workers.dev/api/stats",
+        url: "https://configured-gateway.workers.dev/api/stats?window=24h",
         headers: expect.objectContaining({ Authorization: "Bearer config-secret-key" }),
       }),
     );
+  });
+
+  it("applies the configured token window to the stats URL", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://example.com";
+      if (name === "CF_ROUTER_KEY") return "key";
+      return null;
+    });
+    ctx.host.fs.writeText(
+      "/tmp/pacebar-test/plugin/config.json",
+      JSON.stringify({ window: "7d" }),
+    );
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://example.com/api/stats?window=7d" }),
+    );
+  });
+
+  it("falls back to the 24h window when the configured value is invalid", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://example.com";
+      if (name === "CF_ROUTER_KEY") return "key";
+      return null;
+    });
+    ctx.host.fs.writeText(
+      "/tmp/pacebar-test/plugin/config.json",
+      JSON.stringify({ window: "bogus" }),
+    );
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://example.com/api/stats?window=24h" }),
+    );
+  });
+
+  it("emits a capless Tokens count line as the menu-bar primary", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://example.com";
+      if (name === "CF_ROUTER_KEY") return "key";
+      return null;
+    });
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({
+        cap_usd: 100,
+        spent_usd: 10,
+        total_tokens_in: 1000000,
+        total_tokens_out: 234567,
+      }),
+    });
+    const plugin = await loadPlugin();
+    const result = plugin.probe(ctx);
+    const tokens = result.lines.find((l) => l.label === "Tokens");
+    expect(tokens).toBeTruthy();
+    expect(tokens.type).toBe("progress");
+    expect(tokens.used).toBe(1234567);
+    expect(tokens.limit).toBe(0);
+    expect(tokens.format).toEqual({ kind: "count", suffix: "tokens" });
   });
 
   it("renders the remaining amount when display is 'remaining'", async () => {
