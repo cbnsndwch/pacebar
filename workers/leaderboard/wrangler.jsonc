@@ -7,6 +7,10 @@
     {
       "pattern": "ai-leaderboard.helloworld.miami",
       "custom_domain": true
+    },
+    {
+      "pattern": "token-maxxing.helloworld.miami",
+      "custom_domain": true
     }
   ],
   "triggers": {
