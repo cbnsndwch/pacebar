@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { CircleHelp, Settings, Trophy } from "lucide-react";
+import { CircleHelp, Settings } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { invoke } from "@tauri-apps/api/core";
 import { Menu, MenuItem, PredefinedMenuItem } from "@tauri-apps/api/menu";
@@ -90,6 +90,10 @@ function NavButton({
   );
 }
 
+// Plugins whose icon is a full-color logo and should render as-is rather than
+// being recolored with a single-color mask (e.g. the Hack Night Leaderboard cup).
+const FULL_COLOR_NAV_ICONS = new Set(["leaderboard"]);
+
 function getIconColor(brandColor: string | undefined, isDark: boolean): string {
   if (!brandColor) return "currentColor";
   const luminance = getRelativeLuminance(brandColor);
@@ -139,6 +143,14 @@ function SortableNavPlugin({
               src={plugin.avatarUrl}
               alt={plugin.name}
               className="size-6 rounded object-cover"
+            />
+          ) : FULL_COLOR_NAV_ICONS.has(plugin.id) ? (
+            <img
+              role="img"
+              aria-label={plugin.name}
+              src={plugin.iconUrl}
+              alt={plugin.name}
+              className="size-6 object-contain"
             />
           ) : (
             <span
@@ -267,16 +279,7 @@ export function SideNav({
         <GaugeIcon className="size-6 dark:text-page-accent" />
       </NavButton>
 
-      {/* Leaderboard */}
-      <NavButton
-        isActive={activeView === "leaderboard"}
-        onClick={() => onViewChange("leaderboard")}
-        aria-label="Leaderboard"
-      >
-        <Trophy className="size-6" />
-      </NavButton>
-
-      {/* Plugin icons */}
+      {/* Plugin icons (includes the Hack Night Leaderboard plugin) */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={plugins.map((p) => p.id)} strategy={verticalListSortingStrategy}>
           {plugins.map((plugin) => (

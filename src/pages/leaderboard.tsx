@@ -227,6 +227,16 @@ export function LeaderboardPage() {
         <p className="text-xs text-destructive px-1">{error}</p>
       ) : loading && entries.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-4">Loading…</p>
+      ) : entries.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-8 px-4 text-center">
+          <Trophy className="size-8 text-muted-foreground" />
+          <p className="text-sm font-medium">No rankings yet</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            This board ranks AI-coding usage among hello_miami builders. While participation is on,
+            your usage is shared automatically during Hack Nights (Tuesday &amp; Thursday evenings,
+            ET). {inSession ? "A session is live — be the first on the board!" : "Check back during the next Hack Night to compete."}
+          </p>
+        </div>
       ) : (
         <LeaderboardTable entries={entries} handle={leaderboardHandle} metric={selectedMetric} />
       )}
