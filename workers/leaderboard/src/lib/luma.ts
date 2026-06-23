@@ -2,9 +2,12 @@
  * Fetch and parse the Luma iCal feed to extract hack night events.
  *
  * Expected event title patterns (case-insensitive):
- *   "Hello Miami Hack Night #42"
- *   "Hello Miami Hack Night #42: Special Edition"
- *   "Hello Miami Hack Night #42 - Special Edition"
+ *   "hack night v0.149"
+ *   "hack night v0.150 - South Beach"
+ *   "hack night v0.151 - Wynwood - Effect Edition"
+ *
+ * The versioned "v0.N" prefix also distinguishes the official hello_miami
+ * series from unrelated "hack night" events that share the calendar.
  */
 
 export interface ParsedHacknight {
@@ -71,12 +74,12 @@ export function parseIcal(raw: string): ParsedHacknight[] {
 
     if (!summary || !dtstart) continue;
 
-    // Extract hack night number
-    const numMatch = summary.match(/hack\s+night\s+#(\d+)/i);
+    // Extract hack night number from the "v0.N" version suffix
+    const numMatch = summary.match(/hack\s*night\s+v0\.(\d+)/i);
     if (!numMatch) continue;
 
     const number = parseInt(numMatch[1], 10);
-    const isSpecial = /special/i.test(summary);
+    const isSpecial = /edition|special/i.test(summary);
 
     results.push({
       number,
@@ -92,7 +95,7 @@ export function parseIcal(raw: string): ParsedHacknight[] {
 
 // ─── Fetch from Luma ─────────────────────────────────────────────────────────
 
-const DEFAULT_ICAL_URL = "https://api.lu.ma/ical/v1/calendar/hello_miami";
+const DEFAULT_ICAL_URL = "https://api.lu.ma/ics/get?entity=calendar&id=cal-dIzfidGLJOmv2it";
 
 export async function fetchLumaHacknights(icalUrl = DEFAULT_ICAL_URL): Promise<ParsedHacknight[]> {
   const resp = await fetch(icalUrl, {
