@@ -39,6 +39,7 @@
   }
 
   function getAuthToken(ctx) {
+    // Preference 1: env var (after PR is merged and app rebuilt)
     let token = null
     try {
       token = ctx.host.env.get("CF_ROUTER_KEY")
@@ -46,6 +47,21 @@
       ctx.host.log.warn("env get failed: " + String(e))
     }
     if (token) return String(token).trim()
+
+    // Preference 2: plugin data dir config (works with current app installs)
+    try {
+      const configPath = ctx.app.pluginDataDir + "/config.json"
+      if (ctx.host.fs.exists(configPath)) {
+        const raw = ctx.host.fs.readText(configPath)
+        const config = ctx.util.tryParseJson(raw)
+        if (config && config.routerKey) {
+          return String(config.routerKey).trim()
+        }
+      }
+    } catch (e) {
+      ctx.host.log.warn("config read failed: " + String(e))
+    }
+
     return null
   }
 
