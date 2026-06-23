@@ -36,7 +36,7 @@ function setFactorySettings(ctx, apiKey, baseUrl) {
           displayName: "Test [Synthetic]",
         },
       ],
-    })
+    }),
   );
 }
 
@@ -47,14 +47,12 @@ function setOpenCodeAuth(ctx, key, providerName) {
 }
 
 function setEnvKey(ctx, key) {
-  ctx.host.env.get.mockImplementation((name) =>
-    name === "SYNTHETIC_API_KEY" ? key : null
-  );
+  ctx.host.env.get.mockImplementation((name) => (name === "SYNTHETIC_API_KEY" ? key : null));
 }
 
 function setEnv(ctx, envValues) {
   ctx.host.env.get.mockImplementation((name) =>
-    Object.prototype.hasOwnProperty.call(envValues, name) ? envValues[name] : null
+    Object.prototype.hasOwnProperty.call(envValues, name) ? envValues[name] : null,
   );
 }
 
@@ -118,9 +116,7 @@ describe("synthetic plugin", () => {
 
   describe("authentication", () => {
     it("throws when no sources have a key", () => {
-      expect(() => plugin.probe(makeCtx())).toThrow(
-        "Synthetic API key not found"
-      );
+      expect(() => plugin.probe(makeCtx())).toThrow("Synthetic API key not found");
     });
 
     // --- Pi auth.json (source 1) ---
@@ -210,7 +206,7 @@ describe("synthetic plugin", () => {
       setEnv(ctx, { PI_CODING_AGENT_DIR: "~/custom/pi" });
       ctx.host.fs.writeText(
         "~/custom/pi/auth.json",
-        JSON.stringify({ synthetic: { type: "api_key", key: "syn_custom" } })
+        JSON.stringify({ synthetic: { type: "api_key", key: "syn_custom" } }),
       );
       mockHttp(ctx);
       plugin.probe(ctx);
@@ -223,7 +219,7 @@ describe("synthetic plugin", () => {
       setEnv(ctx, { PI_CODING_AGENT_DIR: "~/custom/pi" });
       ctx.host.fs.writeText(
         "~/custom/pi/models.json",
-        JSON.stringify({ providers: { synthetic: { apiKey: "syn_custommodels" } } })
+        JSON.stringify({ providers: { synthetic: { apiKey: "syn_custommodels" } } }),
       );
       mockHttp(ctx);
       plugin.probe(ctx);
@@ -256,10 +252,8 @@ describe("synthetic plugin", () => {
       ctx.host.fs.writeText(
         FACTORY_SETTINGS,
         JSON.stringify({
-          customModels: [
-            { baseUrl: "https://api.openai.com/v1", apiKey: "sk_other" },
-          ],
-        })
+          customModels: [{ baseUrl: "https://api.openai.com/v1", apiKey: "sk_other" }],
+        }),
       );
       setEnvKey(ctx, "syn_envkey");
       mockHttp(ctx);
@@ -414,7 +408,7 @@ describe("synthetic plugin", () => {
             max: 400,
             limited: false,
           },
-        })
+        }),
       );
       var result = plugin.probe(ctx);
       var line = result.lines.find((l) => l.label === "5h Rate Limit");
@@ -445,7 +439,7 @@ describe("synthetic plugin", () => {
             max: 600,
             limited: true,
           },
-        })
+        }),
       );
       var result = plugin.probe(ctx);
       var line = result.lines.find((l) => l.label === "5h Rate Limit");
@@ -489,7 +483,7 @@ describe("synthetic plugin", () => {
             nextRegenAt: "2026-03-30T16:20:39.000Z",
             percentRemaining: 100,
           },
-        })
+        }),
       );
       var result = plugin.probe(ctx);
       var line = result.lines.find((l) => l.label === "Mana Bar");
@@ -506,7 +500,7 @@ describe("synthetic plugin", () => {
             nextRegenAt: "2026-03-30T16:20:39.000Z",
             percentRemaining: 0,
           },
-        })
+        }),
       );
       var result = plugin.probe(ctx);
       var line = result.lines.find((l) => l.label === "Mana Bar");
@@ -558,7 +552,7 @@ describe("synthetic plugin", () => {
             max: 600,
             limited: true,
           },
-        })
+        }),
       );
       var result = plugin.probe(ctx);
       var badge = result.lines.find((l) => l.label === "Rate Limited");
@@ -778,7 +772,7 @@ describe("synthetic plugin", () => {
             max: 600,
             limited: true,
           },
-        })
+        }),
       );
       var result = plugin.probe(ctx);
       expect(result.lines.length).toBe(4); // v3 user rate limited: no subscription

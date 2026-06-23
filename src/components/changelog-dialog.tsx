@@ -1,13 +1,13 @@
-import { useEffect } from "react"
-import { Loader2, ChevronRight, ExternalLink as ExternalLinkIcon } from "lucide-react"
-import { useChangelog } from "@/hooks/use-changelog"
-import { Button } from "@/components/ui/button"
-import { openUrl } from "@tauri-apps/plugin-opener"
+import { useEffect } from "react";
+import { Loader2, ChevronRight, ExternalLink as ExternalLinkIcon } from "lucide-react";
+import { useChangelog } from "@/hooks/use-changelog";
+import { Button } from "@/components/ui/button";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 interface ChangelogDialogProps {
-  currentVersion: string
-  onBack: () => void
-  onClose: () => void
+  currentVersion: string;
+  onBack: () => void;
+  onClose: () => void;
 }
 
 function SimpleMarkdown({ content }: { content: string }) {
@@ -82,7 +82,8 @@ function SimpleMarkdown({ content }: { content: string }) {
       parts = newParts;
     });
 
-    const linkClass = "text-[#58a6ff] hover:underline hover:text-[#58a6ff]/80 transition-colors cursor-pointer";
+    const linkClass =
+      "text-[#58a6ff] hover:underline hover:text-[#58a6ff]/80 transition-colors cursor-pointer";
 
     return parts.map((part, i) => {
       if (part.type === "link") {
@@ -97,16 +98,28 @@ function SimpleMarkdown({ content }: { content: string }) {
         );
       }
       if (part.type === "bold") {
-        return <strong key={i} className="font-bold text-foreground">{renderText(part.content)}</strong>;
+        return (
+          <strong key={i} className="font-bold text-foreground">
+            {renderText(part.content)}
+          </strong>
+        );
       }
       if (part.type === "italic") {
-        return <em key={i} className="italic text-foreground/90">{renderText(part.content)}</em>;
+        return (
+          <em key={i} className="italic text-foreground/90">
+            {renderText(part.content)}
+          </em>
+        );
       }
       if (part.type === "pr") {
         return (
           <button
             key={i}
-            onClick={() => openUrl(`https://github.com/cbnsndwch/pacebar/pull/${part.content.slice(1)}`).catch(console.error)}
+            onClick={() =>
+              openUrl(`https://github.com/cbnsndwch/pacebar/pull/${part.content.slice(1)}`).catch(
+                console.error,
+              )
+            }
             className={linkClass}
           >
             {part.content}
@@ -117,7 +130,9 @@ function SimpleMarkdown({ content }: { content: string }) {
         return (
           <button
             key={i}
-            onClick={() => openUrl(`https://github.com/${part.content.slice(1)}`).catch(console.error)}
+            onClick={() =>
+              openUrl(`https://github.com/${part.content.slice(1)}`).catch(console.error)
+            }
             className={linkClass}
           >
             {part.content}
@@ -128,7 +143,11 @@ function SimpleMarkdown({ content }: { content: string }) {
         return (
           <button
             key={i}
-            onClick={() => openUrl(`https://github.com/cbnsndwch/pacebar/commit/${part.content}`).catch(console.error)}
+            onClick={() =>
+              openUrl(`https://github.com/cbnsndwch/pacebar/commit/${part.content}`).catch(
+                console.error,
+              )
+            }
             className={`${linkClass} font-mono`}
           >
             {part.content}
@@ -145,51 +164,66 @@ function SimpleMarkdown({ content }: { content: string }) {
       {lines.map((line, i) => {
         const trimmed = line.trim();
         if (trimmed === "---" || trimmed === "***" || trimmed === "--") {
-          return <hr key={i} className="border-t border-border/50 my-4" />
+          return <hr key={i} className="border-t border-border/50 my-4" />;
         }
         if (trimmed.startsWith("###")) {
-          return <h4 key={i} className="text-sm font-bold mt-4 mb-1 text-foreground">{renderText(trimmed.replace(/^###\s*/, ""))}</h4>
+          return (
+            <h4 key={i} className="text-sm font-bold mt-4 mb-1 text-foreground">
+              {renderText(trimmed.replace(/^###\s*/, ""))}
+            </h4>
+          );
         }
         if (trimmed.startsWith("##")) {
-          return <h3 key={i} className="text-base font-bold mt-5 mb-2 text-foreground">{renderText(trimmed.replace(/^##\s*/, ""))}</h3>
+          return (
+            <h3 key={i} className="text-base font-bold mt-5 mb-2 text-foreground">
+              {renderText(trimmed.replace(/^##\s*/, ""))}
+            </h3>
+          );
         }
         if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
           if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
             return (
               <div key={i} className="flex gap-2 pl-1 text-[13px] leading-relaxed">
                 <span className="text-muted-foreground/60 mt-1.5 shrink-0 scale-75">•</span>
-                <span className="flex-1 text-foreground/90">{renderText(trimmed.replace(/^[-*]\s*/, ""))}</span>
+                <span className="flex-1 text-foreground/90">
+                  {renderText(trimmed.replace(/^[-*]\s*/, ""))}
+                </span>
               </div>
-            )
+            );
           }
         }
-        if (!trimmed) return <div key={i} className="h-1" />
-        return <p key={i} className="text-[13px] text-foreground/90 leading-relaxed">{renderText(line)}</p>
+        if (!trimmed) return <div key={i} className="h-1" />;
+        return (
+          <p key={i} className="text-[13px] text-foreground/90 leading-relaxed">
+            {renderText(line)}
+          </p>
+        );
       })}
     </div>
-  )
+  );
 }
 
 export function ChangelogDialog({ currentVersion, onBack, onClose }: ChangelogDialogProps) {
-  const { releases, loading, error } = useChangelog(currentVersion)
+  const { releases, loading, error } = useChangelog(currentVersion);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        e.preventDefault()
-        onClose()
+        e.preventDefault();
+        onClose();
       }
-    }
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [onClose])
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
-  const currentRelease = releases.find(r => 
-    r.tag_name === currentVersion || 
-    r.tag_name === `v${currentVersion}` ||
-    r.name === currentVersion ||
-    r.name === `v${currentVersion}`
-  )
+  const currentRelease = releases.find(
+    (r) =>
+      r.tag_name === currentVersion ||
+      r.tag_name === `v${currentVersion}` ||
+      r.name === currentVersion ||
+      r.name === `v${currentVersion}`,
+  );
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] rounded-xl">
@@ -215,7 +249,9 @@ export function ChangelogDialog({ currentVersion, onBack, onClose }: ChangelogDi
             </div>
           ) : error ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-4">
-              <span className="text-destructive text-sm font-medium mb-1">Failed to load release notes</span>
+              <span className="text-destructive text-sm font-medium mb-1">
+                Failed to load release notes
+              </span>
               <span className="text-xs text-muted-foreground mb-4">{error}</span>
               <Button size="xs" variant="outline" onClick={() => window.location.reload()}>
                 Try again
@@ -225,15 +261,17 @@ export function ChangelogDialog({ currentVersion, onBack, onClose }: ChangelogDi
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex items-baseline justify-between mb-4 border-b pb-4">
                 <div>
-                  <h3 className="font-bold text-lg">{currentRelease.name || currentRelease.tag_name}</h3>
+                  <h3 className="font-bold text-lg">
+                    {currentRelease.name || currentRelease.tag_name}
+                  </h3>
                   <p className="text-[10px] text-muted-foreground mt-0.5">
                     {currentRelease.published_at
                       ? (() => {
-                          const d = new Date(currentRelease.published_at)
-                          const year = d.getUTCFullYear()
-                          const month = String(d.getUTCMonth() + 1).padStart(2, "0")
-                          const day = String(d.getUTCDate()).padStart(2, "0")
-                          return `Released on ${year}/${month}/${day}`
+                          const d = new Date(currentRelease.published_at);
+                          const year = d.getUTCFullYear();
+                          const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+                          const day = String(d.getUTCDate()).padStart(2, "0");
+                          return `Released on ${year}/${month}/${day}`;
                         })()
                       : "Unpublished release"}
                   </p>
@@ -245,7 +283,7 @@ export function ChangelogDialog({ currentVersion, onBack, onClose }: ChangelogDi
                   GitHub <ExternalLinkIcon className="w-3 h-3" />
                 </button>
               </div>
-              
+
               <div className="bg-muted/10 rounded-lg p-1">
                 <SimpleMarkdown content={currentRelease.body ?? ""} />
               </div>
@@ -255,7 +293,11 @@ export function ChangelogDialog({ currentVersion, onBack, onClose }: ChangelogDi
                   <p className="text-[10px] text-muted-foreground text-center">
                     Looking for older versions? Check the{" "}
                     <button
-                      onClick={() => openUrl("https://github.com/cbnsndwch/pacebar/releases").catch(console.error)}
+                      onClick={() =>
+                        openUrl("https://github.com/cbnsndwch/pacebar/releases").catch(
+                          console.error,
+                        )
+                      }
                       className="text-[#58a6ff] hover:underline"
                     >
                       full changelog
@@ -266,10 +308,16 @@ export function ChangelogDialog({ currentVersion, onBack, onClose }: ChangelogDi
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-4 opacity-60">
-              <span className="text-sm font-medium mb-1">No specific notes for v{currentVersion}</span>
-              <span className="text-xs mb-4">This version might be a pre-release or local build.</span>
+              <span className="text-sm font-medium mb-1">
+                No specific notes for v{currentVersion}
+              </span>
+              <span className="text-xs mb-4">
+                This version might be a pre-release or local build.
+              </span>
               <button
-                onClick={() => openUrl("https://github.com/cbnsndwch/pacebar/releases").catch(console.error)}
+                onClick={() =>
+                  openUrl("https://github.com/cbnsndwch/pacebar/releases").catch(console.error)
+                }
                 className="text-xs text-[#58a6ff] hover:underline"
               >
                 View all releases on GitHub
@@ -279,5 +327,5 @@ export function ChangelogDialog({ currentVersion, onBack, onClose }: ChangelogDi
         </div>
       </div>
     </div>
-  )
+  );
 }

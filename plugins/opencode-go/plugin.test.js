@@ -25,32 +25,18 @@ function setHistoryQuery(ctx, rows, options = {}) {
 
     if (String(sql).includes("SELECT 1 AS present")) {
       if (options.assertFilters !== false) {
-        expect(String(sql)).toContain(
-          "json_extract(data, '$.providerID') = 'opencode-go'",
-        );
-        expect(String(sql)).toContain(
-          "json_extract(data, '$.role') = 'assistant'",
-        );
-        expect(String(sql)).toContain(
-          "json_type(data, '$.cost') IN ('integer', 'real')",
-        );
+        expect(String(sql)).toContain("json_extract(data, '$.providerID') = 'opencode-go'");
+        expect(String(sql)).toContain("json_extract(data, '$.role') = 'assistant'");
+        expect(String(sql)).toContain("json_type(data, '$.cost') IN ('integer', 'real')");
       }
       return JSON.stringify(list.length > 0 ? [{ present: 1 }] : []);
     }
 
     if (options.assertFilters !== false) {
-      expect(String(sql)).toContain(
-        "json_extract(data, '$.providerID') = 'opencode-go'",
-      );
-      expect(String(sql)).toContain(
-        "json_extract(data, '$.role') = 'assistant'",
-      );
-      expect(String(sql)).toContain(
-        "json_type(data, '$.cost') IN ('integer', 'real')",
-      );
-      expect(String(sql)).toContain(
-        "COALESCE(json_extract(data, '$.time.created'), time_created)",
-      );
+      expect(String(sql)).toContain("json_extract(data, '$.providerID') = 'opencode-go'");
+      expect(String(sql)).toContain("json_extract(data, '$.role') = 'assistant'");
+      expect(String(sql)).toContain("json_type(data, '$.cost') IN ('integer', 'real')");
+      expect(String(sql)).toContain("COALESCE(json_extract(data, '$.time.created'), time_created)");
     }
 
     return JSON.stringify(list);
@@ -69,9 +55,7 @@ describe("opencode-go plugin", () => {
   });
 
   it("ships plugin metadata with links and expected line layout", () => {
-    const manifest = JSON.parse(
-      readFileSync("plugins/opencode-go/plugin.json", "utf8"),
-    );
+    const manifest = JSON.parse(readFileSync("plugins/opencode-go/plugin.json", "utf8"));
 
     expect(manifest.id).toBe("opencode-go");
     expect(manifest.name).toBe("OpenCode Go");
@@ -109,11 +93,7 @@ describe("opencode-go plugin", () => {
     const result = plugin.probe(ctx);
 
     expect(result.plan).toBe("Go");
-    expect(result.lines.map((line) => line.label)).toEqual([
-      "Session",
-      "Weekly",
-      "Monthly",
-    ]);
+    expect(result.lines.map((line) => line.label)).toEqual(["Session", "Weekly", "Monthly"]);
     expect(result.lines.every((line) => line.used === 0)).toBe(true);
     expect(result.lines[0].resetsAt).toBe("2026-03-06T17:00:00.000Z");
     expect(result.lines[1].resetsAt).toBe("2026-03-09T00:00:00.000Z");
@@ -125,9 +105,7 @@ describe("opencode-go plugin", () => {
     vi.setSystemTime(new Date("2026-03-06T12:00:00.000Z"));
 
     const ctx = makeCtx();
-    setHistoryQuery(ctx, [
-      { createdMs: Date.parse("2026-03-06T11:00:00.000Z"), cost: 3 },
-    ]);
+    setHistoryQuery(ctx, [{ createdMs: Date.parse("2026-03-06T11:00:00.000Z"), cost: 3 }]);
 
     const plugin = await loadPlugin();
     const result = plugin.probe(ctx);
@@ -141,9 +119,7 @@ describe("opencode-go plugin", () => {
     vi.setSystemTime(new Date("2026-03-06T12:00:00.000Z"));
 
     const ctx = makeCtx();
-    setHistoryQuery(ctx, [
-      { createdMs: Date.parse("2026-03-06T09:30:00.000Z"), cost: 1.2 },
-    ]);
+    setHistoryQuery(ctx, [{ createdMs: Date.parse("2026-03-06T09:30:00.000Z"), cost: 1.2 }]);
 
     const plugin = await loadPlugin();
     const result = plugin.probe(ctx);
@@ -214,9 +190,7 @@ describe("opencode-go plugin", () => {
     vi.setSystemTime(new Date("2026-03-06T12:00:00.000Z"));
 
     const ctx = makeCtx();
-    setHistoryQuery(ctx, [
-      { createdMs: Date.parse("2026-03-06T11:00:00.000Z"), cost: 40 },
-    ]);
+    setHistoryQuery(ctx, [{ createdMs: Date.parse("2026-03-06T11:00:00.000Z"), cost: 40 }]);
 
     const plugin = await loadPlugin();
     const result = plugin.probe(ctx);

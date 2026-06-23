@@ -8,13 +8,7 @@ interface AboutDialogProps {
   onClose: () => void;
 }
 
-function ExternalLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
+function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
   const handleClick = () => {
     openUrl(href).catch(console.error);
   };
@@ -85,11 +79,7 @@ export function AboutDialog({ version, onClose }: AboutDialogProps) {
       onClick={handleBackdropClick}
     >
       <div className="bg-card rounded-lg border shadow-xl p-6 max-w-xs w-full mx-4 text-center animate-in fade-in zoom-in-95 duration-200">
-        <img
-          src="/icon.png"
-          alt="PaceBar"
-          className="w-16 h-16 mx-auto mb-3 rounded-xl"
-        />
+        <img src="/icon.png" alt="PaceBar" className="w-16 h-16 mx-auto mb-3 rounded-xl" />
 
         <h2 className="text-xl font-semibold mb-1">PaceBar</h2>
 
@@ -109,25 +99,19 @@ export function AboutDialog({ version, onClose }: AboutDialogProps) {
 
         <div className="text-sm text-muted-foreground space-y-1">
           <p>
-            Maintained by{" "}
-            <ExternalLink href="https://github.com/cbnsndwch">cbnsndwch</ExternalLink>
+            Maintained by <ExternalLink href="https://github.com/cbnsndwch">cbnsndwch</ExternalLink>
           </p>
           <p>
             Open source on{" "}
-            <ExternalLink href="https://github.com/cbnsndwch/pacebar">
-              GitHub
-            </ExternalLink>
+            <ExternalLink href="https://github.com/cbnsndwch/pacebar">GitHub</ExternalLink>
           </p>
           <p className="text-xs pt-1">
             Originally based on{" "}
-            <ExternalLink href="https://github.com/robinebers/openusage">
-              OpenUsage
-            </ExternalLink>
-            {" "}by Robin Ebers
+            <ExternalLink href="https://github.com/robinebers/openusage">OpenUsage</ExternalLink> by
+            Robin Ebers
           </p>
         </div>
       </div>
     </div>
   );
 }
-

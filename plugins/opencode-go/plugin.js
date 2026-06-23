@@ -41,8 +41,7 @@
   }
 
   function clampPercent(used, limit) {
-    if (!Number.isFinite(used) || !Number.isFinite(limit) || limit <= 0)
-      return 0;
+    if (!Number.isFinite(used) || !Number.isFinite(limit) || limit <= 0) return 0;
     const percent = (used / limit) * 100;
     if (!Number.isFinite(percent)) return 0;
     return Math.round(Math.max(0, Math.min(100, percent)) * 10) / 10;
@@ -68,15 +67,7 @@
 
   function startOfNextUtcMonth(nowMs) {
     const date = new Date(nowMs);
-    return Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth() + 1,
-      1,
-      0,
-      0,
-      0,
-      0,
-    );
+    return Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1, 0, 0, 0, 0);
   }
 
   function shiftMonth(year, month, delta) {

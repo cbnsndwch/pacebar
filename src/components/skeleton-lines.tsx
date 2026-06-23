@@ -1,7 +1,7 @@
-import { Fragment } from "react"
-import { Skeleton } from "@/components/ui/skeleton"
-import type { ManifestLine } from "@/lib/plugin-types"
-import { groupLinesByType } from "@/lib/group-lines-by-type"
+import { Fragment } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { ManifestLine } from "@/lib/plugin-types";
+import { groupLinesByType } from "@/lib/group-lines-by-type";
 
 function SkeletonText({ label }: { label: string }) {
   return (
@@ -9,7 +9,7 @@ function SkeletonText({ label }: { label: string }) {
       <span className="text-xs text-muted-foreground">{label}</span>
       <Skeleton className="h-3 w-16" />
     </div>
-  )
+  );
 }
 
 function SkeletonBadge({ label }: { label: string }) {
@@ -18,7 +18,7 @@ function SkeletonBadge({ label }: { label: string }) {
       <span className="text-sm text-muted-foreground">{label}</span>
       <Skeleton className="h-5 w-16 rounded-md" />
     </div>
-  )
+  );
 }
 
 function SkeletonProgress({ label }: { label: string }) {
@@ -31,26 +31,26 @@ function SkeletonProgress({ label }: { label: string }) {
         <Skeleton className="h-4 w-24" />
       </div>
     </div>
-  )
+  );
 }
 
 export function SkeletonLine({ line }: { line: ManifestLine }) {
   switch (line.type) {
     case "text":
-      return <SkeletonText label={line.label} />
+      return <SkeletonText label={line.label} />;
     case "badge":
-      return <SkeletonBadge label={line.label} />
+      return <SkeletonBadge label={line.label} />;
     case "progress":
-      return <SkeletonProgress label={line.label} />
+      return <SkeletonProgress label={line.label} />;
     default:
-      return <SkeletonText label={line.label} />
+      return <SkeletonText label={line.label} />;
   }
 }
 
 export function SkeletonLines({ lines }: { lines: ManifestLine[] }) {
   return (
     <div className="space-y-4">
-      {groupLinesByType(lines).map((group, groupIndex) => (
+      {groupLinesByType(lines).map((group, groupIndex) =>
         group.kind === "text" ? (
           <div key={groupIndex} className="space-y-1">
             {group.lines.map((line, lineIndex) => (
@@ -63,8 +63,8 @@ export function SkeletonLines({ lines }: { lines: ManifestLine[] }) {
               <SkeletonLine key={`${line.label}-${groupIndex}-${lineIndex}`} line={line} />
             ))}
           </Fragment>
-        )
-      ))}
+        ),
+      )}
     </div>
-  )
+  );
 }

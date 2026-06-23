@@ -1,19 +1,19 @@
 (function () {
-  const BASE_URL = "https://api.z.ai"
-  const SUBSCRIPTION_URL = BASE_URL + "/api/biz/subscription/list"
-  const QUOTA_URL = BASE_URL + "/api/monitor/usage/quota/limit"
-  const PERIOD_MS = 5 * 60 * 60 * 1000
-  const WEEK_MS = 7 * 24 * 60 * 60 * 1000
-  const MONTH_MS = 30 * 24 * 60 * 60 * 1000
+  const BASE_URL = "https://api.z.ai";
+  const SUBSCRIPTION_URL = BASE_URL + "/api/biz/subscription/list";
+  const QUOTA_URL = BASE_URL + "/api/monitor/usage/quota/limit";
+  const PERIOD_MS = 5 * 60 * 60 * 1000;
+  const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+  const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
   function loadApiKey(ctx) {
-    const zai = ctx.host.env.get("ZAI_API_KEY")
-    if (typeof zai === "string" && zai.trim()) return zai.trim()
+    const zai = ctx.host.env.get("ZAI_API_KEY");
+    if (typeof zai === "string" && zai.trim()) return zai.trim();
 
-    const glm = ctx.host.env.get("GLM_API_KEY")
-    if (typeof glm === "string" && glm.trim()) return glm.trim()
+    const glm = ctx.host.env.get("GLM_API_KEY");
+    if (typeof glm === "string" && glm.trim()) return glm.trim();
 
-    return null
+    return null;
   }
 
   function fetchSubscription(ctx, apiKey) {
@@ -26,27 +26,27 @@
           Accept: "application/json",
         },
         timeoutMs: 10000,
-      })
+      });
       if (resp.status < 200 || resp.status >= 300) {
-        ctx.host.log.warn("subscription request failed: HTTP " + resp.status)
-        return null
+        ctx.host.log.warn("subscription request failed: HTTP " + resp.status);
+        return null;
       }
-      const data = ctx.util.tryParseJson(resp.bodyText)
-      if (!data) return null
-      const list = data.data
-      if (!Array.isArray(list) || list.length === 0) return null
+      const data = ctx.util.tryParseJson(resp.bodyText);
+      if (!data) return null;
+      const list = data.data;
+      if (!Array.isArray(list) || list.length === 0) return null;
       return {
         productName: list[0].productName || null,
         nextRenewTime: list[0].nextRenewTime || null,
-      }
+      };
     } catch (e) {
-      ctx.host.log.warn("subscription request exception: " + String(e))
-      return null
+      ctx.host.log.warn("subscription request exception: " + String(e));
+      return null;
     }
   }
 
   function fetchQuota(ctx, apiKey) {
-    let resp
+    let resp;
     try {
       resp = ctx.util.request({
         method: "GET",
@@ -56,76 +56,78 @@
           Accept: "application/json",
         },
         timeoutMs: 10000,
-      })
+      });
     } catch (e) {
-      ctx.host.log.error("usage request exception: " + String(e))
-      throw "Usage request failed. Check your connection."
+      ctx.host.log.error("usage request exception: " + String(e));
+      throw "Usage request failed. Check your connection.";
     }
 
     if (ctx.util.isAuthStatus(resp.status)) {
-      throw "API key invalid. Check your Z.ai API key."
+      throw "API key invalid. Check your Z.ai API key.";
     }
 
     if (resp.status < 200 || resp.status >= 300) {
-      throw "Usage request failed (HTTP " + String(resp.status) + "). Try again later."
+      throw "Usage request failed (HTTP " + String(resp.status) + "). Try again later.";
     }
 
-    const data = ctx.util.tryParseJson(resp.bodyText)
+    const data = ctx.util.tryParseJson(resp.bodyText);
     if (!data) {
-      throw "Usage response invalid. Try again later."
+      throw "Usage response invalid. Try again later.";
     }
 
-    return data
+    return data;
   }
 
   function findLimit(limits, type, unit) {
-    let fallback = null
+    let fallback = null;
     for (let i = 0; i < limits.length; i++) {
-      const item = limits[i]
+      const item = limits[i];
       if (item.type === type || item.name === type) {
         if (unit === undefined) {
-          return item
+          return item;
         }
         if (item.unit === unit) {
-          return item
+          return item;
         }
         // Store first entry without unit as fallback
         if (fallback === null && item.unit === undefined) {
-          fallback = item
+          fallback = item;
         }
       }
     }
-    return fallback
+    return fallback;
   }
 
   function probe(ctx) {
-    const apiKey = loadApiKey(ctx)
+    const apiKey = loadApiKey(ctx);
     if (!apiKey) {
-      throw "No ZAI_API_KEY found. Set up environment variable first."
+      throw "No ZAI_API_KEY found. Set up environment variable first.";
     }
 
-    const sub = fetchSubscription(ctx, apiKey)
-    const plan = sub && sub.productName ? ctx.fmt.planLabel(sub.productName) : null
+    const sub = fetchSubscription(ctx, apiKey);
+    const plan = sub && sub.productName ? ctx.fmt.planLabel(sub.productName) : null;
 
-    const quota = fetchQuota(ctx, apiKey)
-    const lines = []
+    const quota = fetchQuota(ctx, apiKey);
+    const lines = [];
 
-    const container = quota.data || quota
-    const limits = container.limits || container
+    const container = quota.data || quota;
+    const limits = container.limits || container;
     if (!Array.isArray(limits) || limits.length === 0) {
-      lines.push(ctx.line.badge({ label: "Session", text: "No usage data", color: "#a3a3a3" }))
-      return { plan, lines }
+      lines.push(ctx.line.badge({ label: "Session", text: "No usage data", color: "#a3a3a3" }));
+      return { plan, lines };
     }
 
-    const tokenLimit = findLimit(limits, "TOKENS_LIMIT", 3)
+    const tokenLimit = findLimit(limits, "TOKENS_LIMIT", 3);
 
     if (!tokenLimit) {
-      lines.push(ctx.line.badge({ label: "Session", text: "No usage data", color: "#a3a3a3" }))
-      return { plan, lines }
+      lines.push(ctx.line.badge({ label: "Session", text: "No usage data", color: "#a3a3a3" }));
+      return { plan, lines };
     }
 
-    const used = typeof tokenLimit.percentage === "number" ? tokenLimit.percentage : 0
-    const resetsAt = tokenLimit.nextResetTime ? ctx.util.toIso(tokenLimit.nextResetTime) : undefined
+    const used = typeof tokenLimit.percentage === "number" ? tokenLimit.percentage : 0;
+    const resetsAt = tokenLimit.nextResetTime
+      ? ctx.util.toIso(tokenLimit.nextResetTime)
+      : undefined;
 
     const progressOpts = {
       label: "Session",
@@ -133,16 +135,20 @@
       limit: 100,
       format: { kind: "percent" },
       periodDurationMs: PERIOD_MS,
-    }
+    };
     if (resetsAt) {
-      progressOpts.resetsAt = resetsAt
+      progressOpts.resetsAt = resetsAt;
     }
-    lines.push(ctx.line.progress(progressOpts))
+    lines.push(ctx.line.progress(progressOpts));
 
-    const weeklyTokenLimit = findLimit(limits, "TOKENS_LIMIT", 6)
+    const weeklyTokenLimit = findLimit(limits, "TOKENS_LIMIT", 6);
     if (weeklyTokenLimit) {
-      const weeklyUsed = Number.isFinite(weeklyTokenLimit.percentage) ? weeklyTokenLimit.percentage : 0
-      const weeklyResetsAt = weeklyTokenLimit.nextResetTime ? ctx.util.toIso(weeklyTokenLimit.nextResetTime) : undefined
+      const weeklyUsed = Number.isFinite(weeklyTokenLimit.percentage)
+        ? weeklyTokenLimit.percentage
+        : 0;
+      const weeklyResetsAt = weeklyTokenLimit.nextResetTime
+        ? ctx.util.toIso(weeklyTokenLimit.nextResetTime)
+        : undefined;
 
       const weeklyOpts = {
         label: "Weekly",
@@ -150,23 +156,23 @@
         limit: 100,
         format: { kind: "percent" },
         periodDurationMs: WEEK_MS,
-      }
+      };
       if (weeklyResetsAt) {
-        weeklyOpts.resetsAt = weeklyResetsAt
+        weeklyOpts.resetsAt = weeklyResetsAt;
       }
-      lines.push(ctx.line.progress(weeklyOpts))
+      lines.push(ctx.line.progress(weeklyOpts));
     }
 
-    const timeLimit = findLimit(limits, "TIME_LIMIT")
+    const timeLimit = findLimit(limits, "TIME_LIMIT");
 
     if (timeLimit) {
-      const webUsed = typeof timeLimit.currentValue === "number" ? timeLimit.currentValue : 0
-      const webTotal = typeof timeLimit.usage === "number" ? timeLimit.usage : 0
-      const now = new Date()
-      const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
+      const webUsed = typeof timeLimit.currentValue === "number" ? timeLimit.currentValue : 0;
+      const webTotal = typeof timeLimit.usage === "number" ? timeLimit.usage : 0;
+      const now = new Date();
+      const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
       const webResetsAt = timeLimit.nextResetTime
         ? ctx.util.toIso(timeLimit.nextResetTime)
-        : nextMonth.toISOString()
+        : nextMonth.toISOString();
 
       const webOpts = {
         label: "Web Searches",
@@ -174,15 +180,15 @@
         limit: webTotal,
         format: { kind: "count", suffix: "/ " + webTotal },
         periodDurationMs: MONTH_MS,
-      }
+      };
       if (webResetsAt) {
-        webOpts.resetsAt = webResetsAt
+        webOpts.resetsAt = webResetsAt;
       }
-      lines.push(ctx.line.progress(webOpts))
+      lines.push(ctx.line.progress(webOpts));
     }
 
-    return { plan, lines }
+    return { plan, lines };
   }
 
-  globalThis.__pacebar_plugin = { id: "zai", probe }
-})()
+  globalThis.__pacebar_plugin = { id: "zai", probe };
+})();

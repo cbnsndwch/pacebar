@@ -43,10 +43,7 @@ function setGhCliKeychain(ctx, value) {
 }
 
 function setStateFileToken(ctx, token) {
-  ctx.host.fs.writeText(
-    ctx.app.pluginDataDir + "/auth.json",
-    JSON.stringify({ token }),
-  );
+  ctx.host.fs.writeText(ctx.app.pluginDataDir + "/auth.json", JSON.stringify({ token }));
 }
 
 function mockUsageOk(ctx, body) {
@@ -116,8 +113,7 @@ describe("copilot plugin", () => {
   it("prefers keychain over gh-cli", async () => {
     const ctx = makePluginTestContext();
     ctx.host.keychain.readGenericPassword.mockImplementation((service) => {
-      if (service === "PaceBar-copilot")
-        return JSON.stringify({ token: "ghu_keychain" });
+      if (service === "PaceBar-copilot") return JSON.stringify({ token: "ghu_keychain" });
       if (service === "gh:github.com") return "gho_ghcli";
       return null;
     });
@@ -149,9 +145,7 @@ describe("copilot plugin", () => {
       "PaceBar-copilot",
       JSON.stringify({ token: "gho_persist" }),
     );
-    const stateFile = ctx.host.fs.readText(
-      ctx.app.pluginDataDir + "/auth.json",
-    );
+    const stateFile = ctx.host.fs.readText(ctx.app.pluginDataDir + "/auth.json");
     expect(JSON.parse(stateFile).token).toBe("gho_persist");
   });
 
@@ -229,9 +223,7 @@ describe("copilot plugin", () => {
     setKeychainToken(ctx, "tok");
     ctx.host.http.request.mockReturnValue({
       status: 200,
-      bodyText: JSON.stringify(
-        makeUsageResponse({ copilot_plan: "business plus" }),
-      ),
+      bodyText: JSON.stringify(makeUsageResponse({ copilot_plan: "business plus" })),
     });
     const plugin = await loadPlugin();
     const result = plugin.probe(ctx);
@@ -276,7 +268,9 @@ describe("copilot plugin", () => {
     setKeychainToken(ctx, "tok");
     ctx.host.http.request.mockReturnValue({ status: 401, bodyText: "" });
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow("Token invalid. Run `gh auth login` to re-authenticate.");
+    expect(() => plugin.probe(ctx)).toThrow(
+      "Token invalid. Run `gh auth login` to re-authenticate.",
+    );
   });
 
   it("throws on 403", async () => {
@@ -284,7 +278,9 @@ describe("copilot plugin", () => {
     setKeychainToken(ctx, "tok");
     ctx.host.http.request.mockReturnValue({ status: 403, bodyText: "" });
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow("Token invalid. Run `gh auth login` to re-authenticate.");
+    expect(() => plugin.probe(ctx)).toThrow(
+      "Token invalid. Run `gh auth login` to re-authenticate.",
+    );
   });
 
   it("throws on HTTP 500", async () => {
@@ -292,9 +288,7 @@ describe("copilot plugin", () => {
     setKeychainToken(ctx, "tok");
     ctx.host.http.request.mockReturnValue({ status: 500, bodyText: "" });
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow(
-      "Usage request failed (HTTP 500). Try again later.",
-    );
+    expect(() => plugin.probe(ctx)).toThrow("Usage request failed (HTTP 500). Try again later.");
   });
 
   it("throws on network error", async () => {
@@ -304,9 +298,7 @@ describe("copilot plugin", () => {
       throw new Error("ECONNREFUSED");
     });
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow(
-      "Usage request failed. Check your connection.",
-    );
+    expect(() => plugin.probe(ctx)).toThrow("Usage request failed. Check your connection.");
   });
 
   it("throws on invalid JSON response", async () => {
@@ -317,9 +309,7 @@ describe("copilot plugin", () => {
       bodyText: "not-json",
     });
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow(
-      "Usage response invalid. Try again later.",
-    );
+    expect(() => plugin.probe(ctx)).toThrow("Usage response invalid. Try again later.");
   });
 
   it("uses 'token' auth header format (not 'Bearer')", async () => {

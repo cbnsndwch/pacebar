@@ -1,28 +1,34 @@
-import { cleanup, render, screen } from "@testing-library/react"
-import type { ReactNode } from "react"
-import userEvent from "@testing-library/user-event"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { cleanup, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-let latestOnDragEnd: ((event: any) => void) | undefined
+let latestOnDragEnd: ((event: any) => void) | undefined;
 
 vi.mock("@dnd-kit/core", () => ({
-  DndContext: ({ children, onDragEnd }: { children: ReactNode; onDragEnd?: (event: any) => void }) => {
-    latestOnDragEnd = onDragEnd
-    return <div data-testid="dnd-context">{children}</div>
+  DndContext: ({
+    children,
+    onDragEnd,
+  }: {
+    children: ReactNode;
+    onDragEnd?: (event: any) => void;
+  }) => {
+    latestOnDragEnd = onDragEnd;
+    return <div data-testid="dnd-context">{children}</div>;
   },
   closestCenter: vi.fn(),
   PointerSensor: class {},
   KeyboardSensor: class {},
   useSensor: vi.fn((_sensor: any, options?: any) => ({ sensor: _sensor, options })),
   useSensors: vi.fn((...sensors: any[]) => sensors),
-}))
+}));
 
 vi.mock("@dnd-kit/sortable", () => ({
   arrayMove: (items: any[], from: number, to: number) => {
-    const next = [...items]
-    const [moved] = next.splice(from, 1)
-    next.splice(to, 0, moved)
-    return next
+    const next = [...items];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    return next;
   },
   SortableContext: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   sortableKeyboardCoordinates: vi.fn(),
@@ -35,13 +41,13 @@ vi.mock("@dnd-kit/sortable", () => ({
     isDragging: false,
   }),
   verticalListSortingStrategy: vi.fn(),
-}))
+}));
 
 vi.mock("@dnd-kit/utilities", () => ({
   CSS: { Transform: { toString: () => "" } },
-}))
+}));
 
-import { SettingsPage } from "@/pages/settings"
+import { SettingsPage } from "@/pages/settings";
 
 const defaultProps = {
   plugins: [{ id: "a", name: "Alpha", enabled: true }],
@@ -77,31 +83,29 @@ const defaultProps = {
   onLeaderboardWorkerUrlChange: vi.fn(),
   onLeaderboardOptInChange: vi.fn(),
   onLeaderboardShareListChange: vi.fn(),
-}
+};
 
 afterEach(() => {
-  cleanup()
-})
+  cleanup();
+});
 
 describe("SettingsPage", () => {
   it("toggles plugins", async () => {
-    const onToggle = vi.fn()
+    const onToggle = vi.fn();
     render(
       <SettingsPage
         {...defaultProps}
-        plugins={[
-          { id: "b", name: "Beta", enabled: false },
-        ]}
+        plugins={[{ id: "b", name: "Beta", enabled: false }]}
         onToggle={onToggle}
-      />
-    )
-    const checkboxes = screen.getAllByRole("checkbox")
-    await userEvent.click(checkboxes[checkboxes.length - 1])
-    expect(onToggle).toHaveBeenCalledWith("b")
-  })
+      />,
+    );
+    const checkboxes = screen.getAllByRole("checkbox");
+    await userEvent.click(checkboxes[checkboxes.length - 1]);
+    expect(onToggle).toHaveBeenCalledWith("b");
+  });
 
   it("reorders plugins on drag end", () => {
-    const onReorder = vi.fn()
+    const onReorder = vi.fn();
     render(
       <SettingsPage
         {...defaultProps}
@@ -110,142 +114,109 @@ describe("SettingsPage", () => {
           { id: "b", name: "Beta", enabled: true },
         ]}
         onReorder={onReorder}
-      />
-    )
-    latestOnDragEnd?.({ active: { id: "a" }, over: { id: "b" } })
-    expect(onReorder).toHaveBeenCalledWith(["b", "a"])
-  })
+      />,
+    );
+    latestOnDragEnd?.({ active: { id: "a" }, over: { id: "b" } });
+    expect(onReorder).toHaveBeenCalledWith(["b", "a"]);
+  });
 
   it("ignores invalid drag end", () => {
-    const onReorder = vi.fn()
-    render(
-      <SettingsPage
-        {...defaultProps}
-        onReorder={onReorder}
-      />
-    )
-    latestOnDragEnd?.({ active: { id: "a" }, over: null })
-    latestOnDragEnd?.({ active: { id: "a" }, over: { id: "a" } })
-    expect(onReorder).not.toHaveBeenCalled()
-  })
+    const onReorder = vi.fn();
+    render(<SettingsPage {...defaultProps} onReorder={onReorder} />);
+    latestOnDragEnd?.({ active: { id: "a" }, over: null });
+    latestOnDragEnd?.({ active: { id: "a" }, over: { id: "a" } });
+    expect(onReorder).not.toHaveBeenCalled();
+  });
 
   it("updates auto-update interval", async () => {
-    const onAutoUpdateIntervalChange = vi.fn()
+    const onAutoUpdateIntervalChange = vi.fn();
     render(
-      <SettingsPage
-        {...defaultProps}
-        onAutoUpdateIntervalChange={onAutoUpdateIntervalChange}
-      />
-    )
-    await userEvent.click(screen.getByText("30 min"))
-    expect(onAutoUpdateIntervalChange).toHaveBeenCalledWith(30)
-  })
+      <SettingsPage {...defaultProps} onAutoUpdateIntervalChange={onAutoUpdateIntervalChange} />,
+    );
+    await userEvent.click(screen.getByText("30 min"));
+    expect(onAutoUpdateIntervalChange).toHaveBeenCalledWith(30);
+  });
 
   it("shows auto-update helper text", () => {
-    render(<SettingsPage {...defaultProps} />)
-    expect(screen.getByText("How obsessive are you")).toBeInTheDocument()
-  })
+    render(<SettingsPage {...defaultProps} />);
+    expect(screen.getByText("How obsessive are you")).toBeInTheDocument();
+  });
 
   it("renders app theme section with theme options", () => {
-    render(<SettingsPage {...defaultProps} />)
-    expect(screen.getByText("App Theme")).toBeInTheDocument()
-    expect(screen.getByText("How it looks around here")).toBeInTheDocument()
-    expect(screen.getByText("System")).toBeInTheDocument()
-    expect(screen.getByText("Light")).toBeInTheDocument()
-    expect(screen.getByText("Dark")).toBeInTheDocument()
-  })
+    render(<SettingsPage {...defaultProps} />);
+    expect(screen.getByText("App Theme")).toBeInTheDocument();
+    expect(screen.getByText("How it looks around here")).toBeInTheDocument();
+    expect(screen.getByText("System")).toBeInTheDocument();
+    expect(screen.getByText("Light")).toBeInTheDocument();
+    expect(screen.getByText("Dark")).toBeInTheDocument();
+  });
 
   it("updates theme mode", async () => {
-    const onThemeModeChange = vi.fn()
-    render(
-      <SettingsPage
-        {...defaultProps}
-        onThemeModeChange={onThemeModeChange}
-      />
-    )
-    await userEvent.click(screen.getByText("Dark"))
-    expect(onThemeModeChange).toHaveBeenCalledWith("dark")
-  })
+    const onThemeModeChange = vi.fn();
+    render(<SettingsPage {...defaultProps} onThemeModeChange={onThemeModeChange} />);
+    await userEvent.click(screen.getByText("Dark"));
+    expect(onThemeModeChange).toHaveBeenCalledWith("dark");
+  });
 
   it("updates display mode", async () => {
-    const onDisplayModeChange = vi.fn()
-    render(
-      <SettingsPage
-        {...defaultProps}
-        onDisplayModeChange={onDisplayModeChange}
-      />
-    )
-    await userEvent.click(screen.getByRole("radio", { name: "Left" }))
-    expect(onDisplayModeChange).toHaveBeenCalledWith("left")
-  })
+    const onDisplayModeChange = vi.fn();
+    render(<SettingsPage {...defaultProps} onDisplayModeChange={onDisplayModeChange} />);
+    await userEvent.click(screen.getByRole("radio", { name: "Left" }));
+    expect(onDisplayModeChange).toHaveBeenCalledWith("left");
+  });
 
   it("updates reset timer display mode", async () => {
-    const onResetTimerDisplayModeChange = vi.fn()
+    const onResetTimerDisplayModeChange = vi.fn();
     render(
       <SettingsPage
         {...defaultProps}
         onResetTimerDisplayModeChange={onResetTimerDisplayModeChange}
-      />
-    )
-    await userEvent.click(screen.getByRole("radio", { name: /Absolute/ }))
-    expect(onResetTimerDisplayModeChange).toHaveBeenCalledWith("absolute")
-  })
+      />,
+    );
+    await userEvent.click(screen.getByRole("radio", { name: /Absolute/ }));
+    expect(onResetTimerDisplayModeChange).toHaveBeenCalledWith("absolute");
+  });
 
   it("renders renamed usage section heading", () => {
-    render(<SettingsPage {...defaultProps} />)
-    expect(screen.getByText("Usage Mode")).toBeInTheDocument()
-  })
+    render(<SettingsPage {...defaultProps} />);
+    expect(screen.getByText("Usage Mode")).toBeInTheDocument();
+  });
 
   it("renders reset timers section heading", () => {
-    render(<SettingsPage {...defaultProps} />)
-    expect(screen.getByText("Reset Timers")).toBeInTheDocument()
-  })
+    render(<SettingsPage {...defaultProps} />);
+    expect(screen.getByText("Reset Timers")).toBeInTheDocument();
+  });
 
   it("renders menubar icon section", () => {
-    render(<SettingsPage {...defaultProps} />)
-    expect(screen.getByText("Menubar Icon")).toBeInTheDocument()
-    expect(screen.getByText("What shows in the menu bar")).toBeInTheDocument()
-  })
+    render(<SettingsPage {...defaultProps} />);
+    expect(screen.getByText("Menubar Icon")).toBeInTheDocument();
+    expect(screen.getByText("What shows in the menu bar")).toBeInTheDocument();
+  });
 
-  it("clicking Bars triggers onMenubarIconStyleChange(\"bars\")", async () => {
-    const onMenubarIconStyleChange = vi.fn()
-    render(
-      <SettingsPage
-        {...defaultProps}
-        onMenubarIconStyleChange={onMenubarIconStyleChange}
-      />
-    )
-    await userEvent.click(screen.getByRole("radio", { name: "Bars" }))
-    expect(onMenubarIconStyleChange).toHaveBeenCalledWith("bars")
-  })
+  it('clicking Bars triggers onMenubarIconStyleChange("bars")', async () => {
+    const onMenubarIconStyleChange = vi.fn();
+    render(<SettingsPage {...defaultProps} onMenubarIconStyleChange={onMenubarIconStyleChange} />);
+    await userEvent.click(screen.getByRole("radio", { name: "Bars" }));
+    expect(onMenubarIconStyleChange).toHaveBeenCalledWith("bars");
+  });
 
-  it("clicking Donut triggers onMenubarIconStyleChange(\"donut\")", async () => {
-    const onMenubarIconStyleChange = vi.fn()
-    render(
-      <SettingsPage
-        {...defaultProps}
-        onMenubarIconStyleChange={onMenubarIconStyleChange}
-      />
-    )
-    await userEvent.click(screen.getByRole("radio", { name: "Donut" }))
-    expect(onMenubarIconStyleChange).toHaveBeenCalledWith("donut")
-  })
+  it('clicking Donut triggers onMenubarIconStyleChange("donut")', async () => {
+    const onMenubarIconStyleChange = vi.fn();
+    render(<SettingsPage {...defaultProps} onMenubarIconStyleChange={onMenubarIconStyleChange} />);
+    await userEvent.click(screen.getByRole("radio", { name: "Donut" }));
+    expect(onMenubarIconStyleChange).toHaveBeenCalledWith("donut");
+  });
 
   it("does not render removed bar icon controls", () => {
-    render(<SettingsPage {...defaultProps} />)
-    expect(screen.queryByText("Bar Icon")).not.toBeInTheDocument()
-    expect(screen.queryByText("Show percentage")).not.toBeInTheDocument()
-  })
+    render(<SettingsPage {...defaultProps} />);
+    expect(screen.queryByText("Bar Icon")).not.toBeInTheDocument();
+    expect(screen.queryByText("Show percentage")).not.toBeInTheDocument();
+  });
 
   it("toggles start on login checkbox", async () => {
-    const onStartOnLoginChange = vi.fn()
-    render(
-      <SettingsPage
-        {...defaultProps}
-        onStartOnLoginChange={onStartOnLoginChange}
-      />
-    )
-    await userEvent.click(screen.getByText("Start on login"))
-    expect(onStartOnLoginChange).toHaveBeenCalledWith(true)
-  })
-})
+    const onStartOnLoginChange = vi.fn();
+    render(<SettingsPage {...defaultProps} onStartOnLoginChange={onStartOnLoginChange} />);
+    await userEvent.click(screen.getByText("Start on login"));
+    expect(onStartOnLoginChange).toHaveBeenCalledWith(true);
+  });
+});

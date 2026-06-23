@@ -24,10 +24,7 @@
 
   function saveToken(ctx, token) {
     try {
-      ctx.host.keychain.writeGenericPassword(
-        KEYCHAIN_SERVICE,
-        JSON.stringify({ token: token }),
-      );
+      ctx.host.keychain.writeGenericPassword(KEYCHAIN_SERVICE, JSON.stringify({ token: token }));
     } catch (e) {
       ctx.host.log.warn("keychain write failed: " + String(e));
     }
@@ -64,10 +61,7 @@
       const raw = ctx.host.keychain.readGenericPassword(GH_KEYCHAIN_SERVICE);
       if (raw) {
         let token = raw;
-        if (
-          typeof token === "string" &&
-          token.indexOf("go-keyring-base64:") === 0
-        ) {
+        if (typeof token === "string" && token.indexOf("go-keyring-base64:") === 0) {
           token = ctx.base64.decode(token.slice("go-keyring-base64:".length));
         }
         if (token) {
@@ -91,11 +85,7 @@
   }
 
   function loadToken(ctx) {
-    return (
-      loadTokenFromKeychain(ctx) ||
-      loadTokenFromGhCli(ctx) ||
-      loadTokenFromStateFile(ctx)
-    );
+    return loadTokenFromKeychain(ctx) || loadTokenFromGhCli(ctx) || loadTokenFromStateFile(ctx);
   }
 
   function fetchUsage(ctx, token) {
@@ -115,8 +105,7 @@
   }
 
   function makeProgressLine(ctx, label, snapshot, resetDate) {
-    if (!snapshot || typeof snapshot.percent_remaining !== "number")
-      return null;
+    if (!snapshot || typeof snapshot.percent_remaining !== "number") return null;
     const usedPercent = Math.min(100, Math.max(0, 100 - snapshot.percent_remaining));
     return ctx.line.progress({
       label: label,
@@ -129,8 +118,7 @@
   }
 
   function makeLimitedProgressLine(ctx, label, remaining, total, resetDate) {
-    if (typeof remaining !== "number" || typeof total !== "number" || total <= 0)
-      return null;
+    if (typeof remaining !== "number" || typeof total !== "number" || total <= 0) return null;
     const used = total - remaining;
     const usedPercent = Math.min(100, Math.max(0, Math.round((used / total) * 100)));
     return ctx.line.progress({
@@ -189,11 +177,7 @@
 
     if (resp.status < 200 || resp.status >= 300) {
       ctx.host.log.error("usage returned error: status=" + resp.status);
-      throw (
-        "Usage request failed (HTTP " +
-        String(resp.status) +
-        "). Try again later."
-      );
+      throw "Usage request failed (HTTP " + String(resp.status) + "). Try again later.";
     }
 
     // Persist gh-cli token to PaceBar keychain for future use
@@ -225,12 +209,7 @@
       );
       if (premiumLine) lines.push(premiumLine);
 
-      const chatLine = makeProgressLine(
-        ctx,
-        "Chat",
-        snapshots.chat,
-        data.quota_reset_date,
-      );
+      const chatLine = makeProgressLine(ctx, "Chat", snapshots.chat, data.quota_reset_date);
       if (chatLine) lines.push(chatLine);
     }
 
@@ -243,7 +222,13 @@
       const chatLine = makeLimitedProgressLine(ctx, "Chat", lq.chat, mq.chat, resetDate);
       if (chatLine) lines.push(chatLine);
 
-      const completionsLine = makeLimitedProgressLine(ctx, "Completions", lq.completions, mq.completions, resetDate);
+      const completionsLine = makeLimitedProgressLine(
+        ctx,
+        "Completions",
+        lq.completions,
+        mq.completions,
+        resetDate,
+      );
       if (completionsLine) lines.push(completionsLine);
     }
 

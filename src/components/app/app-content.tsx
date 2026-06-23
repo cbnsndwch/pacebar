@@ -1,13 +1,13 @@
-import { useShallow } from "zustand/react/shallow"
-import { LeaderboardPage } from "@/pages/leaderboard"
-import { OverviewPage } from "@/pages/overview"
-import { ProviderDetailPage } from "@/pages/provider-detail"
-import { SettingsPage } from "@/pages/settings"
-import type { DisplayPluginState } from "@/hooks/app/use-app-plugin-views"
-import type { SettingsPluginState } from "@/hooks/app/use-settings-plugin-list"
-import type { TraySettingsPreview } from "@/hooks/app/use-tray-icon"
-import { useAppPreferencesStore } from "@/stores/app-preferences-store"
-import { useAppUiStore } from "@/stores/app-ui-store"
+import { useShallow } from "zustand/react/shallow";
+import { LeaderboardPage } from "@/pages/leaderboard";
+import { OverviewPage } from "@/pages/overview";
+import { ProviderDetailPage } from "@/pages/provider-detail";
+import { SettingsPage } from "@/pages/settings";
+import type { DisplayPluginState } from "@/hooks/app/use-app-plugin-views";
+import type { SettingsPluginState } from "@/hooks/app/use-settings-plugin-list";
+import type { TraySettingsPreview } from "@/hooks/app/use-tray-icon";
+import { useAppPreferencesStore } from "@/stores/app-preferences-store";
+import { useAppUiStore } from "@/stores/app-ui-store";
 import type {
   AutoUpdateIntervalMinutes,
   DisplayMode,
@@ -18,37 +18,37 @@ import type {
   MenubarIconStyle,
   ResetTimerDisplayMode,
   ThemeMode,
-} from "@/lib/settings"
+} from "@/lib/settings";
 
 type AppContentDerivedProps = {
-  displayPlugins: DisplayPluginState[]
-  settingsPlugins: SettingsPluginState[]
-  selectedPlugin: DisplayPluginState | null
-}
+  displayPlugins: DisplayPluginState[];
+  settingsPlugins: SettingsPluginState[];
+  selectedPlugin: DisplayPluginState | null;
+};
 
 export type AppContentActionProps = {
-  onRetryPlugin: (id: string) => void
-  onReorder: (orderedIds: string[]) => void
-  onToggle: (id: string) => void
-  onAutoUpdateIntervalChange: (value: AutoUpdateIntervalMinutes) => void
-  onThemeModeChange: (mode: ThemeMode) => void
-  onDisplayModeChange: (mode: DisplayMode) => void
-  onResetTimerDisplayModeChange: (mode: ResetTimerDisplayMode) => void
-  onResetTimerDisplayModeToggle: () => void
-  onMenubarIconStyleChange: (value: MenubarIconStyle) => void
-  traySettingsPreview: TraySettingsPreview
-  onGlobalShortcutChange: (value: GlobalShortcut) => void
-  onStartOnLoginChange: (value: boolean) => void
-  onAvatarChange: (pluginId: string, dataUrl: string | null) => void
+  onRetryPlugin: (id: string) => void;
+  onReorder: (orderedIds: string[]) => void;
+  onToggle: (id: string) => void;
+  onAutoUpdateIntervalChange: (value: AutoUpdateIntervalMinutes) => void;
+  onThemeModeChange: (mode: ThemeMode) => void;
+  onDisplayModeChange: (mode: DisplayMode) => void;
+  onResetTimerDisplayModeChange: (mode: ResetTimerDisplayMode) => void;
+  onResetTimerDisplayModeToggle: () => void;
+  onMenubarIconStyleChange: (value: MenubarIconStyle) => void;
+  traySettingsPreview: TraySettingsPreview;
+  onGlobalShortcutChange: (value: GlobalShortcut) => void;
+  onStartOnLoginChange: (value: boolean) => void;
+  onAvatarChange: (pluginId: string, dataUrl: string | null) => void;
   // Leaderboard
-  onLeaderboardHandleChange:    (value: LeaderboardHandle)    => void
-  onLeaderboardTokenChange:     (value: LeaderboardToken)     => void
-  onLeaderboardWorkerUrlChange: (value: LeaderboardWorkerUrl) => void
-  onLeaderboardOptInChange:     (value: boolean)              => void
-  onLeaderboardShareListChange: (value: string[])             => void
-}
+  onLeaderboardHandleChange: (value: LeaderboardHandle) => void;
+  onLeaderboardTokenChange: (value: LeaderboardToken) => void;
+  onLeaderboardWorkerUrlChange: (value: LeaderboardWorkerUrl) => void;
+  onLeaderboardOptInChange: (value: boolean) => void;
+  onLeaderboardShareListChange: (value: string[]) => void;
+};
 
-export type AppContentProps = AppContentDerivedProps & AppContentActionProps
+export type AppContentProps = AppContentDerivedProps & AppContentActionProps;
 
 export function AppContent({
   displayPlugins,
@@ -76,8 +76,8 @@ export function AppContent({
   const { activeView } = useAppUiStore(
     useShallow((state) => ({
       activeView: state.activeView,
-    }))
-  )
+    })),
+  );
 
   const {
     displayMode,
@@ -106,8 +106,8 @@ export function AppContent({
       leaderboardWorkerUrl: state.leaderboardWorkerUrl,
       leaderboardOptIn: state.leaderboardOptIn,
       leaderboardShareList: state.leaderboardShareList,
-    }))
-  )
+    })),
+  );
 
   if (activeView === "home") {
     return (
@@ -118,7 +118,7 @@ export function AppContent({
         resetTimerDisplayMode={resetTimerDisplayMode}
         onResetTimerDisplayModeToggle={onResetTimerDisplayModeToggle}
       />
-    )
+    );
   }
 
   if (activeView === "settings") {
@@ -154,16 +154,16 @@ export function AppContent({
         onLeaderboardOptInChange={onLeaderboardOptInChange}
         onLeaderboardShareListChange={onLeaderboardShareListChange}
       />
-    )
+    );
   }
 
   if (activeView === "leaderboard") {
-    return <LeaderboardPage />
+    return <LeaderboardPage />;
   }
 
   const handleRetry = selectedPlugin
     ? () => onRetryPlugin(selectedPlugin.meta.id)
-    : /* v8 ignore next */ undefined
+    : /* v8 ignore next */ undefined;
 
   return (
     <ProviderDetailPage
@@ -173,5 +173,5 @@ export function AppContent({
       resetTimerDisplayMode={resetTimerDisplayMode}
       onResetTimerDisplayModeToggle={onResetTimerDisplayModeToggle}
     />
-  )
+  );
 }

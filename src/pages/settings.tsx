@@ -92,8 +92,21 @@ function ProviderIconMask({
   }
   const textClass = isActive ? "text-primary-foreground" : "text-foreground";
   return (
-    <svg aria-hidden viewBox="0 0 26 26" className={cn("shrink-0", textClass)} style={{ width: `${sizePx}px`, height: `${sizePx}px` }}>
-      <circle cx="13" cy="13" r="9" fill="none" stroke="currentColor" strokeWidth="3.5" opacity={0.3} />
+    <svg
+      aria-hidden
+      viewBox="0 0 26 26"
+      className={cn("shrink-0", textClass)}
+      style={{ width: `${sizePx}px`, height: `${sizePx}px` }}
+    >
+      <circle
+        cx="13"
+        cy="13"
+        r="9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3.5"
+        opacity={0.3}
+      />
     </svg>
   );
 }
@@ -128,9 +141,10 @@ function MenubarIconStylePreview({
     const trackClass = isActive ? "bg-primary-foreground/15" : "bg-foreground/15";
     const remainderClass = isActive ? "bg-primary-foreground/20" : "bg-foreground/15";
     const fillClass = isActive ? "bg-primary-foreground" : "bg-foreground";
-    const fractions = traySettingsPreview.bars.length > 0
-      ? traySettingsPreview.bars.map((b) => b.fraction ?? 0)
-      : [0.83, 0.7, 0.56];
+    const fractions =
+      traySettingsPreview.bars.length > 0
+        ? traySettingsPreview.bars.map((b) => b.fraction ?? 0)
+        : [0.83, 0.7, 0.56];
 
     return (
       <div className="flex items-center">
@@ -175,16 +189,29 @@ function MenubarIconStylePreview({
           isActive={isActive}
           sizePx={TRAY_PREVIEW_SIZE_PX}
         />
-        <svg aria-hidden viewBox="0 0 26 26" className={cn("shrink-0", textClass)} style={{ width: `${TRAY_PREVIEW_SIZE_PX}px`, height: `${TRAY_PREVIEW_SIZE_PX}px` }}>
+        <svg
+          aria-hidden
+          viewBox="0 0 26 26"
+          className={cn("shrink-0", textClass)}
+          style={{ width: `${TRAY_PREVIEW_SIZE_PX}px`, height: `${TRAY_PREVIEW_SIZE_PX}px` }}
+        >
           <circle
-            cx="13" cy="13" r="9"
-            fill="none" stroke="currentColor" strokeWidth="4"
+            cx="13"
+            cy="13"
+            r="9"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4"
             opacity={isActive ? 0.2 : 0.15}
           />
           {clamped > 0 && (
             <circle
-              cx="13" cy="13" r="9"
-              fill="none" stroke="currentColor" strokeWidth="4"
+              cx="13"
+              cy="13"
+              r="9"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4"
               strokeLinecap="butt"
               pathLength="100"
               strokeDasharray={`${Math.round(clamped * 100)} 100`}
@@ -210,14 +237,9 @@ function SortablePluginItem({
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: plugin.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: plugin.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -243,7 +265,7 @@ function SortablePluginItem({
       className={cn(
         "flex items-center gap-3 px-3 py-2 rounded-md bg-card cursor-pointer",
         "border border-transparent",
-        isDragging && "opacity-50 border-border"
+        isDragging && "opacity-50 border-border",
       )}
     >
       <button
@@ -256,20 +278,12 @@ function SortablePluginItem({
         <GripVertical className="h-4 w-4" />
       </button>
 
-      <span
-        className={cn(
-          "flex-1 text-sm",
-          !plugin.enabled && "text-muted-foreground"
-        )}
-      >
+      <span className={cn("flex-1 text-sm", !plugin.enabled && "text-muted-foreground")}>
         {plugin.name}
       </span>
 
       {plugin.supportsAvatar && (
-        <span
-          className="flex items-center gap-1"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <input
             ref={fileInputRef}
             type="file"
@@ -285,7 +299,7 @@ function SortablePluginItem({
             className={cn(
               "size-6 rounded overflow-hidden flex items-center justify-center",
               "border border-border hover:border-foreground/40 transition-colors",
-              !plugin.avatarUrl && "bg-muted"
+              !plugin.avatarUrl && "bg-muted",
             )}
           >
             {plugin.avatarUrl ? (
@@ -340,16 +354,16 @@ interface SettingsPageProps {
   startOnLogin: boolean;
   onStartOnLoginChange: (value: boolean) => void;
   // Leaderboard
-  leaderboardHandle:       LeaderboardHandle;
-  leaderboardToken:        LeaderboardToken;
-  leaderboardWorkerUrl:    LeaderboardWorkerUrl;
-  leaderboardOptIn:        boolean;
-  leaderboardShareList:    string[];
-  onLeaderboardHandleChange:    (value: LeaderboardHandle)    => void;
-  onLeaderboardTokenChange:     (value: LeaderboardToken)     => void;
+  leaderboardHandle: LeaderboardHandle;
+  leaderboardToken: LeaderboardToken;
+  leaderboardWorkerUrl: LeaderboardWorkerUrl;
+  leaderboardOptIn: boolean;
+  leaderboardShareList: string[];
+  onLeaderboardHandleChange: (value: LeaderboardHandle) => void;
+  onLeaderboardTokenChange: (value: LeaderboardToken) => void;
   onLeaderboardWorkerUrlChange: (value: LeaderboardWorkerUrl) => void;
-  onLeaderboardOptInChange:     (value: boolean)              => void;
-  onLeaderboardShareListChange: (value: string[])             => void;
+  onLeaderboardOptInChange: (value: boolean) => void;
+  onLeaderboardShareListChange: (value: string[]) => void;
 }
 
 export function SettingsPage({
@@ -387,7 +401,7 @@ export function SettingsPage({
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -406,9 +420,7 @@ export function SettingsPage({
     <div className="py-3 space-y-4">
       <section>
         <h3 className="text-lg font-semibold mb-0">Auto Refresh</h3>
-        <p className="text-sm text-muted-foreground mb-2">
-          How obsessive are you
-        </p>
+        <p className="text-sm text-muted-foreground mb-2">How obsessive are you</p>
         <div className="bg-muted/50 rounded-lg p-1">
           <div className="flex gap-1" role="radiogroup" aria-label="Auto-update interval">
             {AUTO_UPDATE_OPTIONS.map((option) => {
@@ -433,9 +445,7 @@ export function SettingsPage({
       </section>
       <section>
         <h3 className="text-lg font-semibold mb-0">Usage Mode</h3>
-        <p className="text-sm text-muted-foreground mb-2">
-          Glass half full or half empty
-        </p>
+        <p className="text-sm text-muted-foreground mb-2">Glass half full or half empty</p>
         <div className="bg-muted/50 rounded-lg p-1">
           <div className="flex gap-1" role="radiogroup" aria-label="Usage display mode">
             {DISPLAY_MODE_OPTIONS.map((option) => {
@@ -460,9 +470,7 @@ export function SettingsPage({
       </section>
       <section>
         <h3 className="text-lg font-semibold mb-0">Reset Timers</h3>
-        <p className="text-sm text-muted-foreground mb-2">
-          Countdown or clock time
-        </p>
+        <p className="text-sm text-muted-foreground mb-2">Countdown or clock time</p>
         <div className="bg-muted/50 rounded-lg p-1">
           <div className="flex gap-1" role="radiogroup" aria-label="Reset timer display mode">
             {RESET_TIMER_DISPLAY_OPTIONS.map((option) => {
@@ -471,7 +479,8 @@ export function SettingsPage({
                 hour: "numeric",
                 minute: "2-digit",
               }).format(new Date(2026, 1, 2, 11, 4));
-              const example = option.value === "relative" ? "5h 12m" : `today at ${absoluteTimeExample}`;
+              const example =
+                option.value === "relative" ? "5h 12m" : `today at ${absoluteTimeExample}`;
               return (
                 <Button
                   key={option.value}
@@ -487,7 +496,7 @@ export function SettingsPage({
                   <span
                     className={cn(
                       "text-xs font-normal",
-                      isActive ? "text-primary-foreground/80" : "text-muted-foreground"
+                      isActive ? "text-primary-foreground/80" : "text-muted-foreground",
                     )}
                   >
                     {example}
@@ -500,9 +509,7 @@ export function SettingsPage({
       </section>
       <section>
         <h3 className="text-lg font-semibold mb-0">Menubar Icon</h3>
-        <p className="text-sm text-muted-foreground mb-2">
-          What shows in the menu bar
-        </p>
+        <p className="text-sm text-muted-foreground mb-2">What shows in the menu bar</p>
         <div className="bg-muted/50 rounded-lg p-1">
           <div className="flex gap-1" role="radiogroup" aria-label="Menubar icon style">
             {MENUBAR_ICON_STYLE_OPTIONS.map((option) => {
@@ -532,9 +539,7 @@ export function SettingsPage({
       </section>
       <section>
         <h3 className="text-lg font-semibold mb-0">App Theme</h3>
-        <p className="text-sm text-muted-foreground mb-2">
-          How it looks around here
-        </p>
+        <p className="text-sm text-muted-foreground mb-2">How it looks around here</p>
         <div className="bg-muted/50 rounded-lg p-1">
           <div className="flex gap-1" role="radiogroup" aria-label="Theme mode">
             {THEME_OPTIONS.map((option) => {
@@ -563,9 +568,7 @@ export function SettingsPage({
       />
       <section>
         <h3 className="text-lg font-semibold mb-0">Start on Login</h3>
-        <p className="text-sm text-muted-foreground mb-2">
-          PaceBar starts when you sign in
-        </p>
+        <p className="text-sm text-muted-foreground mb-2">PaceBar starts when you sign in</p>
         <label className="flex items-center gap-2 text-sm select-none text-foreground">
           <Checkbox
             key={`start-on-login-${startOnLogin}`}
@@ -632,7 +635,7 @@ export function SettingsPage({
               </label>
               <div className="space-y-1">
                 {plugins.map((plugin) => {
-                  const isShared = leaderboardShareList.includes(plugin.id)
+                  const isShared = leaderboardShareList.includes(plugin.id);
                   return (
                     <label
                       key={plugin.id}
@@ -642,15 +645,17 @@ export function SettingsPage({
                         checked={isShared}
                         onCheckedChange={(checked) => {
                           if (checked === true) {
-                            onLeaderboardShareListChange([...leaderboardShareList, plugin.id])
+                            onLeaderboardShareListChange([...leaderboardShareList, plugin.id]);
                           } else {
-                            onLeaderboardShareListChange(leaderboardShareList.filter((id) => id !== plugin.id))
+                            onLeaderboardShareListChange(
+                              leaderboardShareList.filter((id) => id !== plugin.id),
+                            );
                           }
                         }}
                       />
                       {plugin.name}
                     </label>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -659,9 +664,7 @@ export function SettingsPage({
       </section>
       <section>
         <h3 className="text-lg font-semibold mb-0">Plugins</h3>
-        <p className="text-sm text-muted-foreground mb-2">
-          Your AI coding lineup
-        </p>
+        <p className="text-sm text-muted-foreground mb-2">Your AI coding lineup</p>
         <div className="bg-muted/50 rounded-lg p-1 space-y-1">
           <DndContext
             sensors={sensors}

@@ -50,9 +50,7 @@ function VersionDisplay({
         </Button>
       );
     case "installing":
-      return (
-        <span className="text-xs text-muted-foreground">Installing...</span>
-      );
+      return <span className="text-xs text-muted-foreground">Installing...</span>;
     case "error":
       if (updateStatus.message === "Update check failed") {
         return (
@@ -125,8 +123,8 @@ export function PanelFooter({
           <button
             type="button"
             onClick={(event) => {
-              event.currentTarget.blur()
-              onRefreshAll()
+              event.currentTarget.blur();
+              onRefreshAll();
             }}
             className="text-xs text-muted-foreground tabular-nums hover:text-foreground transition-colors cursor-pointer"
             title="Refresh now"
@@ -134,14 +132,10 @@ export function PanelFooter({
             {countdownLabel}
           </button>
         ) : (
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {countdownLabel}
-          </span>
+          <span className="text-xs text-muted-foreground tabular-nums">{countdownLabel}</span>
         )}
       </div>
-      {showAbout && (
-        <AboutDialog version={version} onClose={onCloseAbout} />
-      )}
+      {showAbout && <AboutDialog version={version} onClose={onCloseAbout} />}
     </>
   );
 }

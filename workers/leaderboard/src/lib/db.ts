@@ -1,42 +1,42 @@
-import type { D1Database } from "@cloudflare/workers-types"
+import type { D1Database } from "@cloudflare/workers-types";
 
 export interface HacknightRow {
-  id:         number
-  number:     number
-  title:      string
-  is_special: number
-  starts_at:  string
-  ends_at:    string
+  id: number;
+  number: number;
+  title: string;
+  is_special: number;
+  starts_at: string;
+  ends_at: string;
 }
 
 export interface ReportRow {
-  id:               number
-  handle:           string
-  submitted_at:     string
-  window_type:      string
-  hacknight_id:     number | null
-  window_key:       string
-  tokens_used:      number
-  dollars_spent:    number
-  providers_active: number
-  score:            number
-  providers_json:   string
+  id: number;
+  handle: string;
+  submitted_at: string;
+  window_type: string;
+  hacknight_id: number | null;
+  window_key: string;
+  tokens_used: number;
+  dollars_spent: number;
+  providers_active: number;
+  score: number;
+  providers_json: string;
 }
 
 export interface LeaderboardEntry {
-  rank:             number
-  handle:           string
-  tokens_used:      number
-  dollars_spent:    number
-  providers_active: number
-  score:            number
+  rank: number;
+  handle: string;
+  tokens_used: number;
+  dollars_spent: number;
+  providers_active: number;
+  score: number;
 }
 
 // ─── Hacknights ──────────────────────────────────────────────────────────────
 
 export async function upsertHacknight(
   db: D1Database,
-  row: Omit<HacknightRow, "id">
+  row: Omit<HacknightRow, "id">,
 ): Promise<void> {
   await db
     .prepare(`
@@ -49,17 +49,14 @@ export async function upsertHacknight(
         ends_at    = excluded.ends_at
     `)
     .bind(row.number, row.title, row.is_special, row.starts_at, row.ends_at)
-    .run()
+    .run();
 }
 
 export async function getHacknightByNumber(
   db: D1Database,
-  number: number
+  number: number,
 ): Promise<HacknightRow | null> {
-  return db
-    .prepare("SELECT * FROM hacknights WHERE number = ?")
-    .bind(number)
-    .first<HacknightRow>()
+  return db.prepare("SELECT * FROM hacknights WHERE number = ?").bind(number).first<HacknightRow>();
 }
 
 /**
@@ -67,27 +64,24 @@ export async function getHacknightByNumber(
  */
 export async function getHacknightForTime(
   db: D1Database,
-  isoTime: string
+  isoTime: string,
 ): Promise<HacknightRow | null> {
   return db
     .prepare("SELECT * FROM hacknights WHERE starts_at <= ? AND ends_at > ? LIMIT 1")
     .bind(isoTime, isoTime)
-    .first<HacknightRow>()
+    .first<HacknightRow>();
 }
 
 export async function listHacknights(db: D1Database): Promise<HacknightRow[]> {
   const { results } = await db
     .prepare("SELECT * FROM hacknights ORDER BY number DESC")
-    .all<HacknightRow>()
-  return results
+    .all<HacknightRow>();
+  return results;
 }
 
 // ─── Reports ─────────────────────────────────────────────────────────────────
 
-export async function upsertReport(
-  db: D1Database,
-  row: Omit<ReportRow, "id">
-): Promise<void> {
+export async function upsertReport(db: D1Database, row: Omit<ReportRow, "id">): Promise<void> {
   await db
     .prepare(`
       INSERT INTO reports
@@ -103,30 +97,36 @@ export async function upsertReport(
         providers_json   = excluded.providers_json
     `)
     .bind(
-      row.handle, row.submitted_at, row.window_type,
-      row.hacknight_id, row.window_key,
-      row.tokens_used, row.dollars_spent,
-      row.providers_active, row.score, row.providers_json
+      row.handle,
+      row.submitted_at,
+      row.window_type,
+      row.hacknight_id,
+      row.window_key,
+      row.tokens_used,
+      row.dollars_spent,
+      row.providers_active,
+      row.score,
+      row.providers_json,
     )
-    .run()
+    .run();
 }
 
-export type LeaderboardMetric = "tokens" | "dollars" | "providers" | "score"
+export type LeaderboardMetric = "tokens" | "dollars" | "providers" | "score";
 
 const METRIC_COL: Record<LeaderboardMetric, string> = {
-  tokens:    "tokens_used",
-  dollars:   "dollars_spent",
+  tokens: "tokens_used",
+  dollars: "dollars_spent",
   providers: "providers_active",
-  score:     "score",
-}
+  score: "score",
+};
 
 export async function getLeaderboard(
   db: D1Database,
   windowKey: string,
   metric: LeaderboardMetric = "tokens",
-  limit = 50
+  limit = 50,
 ): Promise<LeaderboardEntry[]> {
-  const col = METRIC_COL[metric]
+  const col = METRIC_COL[metric];
   const { results } = await db
     .prepare(`
       SELECT
@@ -142,6 +142,6 @@ export async function getLeaderboard(
       LIMIT ?
     `)
     .bind(windowKey, limit)
-    .all<LeaderboardEntry>()
-  return results
+    .all<LeaderboardEntry>();
+  return results;
 }
