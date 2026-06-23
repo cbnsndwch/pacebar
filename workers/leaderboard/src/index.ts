@@ -1,6 +1,11 @@
 import type { D1Database, ExecutionContext, ScheduledController } from "@cloudflare/workers-types";
 
-import { upsertHacknight } from "./lib/db";
+import {
+  getSyncState,
+  recordSyncFailure,
+  recordSyncSuccess,
+  upsertHacknight,
+} from "./lib/db";
 import { fetchLumaHacknights } from "./lib/luma";
 import {
   handleHacknightByNumber,
@@ -40,6 +45,48 @@ function requireToken(req: Request, env: Env): boolean {
   return token === env.INVITE_TOKEN;
 }
 
+/**
+ * Sync the Luma calendar into D1. Shared by the daily cron and the ad-hoc
+ * POST /api/v1/sync route. Records success/failure in sync_state and re-throws
+ * on any failure so the caller (cron) is marked unhealthy.
+ */
+async function runSync(env: Env): Promise<{ upserted: number; total: number }> {
+  const startedAt = new Date().toISOString();
+  try {
+    const events = await fetchLumaHacknights(env.LUMA_ICAL_URL);
+
+    const results = await Promise.allSettled(
+      events.map((e) =>
+        upsertHacknight(env.DB, {
+          number: e.number,
+          title: e.title,
+          is_special: e.is_special ? 1 : 0,
+          starts_at: e.starts_at,
+          ends_at: e.ends_at,
+        }),
+      ),
+    );
+
+    const ok = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.filter((r) => r.status === "rejected").length;
+    console.log(`Luma sync: ${ok} upserted, ${failed} failed (${events.length} total events)`);
+
+    // Surface partial failure so the cron run is marked unhealthy.
+    if (failed > 0) {
+      throw new Error(`Luma sync: ${failed}/${events.length} upserts failed`);
+    }
+
+    await recordSyncSuccess(env.DB, ok, startedAt);
+    return { upserted: ok, total: events.length };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    // Best-effort record; don't let a logging failure mask the real error.
+    await recordSyncFailure(env.DB, message, startedAt).catch(() => {});
+    console.error("Luma sync failed:", err);
+    throw err;
+  }
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     // Preflight
@@ -50,9 +97,11 @@ export default {
     const url = new URL(req.url);
     const pathname = url.pathname.replace(/\/$/, "");
 
-    // Health — no auth needed
+    // Health — no auth needed. Surfaces the last Luma sync so a silently
+    // broken cron is visible without digging through CF logs.
     if (pathname === "/api/v1/health") {
-      return json({ ok: true, ts: new Date().toISOString() });
+      const sync = await getSyncState(env.DB).catch(() => null);
+      return json({ ok: true, ts: new Date().toISOString(), sync });
     }
 
     // All other routes require the invite token
@@ -63,6 +112,16 @@ export default {
     // POST /api/v1/report
     if (req.method === "POST" && pathname === "/api/v1/report") {
       return cors(await handleReport(req, env.DB));
+    }
+
+    // POST /api/v1/sync — ad-hoc Luma sync (same work the daily cron does)
+    if (req.method === "POST" && pathname === "/api/v1/sync") {
+      try {
+        const result = await runSync(env);
+        return json({ ok: true, ...result });
+      } catch (err) {
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 502);
+      }
     }
 
     // GET /api/v1/leaderboard
@@ -89,31 +148,10 @@ export default {
     return json({ error: "not found" }, 404);
   },
 
-  // Scheduled cron — sync Luma calendar daily
+  // Scheduled cron — sync Luma calendar daily. runSync re-throws on failure so
+  // Cloudflare marks the invocation as failed (visible in the dashboard) rather
+  // than silently swallowing it.
   async scheduled(_ctrl: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
-    const url = env.LUMA_ICAL_URL ?? "https://api.lu.ma/ical/v1/calendar/hello_miami";
-    let events;
-    try {
-      events = await fetchLumaHacknights(url);
-    } catch (err) {
-      console.error("Luma sync failed:", err);
-      return;
-    }
-
-    const results = await Promise.allSettled(
-      events.map((e) =>
-        upsertHacknight(env.DB, {
-          number: e.number,
-          title: e.title,
-          is_special: e.is_special ? 1 : 0,
-          starts_at: e.starts_at,
-          ends_at: e.ends_at,
-        }),
-      ),
-    );
-
-    const ok = results.filter((r) => r.status === "fulfilled").length;
-    const failed = results.filter((r) => r.status === "rejected").length;
-    console.log(`Luma sync: ${ok} upserted, ${failed} failed (${events.length} total events)`);
+    await runSync(env);
   },
 };

@@ -28,3 +28,12 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE INDEX IF NOT EXISTS idx_reports_window_key  ON reports(window_key);
 CREATE INDEX IF NOT EXISTS idx_reports_handle      ON reports(handle);
 CREATE INDEX IF NOT EXISTS idx_reports_hacknight   ON reports(hacknight_id);
+
+-- Single-row record of the most recent Luma calendar sync (cron health).
+CREATE TABLE IF NOT EXISTS sync_state (
+  id              INTEGER PRIMARY KEY CHECK (id = 1),
+  last_attempt_at TEXT,
+  last_ok_at      TEXT,
+  last_count      INTEGER,
+  last_error      TEXT
+);

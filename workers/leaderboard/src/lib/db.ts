@@ -72,6 +72,19 @@ export async function getHacknightForTime(
     .first<HacknightRow>();
 }
 
+/** Upcoming published sessions, soonest first. */
+export async function getUpcomingHacknights(
+  db: D1Database,
+  isoTime: string,
+  limit = 5,
+): Promise<HacknightRow[]> {
+  const { results } = await db
+    .prepare("SELECT * FROM hacknights WHERE starts_at > ? ORDER BY starts_at ASC LIMIT ?")
+    .bind(isoTime, limit)
+    .all<HacknightRow>();
+  return results;
+}
+
 export async function listHacknights(db: D1Database): Promise<HacknightRow[]> {
   const { results } = await db
     .prepare("SELECT * FROM hacknights ORDER BY number DESC")
@@ -119,6 +132,57 @@ const METRIC_COL: Record<LeaderboardMetric, string> = {
   providers: "providers_active",
   score: "score",
 };
+
+// ─── Sync state ──────────────────────────────────────────────────────────────
+
+export interface SyncStateRow {
+  last_attempt_at: string | null;
+  last_ok_at: string | null;
+  last_count: number | null;
+  last_error: string | null;
+}
+
+/** Record a successful Luma sync (clears any prior error). */
+export async function recordSyncSuccess(
+  db: D1Database,
+  count: number,
+  at: string,
+): Promise<void> {
+  await db
+    .prepare(`
+      INSERT INTO sync_state (id, last_attempt_at, last_ok_at, last_count, last_error)
+      VALUES (1, ?, ?, ?, NULL)
+      ON CONFLICT(id) DO UPDATE SET
+        last_attempt_at = excluded.last_attempt_at,
+        last_ok_at      = excluded.last_ok_at,
+        last_count      = excluded.last_count,
+        last_error      = NULL
+    `)
+    .bind(at, at, count)
+    .run();
+}
+
+/** Record a failed Luma sync, preserving the last successful sync info. */
+export async function recordSyncFailure(
+  db: D1Database,
+  message: string,
+  at: string,
+): Promise<void> {
+  await db
+    .prepare(`
+      INSERT INTO sync_state (id, last_attempt_at, last_ok_at, last_count, last_error)
+      VALUES (1, ?, NULL, NULL, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        last_attempt_at = excluded.last_attempt_at,
+        last_error      = excluded.last_error
+    `)
+    .bind(at, message.slice(0, 500))
+    .run();
+}
+
+export async function getSyncState(db: D1Database): Promise<SyncStateRow | null> {
+  return db.prepare("SELECT * FROM sync_state WHERE id = 1").first<SyncStateRow>();
+}
 
 export async function getLeaderboard(
   db: D1Database,
