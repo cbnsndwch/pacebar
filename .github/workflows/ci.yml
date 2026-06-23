@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -39,6 +41,7 @@ jobs:
       - uses: swatinem/rust-cache@v2.9.1
         with:
           workspaces: "./src-tauri -> target"
+          cache-on-failure: true
       - uses: oven-sh/setup-bun@v2.2.0
         with:
           bun-version: latest
