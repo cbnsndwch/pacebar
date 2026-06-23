@@ -13,6 +13,7 @@ import {
   type LeaderboardWindow,
 } from "@/lib/leaderboard-api";
 import { cn } from "@/lib/utils";
+import { ErrorReport } from "@/components/error-report";
 import { useAppPreferencesStore } from "@/stores/app-preferences-store";
 
 const WINDOW_OPTIONS: { value: LeaderboardWindow; label: string }[] = [
@@ -263,7 +264,18 @@ export function LeaderboardPage() {
 
       {/* Results */}
       {error ? (
-        <p className="text-xs text-destructive px-1">{error}</p>
+        <ErrorReport
+          context={{
+            feature: "leaderboard",
+            error,
+            details: {
+              workerUrl: leaderboardWorkerUrl,
+              window: selectedWindow,
+              metric: selectedMetric,
+              optIn: leaderboardOptIn,
+            },
+          }}
+        />
       ) : loading && entries.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-4">Loading…</p>
       ) : entries.length === 0 ? (
