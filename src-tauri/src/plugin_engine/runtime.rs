@@ -3,7 +3,7 @@ use crate::plugin_engine::manifest::LoadedPlugin;
 use crate::plugin_engine::profile_discovery::{self, ProfileInstance};
 use rquickjs::{Array, Context, Ctx, Error, Object, Promise, Runtime, Value};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
@@ -54,18 +54,17 @@ pub struct PluginOutput {
 pub fn run_probe(
     plugin: &LoadedPlugin,
     instance: &ProfileInstance,
-    app_data_dir: &PathBuf,
+    app_data_dir: &Path,
     app_version: &str,
 ) -> PluginOutput {
-    let provider_id =
-        profile_discovery::full_provider_id(&plugin.manifest.id, &instance.id_suffix);
+    let provider_id = profile_discovery::full_provider_id(&plugin.manifest.id, &instance.id_suffix);
     let display_name = profile_discovery::full_display_name(
         &plugin.manifest.name,
         instance.display_label.as_deref(),
     );
     let entry_script = plugin.entry_script.clone();
     let icon_url = plugin.icon_data_url.clone();
-    let app_data = app_data_dir.clone();
+    let app_data = app_data_dir.to_path_buf();
     let env_overrides = instance.env_overrides.clone();
     let plugin_id = plugin.manifest.id.clone();
 
@@ -358,7 +357,8 @@ fn parse_lines(result: &Object) -> Result<Vec<MetricLine>, String> {
                                     // ISO-like but missing timezone: assume UTC.
                                     let is_missing_tz =
                                         value.contains('T') && !value.ends_with('Z') && {
-                                            let tail = value.splitn(2, 'T').nth(1).unwrap_or("");
+                                            let tail =
+                                                value.split_once('T').map(|x| x.1).unwrap_or("");
                                             !tail.contains('+') && !tail.contains('-')
                                         };
                                     if is_missing_tz {
@@ -533,7 +533,12 @@ mod tests {
             };
             "#,
         );
-        let output = run_probe(&plugin, &ProfileInstance::anonymous(), &temp_app_dir("sync"), "0.0.0");
+        let output = run_probe(
+            &plugin,
+            &ProfileInstance::anonymous(),
+            &temp_app_dir("sync"),
+            "0.0.0",
+        );
         assert_eq!(error_text(output), "boom");
     }
 
@@ -548,7 +553,12 @@ mod tests {
             };
             "#,
         );
-        let output = run_probe(&plugin, &ProfileInstance::anonymous(), &temp_app_dir("async"), "0.0.0");
+        let output = run_probe(
+            &plugin,
+            &ProfileInstance::anonymous(),
+            &temp_app_dir("async"),
+            "0.0.0",
+        );
         assert_eq!(error_text(output), "boom");
     }
 

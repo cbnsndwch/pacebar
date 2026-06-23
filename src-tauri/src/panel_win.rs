@@ -168,7 +168,9 @@ pub fn position_panel_at_tray_icon(
     let conf: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json"))
         .expect("tauri.conf.json must be valid JSON");
     let conf_logical_w = conf["app"]["windows"][0]["width"].as_f64().unwrap_or(400.0);
-    let conf_logical_h = conf["app"]["windows"][0]["height"].as_f64().unwrap_or(500.0);
+    let conf_logical_h = conf["app"]["windows"][0]["height"]
+        .as_f64()
+        .unwrap_or(500.0);
 
     let outer = window.outer_size().ok();
     let panel_phys_w = outer

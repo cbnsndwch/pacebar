@@ -40,7 +40,10 @@ pub fn discover(name: &str) -> Vec<ProfileInstance> {
     match name {
         "claude-profiles" => discover_claude_profiles(),
         other => {
-            log::warn!("unknown profile discovery '{}'; falling back to single instance", other);
+            log::warn!(
+                "unknown profile discovery '{}'; falling back to single instance",
+                other
+            );
             vec![ProfileInstance::anonymous()]
         }
     }
@@ -173,7 +176,10 @@ mod tests {
     fn full_display_name_collapses_no_label() {
         assert_eq!(full_display_name("Claude", None), "Claude");
         assert_eq!(full_display_name("Claude", Some("")), "Claude");
-        assert_eq!(full_display_name("Claude", Some("work")), "Claude \u{00b7} work");
+        assert_eq!(
+            full_display_name("Claude", Some("work")),
+            "Claude \u{00b7} work"
+        );
     }
 
     #[test]

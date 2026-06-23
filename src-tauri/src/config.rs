@@ -29,7 +29,7 @@ static RESOLVED_PROXY: OnceLock<Option<ResolvedProxy>> = OnceLock::new();
 /// Returns the resolved proxy, or None if disabled/invalid/missing.
 /// Loaded once from disk on first call; subsequent calls are zero-cost.
 pub fn get_resolved_proxy() -> Option<&'static ResolvedProxy> {
-    RESOLVED_PROXY.get_or_init(|| load_and_resolve_proxy()).as_ref()
+    RESOLVED_PROXY.get_or_init(load_and_resolve_proxy).as_ref()
 }
 
 /// Config file path: ~/.pacebar/config.json
@@ -47,12 +47,19 @@ fn load_and_resolve_proxy() -> Option<ResolvedProxy> {
         Ok(contents) => match serde_json::from_str::<AppConfig>(&contents) {
             Ok(cfg) => cfg,
             Err(e) => {
-                log::warn!("[config] failed to parse {}: {}, using defaults", path.display(), e);
+                log::warn!(
+                    "[config] failed to parse {}: {}, using defaults",
+                    path.display(),
+                    e
+                );
                 return None;
             }
         },
         Err(_) => {
-            log::debug!("[config] no config file at {}, using defaults", path.display());
+            log::debug!(
+                "[config] no config file at {}, using defaults",
+                path.display()
+            );
             return None;
         }
     };
