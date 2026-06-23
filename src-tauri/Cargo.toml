@@ -1,6 +1,6 @@
 [package]
 name = "pacebar"
-version = "0.8.0"
+version = "0.9.0"
 description = "PaceBar — pace your AI subscription usage"
 authors = ["Serge the Lion <oss@cbnsndwch.io>"]
 edition = "2024"
