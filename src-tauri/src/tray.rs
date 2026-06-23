@@ -1,7 +1,7 @@
 use tauri::image::Image;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::path::BaseDirectory;
-use tauri::tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_store::StoreExt;
 
@@ -193,10 +193,18 @@ pub fn create(app_handle: &AppHandle) -> tauri::Result<()> {
         .on_tray_icon_event(|tray, event| {
             let app_handle = tray.app_handle();
 
-            if let TrayIconEvent::Click { button_state, .. } = event
+            // Only the left button toggles the panel. Right-click is left alone
+            // so the OS shows the context menu (Quit etc.) — toggling the panel
+            // here would steal focus and dismiss the menu before it can be used.
+            if let TrayIconEvent::Click {
+                button,
+                button_state,
+                ..
+            } = event
+                && button == MouseButton::Left
                 && button_state == MouseButtonState::Up
             {
-                log::debug!("tray click");
+                log::debug!("tray left click");
                 toggle_panel(app_handle);
             }
         })
