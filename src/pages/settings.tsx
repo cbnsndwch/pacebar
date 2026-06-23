@@ -37,6 +37,7 @@ import {
   type ResetTimerDisplayMode,
   type ThemeMode,
 } from "@/lib/settings";
+import type { CloudflareAIDisplayMode } from "@/hooks/use-cloudflare-ai-settings";
 import type { TraySettingsPreview } from "@/hooks/app/use-tray-icon";
 import { cn } from "@/lib/utils";
 
@@ -364,6 +365,13 @@ interface SettingsPageProps {
   onLeaderboardWorkerUrlChange: (value: LeaderboardWorkerUrl) => void;
   onLeaderboardOptInChange: (value: boolean) => void;
   onLeaderboardShareListChange: (value: string[]) => void;
+  // Cloudflare AI
+  cloudflareAIDisplay: CloudflareAIDisplayMode;
+  cloudflareAIShowLimit: boolean;
+  cloudflareAICapOverride: number | null;
+  onCloudflareAIDisplayChange: (value: CloudflareAIDisplayMode) => void;
+  onCloudflareAIShowLimitChange: (value: boolean) => void;
+  onCloudflareAICapOverrideChange: (value: number | null) => void;
 }
 
 export function SettingsPage({
@@ -396,6 +404,13 @@ export function SettingsPage({
   onLeaderboardWorkerUrlChange,
   onLeaderboardOptInChange,
   onLeaderboardShareListChange,
+  // Cloudflare AI
+  cloudflareAIDisplay,
+  cloudflareAIShowLimit,
+  cloudflareAICapOverride,
+  onCloudflareAIDisplayChange,
+  onCloudflareAIShowLimitChange,
+  onCloudflareAICapOverrideChange,
 }: SettingsPageProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -660,6 +675,67 @@ export function SettingsPage({
               </div>
             </div>
           )}
+        </div>
+      </section>
+      <section>
+        <h3 className="text-lg font-semibold mb-0">Cloudflare AI (Gateway)</h3>
+        <p className="text-sm text-muted-foreground mb-2">
+          What shows as the main metric
+        </p>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Display
+            </label>
+            <div className="bg-muted/50 rounded-lg p-1">
+              <div className="flex gap-1" role="radiogroup" aria-label="Cloudflare AI display mode">
+                {[
+                  { value: "spent" as CloudflareAIDisplayMode, label: "Spent" },
+                  { value: "remaining" as CloudflareAIDisplayMode, label: "Remaining" },
+                  { value: "burn" as CloudflareAIDisplayMode, label: "Daily burn" },
+                  { value: "percent" as CloudflareAIDisplayMode, label: "Percent" },
+                ].map((option) => {
+                  const isActive = option.value === cloudflareAIDisplay;
+                  return (
+                    <Button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={isActive}
+                      variant={isActive ? "default" : "outline"}
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => onCloudflareAIDisplayChange(option.value)}
+                    >
+                      {option.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm select-none text-foreground">
+            <Checkbox
+              checked={cloudflareAIShowLimit}
+              onCheckedChange={(checked) => onCloudflareAIShowLimitChange(checked === true)}
+            />
+            Show limit (e.g. "$31 of $50,000")
+          </label>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Custom cap / limit (USD)
+            </label>
+            <input
+              type="number"
+              value={cloudflareAICapOverride ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                onCloudflareAICapOverrideChange(val ? Number(val) : null);
+              }}
+              placeholder="Leave empty to use gateway's cap"
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
         </div>
       </section>
       <section>

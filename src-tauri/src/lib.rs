@@ -602,6 +602,49 @@ fn set_profile_avatar(
     Ok(())
 }
 
+/// Write plugin config file to `{app_data_dir}/plugins_data/{plugin_id}/config.json`
+#[tauri::command]
+fn write_plugin_config(
+    app_handle: tauri::AppHandle,
+    plugin_id: String,
+    data: String,
+) -> Result<(), String> {
+    use tauri::Manager;
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("failed to get app data dir: {}", e))?;
+    let plugin_data_dir = app_data_dir.join("plugins_data").join(&plugin_id);
+    std::fs::create_dir_all(&plugin_data_dir)
+        .map_err(|e| format!("failed to create plugin data dir: {}", e))?;
+    let path = plugin_data_dir.join("config.json");
+    std::fs::write(&path, data.as_bytes())
+        .map_err(|e| format!("failed to write plugin config: {}", e))?;
+    log::info!("config written for plugin '{}'", plugin_id);
+    Ok(())
+}
+
+/// Read plugin config file from `{app_data_dir}/plugins_data/{plugin_id}/config.json`
+/// Returns `null` if the file does not exist.
+#[tauri::command]
+fn read_plugin_config(
+    app_handle: tauri::AppHandle,
+    plugin_id: String,
+) -> Result<Option<String>, String> {
+    use tauri::Manager;
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("failed to get app data dir: {}", e))?;
+    let path = app_data_dir.join("plugins_data").join(&plugin_id).join("config.json");
+    if !path.exists() {
+        return Ok(None);
+    }
+    let data = std::fs::read_to_string(&path)
+        .map_err(|e| format!("failed to read plugin config: {}", e))?;
+    Ok(Some(data))
+}
+
 /// Write leaderboard preferences to `{app_data_dir}/leaderboard-prefs.json`
 /// so the leaderboard plugin.js can read them from the QuickJS sandbox.
 #[tauri::command]
@@ -682,6 +725,8 @@ pub fn run() {
             set_profile_avatar,
             remove_profile_avatar,
             write_leaderboard_prefs,
+            write_plugin_config,
+            read_plugin_config,
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
