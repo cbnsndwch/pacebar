@@ -37,7 +37,10 @@ import {
   type ResetTimerDisplayMode,
   type ThemeMode,
 } from "@/lib/settings";
-import type { CloudflareAIDisplayMode } from "@/hooks/use-cloudflare-ai-settings";
+import type {
+  CloudflareAIDisplayMode,
+  CloudflareAIWindow,
+} from "@/hooks/use-cloudflare-ai-settings";
 import type { TraySettingsPreview } from "@/hooks/app/use-tray-icon";
 import { cn } from "@/lib/utils";
 
@@ -369,9 +372,15 @@ interface SettingsPageProps {
   cloudflareAIDisplay: CloudflareAIDisplayMode;
   cloudflareAIShowLimit: boolean;
   cloudflareAICapOverride: number | null;
+  cloudflareAIGatewayUrl: string | null;
+  cloudflareAIRouterKey: string | null;
+  cloudflareAIWindow: CloudflareAIWindow;
   onCloudflareAIDisplayChange: (value: CloudflareAIDisplayMode) => void;
   onCloudflareAIShowLimitChange: (value: boolean) => void;
   onCloudflareAICapOverrideChange: (value: number | null) => void;
+  onCloudflareAIGatewayUrlChange: (value: string | null) => void;
+  onCloudflareAIRouterKeyChange: (value: string | null) => void;
+  onCloudflareAIWindowChange: (value: CloudflareAIWindow) => void;
 }
 
 export function SettingsPage({
@@ -408,9 +417,15 @@ export function SettingsPage({
   cloudflareAIDisplay,
   cloudflareAIShowLimit,
   cloudflareAICapOverride,
+  cloudflareAIGatewayUrl,
+  cloudflareAIRouterKey,
+  cloudflareAIWindow,
   onCloudflareAIDisplayChange,
   onCloudflareAIShowLimitChange,
   onCloudflareAICapOverrideChange,
+  onCloudflareAIGatewayUrlChange,
+  onCloudflareAIRouterKeyChange,
+  onCloudflareAIWindowChange,
 }: SettingsPageProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -679,8 +694,64 @@ export function SettingsPage({
       </section>
       <section>
         <h3 className="text-lg font-semibold mb-0">Cloudflare AI (Gateway)</h3>
-        <p className="text-sm text-muted-foreground mb-2">What shows as the main metric</p>
+        <p className="text-sm text-muted-foreground mb-2">
+          Connect your self-hosted AI gateway
+        </p>
         <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Gateway URL
+            </label>
+            <input
+              type="text"
+              value={cloudflareAIGatewayUrl ?? ""}
+              onChange={(e) => onCloudflareAIGatewayUrlChange(e.target.value || null)}
+              placeholder="https://your-gateway.workers.dev"
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Router Key
+            </label>
+            <input
+              type="password"
+              value={cloudflareAIRouterKey ?? ""}
+              onChange={(e) => onCloudflareAIRouterKeyChange(e.target.value || null)}
+              placeholder="Your gateway secret key"
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Token Window (menu bar)
+            </label>
+            <div className="bg-muted/50 rounded-lg p-1">
+              <div className="flex gap-1" role="radiogroup" aria-label="Cloudflare AI token window">
+                {[
+                  { value: "1h" as CloudflareAIWindow, label: "Last hour" },
+                  { value: "24h" as CloudflareAIWindow, label: "Last 24h" },
+                  { value: "7d" as CloudflareAIWindow, label: "Last 7d" },
+                ].map((option) => {
+                  const isActive = option.value === cloudflareAIWindow;
+                  return (
+                    <Button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={isActive}
+                      variant={isActive ? "default" : "outline"}
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => onCloudflareAIWindowChange(option.value)}
+                    >
+                      {option.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Display

@@ -159,11 +159,17 @@ export function AppContent({
         cloudflareAIDisplay={cfAISettings.display}
         cloudflareAIShowLimit={cfAISettings.showLimit}
         cloudflareAICapOverride={cfAISettings.capOverride}
+        cloudflareAIGatewayUrl={cfAISettings.gatewayUrl}
+        cloudflareAIRouterKey={cfAISettings.routerKey}
+        cloudflareAIWindow={cfAISettings.window}
         onCloudflareAIDisplayChange={(v) => saveCfAISettings({ ...cfAISettings, display: v })}
         onCloudflareAIShowLimitChange={(v) => saveCfAISettings({ ...cfAISettings, showLimit: v })}
         onCloudflareAICapOverrideChange={(v) =>
           saveCfAISettings({ ...cfAISettings, capOverride: v })
         }
+        onCloudflareAIGatewayUrlChange={(v) => saveCfAISettings({ ...cfAISettings, gatewayUrl: v })}
+        onCloudflareAIRouterKeyChange={(v) => saveCfAISettings({ ...cfAISettings, routerKey: v })}
+        onCloudflareAIWindowChange={(v) => saveCfAISettings({ ...cfAISettings, window: v })}
       />
     );
   }
