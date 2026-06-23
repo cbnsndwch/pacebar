@@ -12,23 +12,31 @@ describe("cloudflare-ai plugin", () => {
     vi.resetModules();
   });
 
-  it("throws when gateway URL is not configured", async () => {
+  it("returns a status line when gateway URL is not configured", async () => {
     const ctx = makeCtx();
     ctx.host.env.get.mockReturnValue(null);
     ctx.host.fs.exists.mockReturnValue(false);
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow("Gateway URL not configured");
+    const result = plugin.probe(ctx);
+    const status = result.lines.find((l) => l.label === "Status");
+    expect(status).toBeTruthy();
+    expect(status.text).toBe("Needs Gateway");
+    expect(status.color).toBe("#f59e0b");
   });
 
-  it("throws when auth token is missing", async () => {
+  it("returns a status line when auth token is missing", async () => {
     const ctx = makeCtx();
     ctx.host.env.get.mockImplementation((name) => {
       if (name === "CF_GATEWAY_URL") return "https://cf-ai-gateway.flux-505.workers.dev";
       if (name === "CF_ROUTER_KEY") return null;
       return null;
     });
+    ctx.host.fs.exists.mockReturnValue(false);
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow("Auth key missing");
+    const result = plugin.probe(ctx);
+    const status = result.lines.find((l) => l.label === "Status");
+    expect(status).toBeTruthy();
+    expect(status.text).toBe("Auth needed");
   });
 
   it("uses env var for gateway URL", async () => {
@@ -111,7 +119,7 @@ describe("cloudflare-ai plugin", () => {
     );
   });
 
-  it("renders spend progress correctly", async () => {
+  it("renders spend as a dollar text line by default", async () => {
     const ctx = makeCtx();
     ctx.host.env.get.mockImplementation((name) => {
       if (name === "CF_GATEWAY_URL") return "https://example.com";
@@ -135,9 +143,75 @@ describe("cloudflare-ai plugin", () => {
     const result = plugin.probe(ctx);
     const spendLine = result.lines.find((l) => l.label === "Spend");
     expect(spendLine).toBeTruthy();
-    expect(spendLine.used).toBe(1234.56);
-    expect(spendLine.limit).toBe(50000);
-    expect(spendLine.format).toEqual({ kind: "dollars" });
+    expect(spendLine.type).toBe("text");
+    expect(spendLine.value).toBe("$1234.56");
+  });
+
+  it("renders the remaining amount when display is 'remaining'", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://example.com";
+      if (name === "CF_ROUTER_KEY") return "key";
+      return null;
+    });
+    ctx.host.fs.writeText(
+      "/tmp/pacebar-test/plugin/config.json",
+      JSON.stringify({ display: "remaining" }),
+    );
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 50000, spent_usd: 1234.56, burn_per_day_usd: 42.5 }),
+    });
+    const plugin = await loadPlugin();
+    const result = plugin.probe(ctx);
+    const remainingLine = result.lines.find((l) => l.label === "Remaining");
+    expect(remainingLine).toBeTruthy();
+    expect(remainingLine.value).toBe("$48765.44");
+  });
+
+  it("appends the cap and honors capOverride when showLimit is set", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://example.com";
+      if (name === "CF_ROUTER_KEY") return "key";
+      return null;
+    });
+    ctx.host.fs.writeText(
+      "/tmp/pacebar-test/plugin/config.json",
+      JSON.stringify({ display: "spent", showLimit: true, capOverride: 1000 }),
+    );
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 50000, spent_usd: 250, burn_per_day_usd: 5 }),
+    });
+    const plugin = await loadPlugin();
+    const result = plugin.probe(ctx);
+    const spendLine = result.lines.find((l) => l.label === "Spend");
+    expect(spendLine).toBeTruthy();
+    expect(spendLine.value).toBe("$250.00 of $1000.00");
+  });
+
+  it("reads the router key from the config file when env is unset", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://example.com";
+      return null;
+    });
+    ctx.host.fs.writeText(
+      "/tmp/pacebar-test/plugin/config.json",
+      JSON.stringify({ routerKey: "file-key" }),
+    );
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer file-key" }),
+      }),
+    );
   });
 
   it("renders hosted-only badge when true", async () => {
@@ -213,7 +287,7 @@ describe("cloudflare-ai plugin", () => {
     expect(reqLine.value).toBe("1500 · 7.0M tokens");
   });
 
-  it("throws on 401 auth error", async () => {
+  it("returns a status line on 401 auth error", async () => {
     const ctx = makeCtx();
     ctx.host.env.get.mockImplementation((name) => {
       if (name === "CF_GATEWAY_URL") return "https://example.com";
@@ -222,10 +296,13 @@ describe("cloudflare-ai plugin", () => {
     });
     ctx.host.http.request.mockReturnValue({ status: 401, bodyText: "" });
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow("Auth failed");
+    const result = plugin.probe(ctx);
+    const status = result.lines.find((l) => l.label === "Status");
+    expect(status.text).toBe("Auth failed");
+    expect(status.color).toBe("#ef4444");
   });
 
-  it("throws on gateway error", async () => {
+  it("returns a status line on gateway error", async () => {
     const ctx = makeCtx();
     ctx.host.env.get.mockImplementation((name) => {
       if (name === "CF_GATEWAY_URL") return "https://example.com";
@@ -234,10 +311,14 @@ describe("cloudflare-ai plugin", () => {
     });
     ctx.host.http.request.mockReturnValue({ status: 500, bodyText: "Internal error" });
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow("Gateway error");
+    const result = plugin.probe(ctx);
+    const status = result.lines.find((l) => l.label === "Status");
+    expect(status.text).toBe("Error");
+    const http = result.lines.find((l) => l.label === "HTTP");
+    expect(http.value).toBe("500");
   });
 
-  it("throws on network failure", async () => {
+  it("returns a status line on network failure", async () => {
     const ctx = makeCtx();
     ctx.host.env.get.mockImplementation((name) => {
       if (name === "CF_GATEWAY_URL") return "https://example.com";
@@ -248,10 +329,12 @@ describe("cloudflare-ai plugin", () => {
       throw new Error("connection refused");
     });
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow("Connection failed");
+    const result = plugin.probe(ctx);
+    const status = result.lines.find((l) => l.label === "Status");
+    expect(status.text).toBe("Offline");
   });
 
-  it("throws on invalid JSON response", async () => {
+  it("returns a status line on invalid JSON response", async () => {
     const ctx = makeCtx();
     ctx.host.env.get.mockImplementation((name) => {
       if (name === "CF_GATEWAY_URL") return "https://example.com";
@@ -260,6 +343,8 @@ describe("cloudflare-ai plugin", () => {
     });
     ctx.host.http.request.mockReturnValue({ status: 200, bodyText: "not json" });
     const plugin = await loadPlugin();
-    expect(() => plugin.probe(ctx)).toThrow("Invalid response");
+    const result = plugin.probe(ctx);
+    const status = result.lines.find((l) => l.label === "Status");
+    expect(status.text).toBe("Invalid data");
   });
 });
