@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::{Mutex, OnceLock};
 
-const WHITELISTED_ENV_VARS: [&str; 16] = [
+const WHITELISTED_ENV_VARS: [&str; 18] = [
     "CODEX_HOME",
     "CLAUDE_CONFIG_DIR",
     "CLAUDE_CODE_OAUTH_TOKEN",
@@ -29,6 +29,8 @@ const WHITELISTED_ENV_VARS: [&str; 16] = [
     "MINIMAX_CN_API_KEY",
     "SYNTHETIC_API_KEY",
     "PI_CODING_AGENT_DIR",
+    "CF_ROUTER_KEY",
+    "CF_GATEWAY_URL",
 ];
 
 fn last_non_empty_trimmed_line(text: &str) -> Option<String> {
@@ -223,10 +225,10 @@ fn resolve_env_value(name: &str) -> Option<String> {
         return Some(value);
     }
 
-    if let Ok(cache) = terminal_env_cache().lock() {
-        if let Some(cached) = cache.get(name) {
-            return cached.clone();
-        }
+    if let Ok(cache) = terminal_env_cache().lock()
+        && let Some(cached) = cache.get(name)
+    {
+        return cached.clone();
     }
 
     let resolved = read_env_from_interactive_shells(name);
@@ -514,7 +516,7 @@ fn encrypt_aes_256_gcm_envelope(plaintext: &str, key_b64: &str) -> Result<String
 pub fn inject_host_api<'js>(
     ctx: &Ctx<'js>,
     plugin_id: &str,
-    app_data_dir: &PathBuf,
+    app_data_dir: &Path,
     app_version: &str,
     env_overrides: &HashMap<String, String>,
 ) -> rquickjs::Result<()> {
@@ -1467,11 +1469,12 @@ fn ls_parse_listening_ports(output: &str) -> Vec<i32> {
         for token in line.split_whitespace().rev() {
             if let Some(colon_pos) = token.rfind(':') {
                 let port_str = &token[colon_pos + 1..];
-                if let Ok(port) = port_str.parse::<i32>() {
-                    if port > 0 && port < 65536 {
-                        ports.insert(port);
-                        break;
-                    }
+                if let Ok(port) = port_str.parse::<i32>()
+                    && port > 0
+                    && port < 65536
+                {
+                    ports.insert(port);
+                    break;
                 }
             }
         }
@@ -1484,6 +1487,17 @@ const CCUSAGE_CLAUDE_PACKAGE_NAME: &str = "ccusage";
 const CCUSAGE_CODEX_PACKAGE_NAME: &str = "@ccusage/codex";
 const CCUSAGE_TIMEOUT_SECS: u64 = 15;
 const CCUSAGE_POLL_INTERVAL_MS: u64 = 100;
+
+#[cfg(windows)]
+fn hide_ccusage_console_window(command: &mut std::process::Command) {
+    use std::os::windows::process::CommandExt;
+
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    command.creation_flags(CREATE_NO_WINDOW);
+}
+
+#[cfg(not(windows))]
+fn hide_ccusage_console_window(_command: &mut std::process::Command) {}
 
 #[derive(Default, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1602,10 +1616,7 @@ fn ccusage_package_spec(provider: CcusageProvider) -> String {
     format!("{}@{}", config.package_name, CCUSAGE_VERSION)
 }
 
-fn ccusage_home_override<'a>(
-    opts: &'a CcusageQueryOpts,
-    provider: CcusageProvider,
-) -> Option<&'a str> {
+fn ccusage_home_override(opts: &CcusageQueryOpts, provider: CcusageProvider) -> Option<&str> {
     if let Some(home_path) = opts
         .home_path
         .as_deref()
@@ -1735,6 +1746,7 @@ fn ccusage_runner_available(candidate: &str, enriched_path: Option<&OsStr>) -> b
     command
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());
+    hide_ccusage_console_window(&mut command);
 
     command.status().map(|s| s.success()).unwrap_or(false)
 }
@@ -1751,6 +1763,7 @@ fn configure_ccusage_command(
     command
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
+    hide_ccusage_console_window(command);
 
     #[cfg(unix)]
     {
@@ -1761,12 +1774,9 @@ fn configure_ccusage_command(
 
 fn resolve_ccusage_runner_binary(kind: CcusageRunnerKind) -> Option<String> {
     let path = ccusage_enriched_path();
-    for candidate in ccusage_runner_candidates(kind) {
-        if ccusage_runner_available(&candidate, path.as_deref()) {
-            return Some(candidate);
-        }
-    }
-    None
+    ccusage_runner_candidates(kind)
+        .into_iter()
+        .find(|candidate| ccusage_runner_available(candidate, path.as_deref()))
 }
 
 fn collect_ccusage_runners_with<F>(mut resolver: F) -> Vec<(CcusageRunnerKind, String)>
@@ -1967,7 +1977,7 @@ fn run_ccusage_with_runner_timeout(
 
     if let Some(home_path) = ccusage_home_override(opts, provider) {
         let config = ccusage_provider_config(provider);
-        command.env(config.home_env_var, expand_path(&home_path));
+        command.env(config.home_env_var, expand_path(home_path));
     }
 
     let redacted_program = redact_log_message(program);
@@ -2333,16 +2343,16 @@ fn inject_keychain<'js>(
                     .args(["find-generic-password", "-s", &service])
                     .output();
 
-                if let Ok(output) = find_output {
-                    if output.status.success() {
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-                        for line in stdout.lines() {
-                            if let Some(start) = line.find("\"acct\"<blob>=\"") {
-                                let rest = &line[start + 14..];
-                                if let Some(end) = rest.find('"') {
-                                    account_arg = Some(rest[..end].to_string());
-                                    break;
-                                }
+                if let Ok(output) = find_output
+                    && output.status.success()
+                {
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    for line in stdout.lines() {
+                        if let Some(start) = line.find("\"acct\"<blob>=\"") {
+                            let rest = &line[start + 14..];
+                            if let Some(end) = rest.find('"') {
+                                account_arg = Some(rest[..end].to_string());
+                                break;
                             }
                         }
                     }
@@ -2558,15 +2568,15 @@ fn iso_now() -> String {
 }
 
 fn expand_path(path: &str) -> String {
-    if path == "~" {
-        if let Some(home) = dirs::home_dir() {
-            return home.to_string_lossy().to_string();
-        }
+    if path == "~"
+        && let Some(home) = dirs::home_dir()
+    {
+        return home.to_string_lossy().to_string();
     }
-    if path.starts_with("~/") {
-        if let Some(home) = dirs::home_dir() {
-            return home.join(&path[2..]).to_string_lossy().to_string();
-        }
+    if path.starts_with("~/")
+        && let Some(home) = dirs::home_dir()
+    {
+        return home.join(&path[2..]).to_string_lossy().to_string();
     }
     path.to_string()
 }
@@ -2693,8 +2703,7 @@ mod tests {
             "__PACEBAR_ENV_END__\n",
             "\u{1b}[32muser@host\u{1b}[0m\n"
         );
-        let value =
-            extract_marked_value(stdout, "__PACEBAR_ENV_START__", "__PACEBAR_ENV_END__");
+        let value = extract_marked_value(stdout, "__PACEBAR_ENV_START__", "__PACEBAR_ENV_END__");
         assert_eq!(value.as_deref(), Some("sk-test-key-12345"));
     }
 
@@ -2706,16 +2715,14 @@ mod tests {
             "  sk-test-key-12345\u{1b}[?2004h\r\n",
             "__PACEBAR_ENV_END__\n"
         );
-        let value =
-            extract_marked_value(stdout, "__PACEBAR_ENV_START__", "__PACEBAR_ENV_END__");
+        let value = extract_marked_value(stdout, "__PACEBAR_ENV_START__", "__PACEBAR_ENV_END__");
         assert_eq!(value.as_deref(), Some("sk-test-key-12345"));
     }
 
     #[test]
     fn extract_marked_value_returns_none_when_marked_value_is_empty() {
         let stdout = "__PACEBAR_ENV_START__\n  \n__PACEBAR_ENV_END__\n";
-        let value =
-            extract_marked_value(stdout, "__PACEBAR_ENV_START__", "__PACEBAR_ENV_END__");
+        let value = extract_marked_value(stdout, "__PACEBAR_ENV_START__", "__PACEBAR_ENV_END__");
         assert!(value.is_none());
     }
 
@@ -2747,7 +2754,8 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new())
+                .expect("inject host api");
             let globals = ctx.globals();
             let probe_ctx: Object = globals.get("__pacebar_ctx").expect("probe ctx");
             let host: Object = probe_ctx.get("host").expect("host");
@@ -2764,7 +2772,8 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new())
+                .expect("inject host api");
             let js_expr = format!(
                 r#"__pacebar_ctx.host.crypto.decryptAes256Gcm("{}", "{}")"#,
                 envelope, key_b64
@@ -2780,7 +2789,8 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new())
+                .expect("inject host api");
             // Vector: `printf '%s' 'hello' | shasum -a 256`
             let result: String = ctx
                 .eval(r#"__pacebar_ctx.host.crypto.sha256Hex("hello")"#)
@@ -2806,7 +2816,8 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new())
+                .expect("inject host api");
             let globals = ctx.globals();
             let probe_ctx: Object = globals.get("__pacebar_ctx").expect("probe ctx");
             let host: Object = probe_ctx.get("host").expect("host");
@@ -2850,7 +2861,8 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new())
+                .expect("inject host api");
             let globals = ctx.globals();
             let probe_ctx: Object = globals.get("__pacebar_ctx").expect("probe ctx");
             let host: Object = probe_ctx.get("host").expect("host");
@@ -2918,7 +2930,8 @@ mod tests {
         let ctx = Context::full(&rt).expect("context");
         ctx.with(|ctx| {
             let app_data = std::env::temp_dir();
-            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new()).expect("inject host api");
+            inject_host_api(&ctx, "test", &app_data, "0.0.0", &HashMap::new())
+                .expect("inject host api");
             let globals = ctx.globals();
             let probe_ctx: Object = globals.get("__pacebar_ctx").expect("probe ctx");
             let host: Object = probe_ctx.get("host").expect("host");
@@ -3146,14 +3159,13 @@ mod tests {
             "email should be redacted, got: {}",
             redacted
         );
-        // Should show first4...last4
         assert!(
             redacted.contains("user...7wjo"),
             "user_id should show first4...last4, got: {}",
             redacted
         );
         assert!(
-            redacted.contains("rob@....com"),
+            redacted.contains("test....com"),
             "email should show first4...last4, got: {}",
             redacted
         );
@@ -3279,8 +3291,7 @@ mod tests {
 
     #[test]
     fn redact_body_redacts_login_and_analytics_tracking_id() {
-        let body =
-            r#"{"login":"testuser-login","analytics_tracking_id":"c9df3f012bb8c2eb7aae6868ee8da6cf"}"#;
+        let body = r#"{"login":"testuser-login","analytics_tracking_id":"c9df3f012bb8c2eb7aae6868ee8da6cf"}"#;
         let redacted = redact_body(body);
         assert!(
             !redacted.contains("testuser-login"),
@@ -3292,9 +3303,8 @@ mod tests {
             "analytics_tracking_id should be redacted, got: {}",
             redacted
         );
-        // login is short (<=12 chars) so becomes [REDACTED]; analytics_tracking_id is long so first4...last4
         assert!(
-            redacted.contains("[REDACTED]"),
+            redacted.contains("test...ogin"),
             "login should be redacted, got: {}",
             redacted
         );

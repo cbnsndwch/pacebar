@@ -1,0 +1,79 @@
+# Cloudflare AI (Self-Hosted Gateway)
+
+Tracks usage from a **self-hosted Cloudflare Worker** that meters AI model usage. This plugin does **not** work with Cloudflare's managed Workers AI or AI Gateway directly — it requires a custom Worker with a monitoring endpoint.
+
+## Who Is This For?
+
+You have deployed a custom Cloudflare Worker (or similar) that:
+- Routes/proxies AI model requests (e.g. `@cf/` models)
+- Tracks usage in a database (D1, KV, etc.)
+- Exposes a `GET /api/stats` endpoint returning spend data
+
+If you use Cloudflare's managed AI Gateway **without** a custom Worker, this plugin won't work — Cloudflare doesn't expose a public API for token usage.
+
+## Prerequisites
+
+### Your Gateway Must Expose
+
+`GET /api/stats` returning:
+```json
+{
+  "cap_usd": 50000,
+  "spent_usd": 1234.56,
+  "remaining_usd": 48765.44,
+  "burn_per_day_usd": 42.50,
+  "total_requests": 1500,
+  "total_tokens_in": 5000000,
+  "total_tokens_out": 2000000,
+  "hosted_only_ok": true
+}
+```
+
+## Setup
+
+### 1. Configure Connection
+
+**Option A — Environment variable (preferred):**
+```bash
+export CF_GATEWAY_URL="https://your-gateway.workers.dev"
+export CF_ROUTER_KEY="your-router-secret"
+```
+
+**Option B — Config file (if env vars don't work):**
+```bash
+# Find your plugin data directory:
+# macOS: ~/Library/Application Support/dev.cbnsndwch.pacebar/plugins_data/cloudflare-ai/
+# Linux: ~/.config/pacebar/plugins_data/cloudflare-ai/
+# Windows: %APPDATA%\pacebar\plugins_data\cloudflare-ai\
+
+echo '{"gatewayUrl": "https://your-gateway.workers.dev", "routerKey": "your-secret"}' \
+  > ~/Library/Application\ Support/dev.cbnsndwch.pacebar/plugins_data/cloudflare-ai/config.json
+```
+
+### 2. Auto-Discovery (optional)
+
+If you have `~/cloudflare-ai/opencode.json` with a `cf-gateway` provider, the plugin reads `baseURL` from it automatically.
+
+## Metrics
+
+- **Spend** — total spend vs cap (primary progress bar)
+- **Daily burn** — 7-day average spend rate  
+- **Remaining** — remaining credit
+- **Models** — hosted-only assertion badge
+- **Requests** — total requests + token count
+
+## Troubleshooting
+
+| Error | Fix |
+|-------|-----|
+| "Gateway URL not configured" | Set `CF_GATEWAY_URL` env or add `gatewayUrl` to config file |
+| "Auth key missing" | Set `CF_ROUTER_KEY` env or add `routerKey` to config file |
+| "Auth failed" | Check key matches your gateway's secret |
+| "Empty response" | Verify your gateway has a `GET /api/stats` endpoint |
+
+## Want This for Managed Workers AI?
+
+Cloudflare doesn't currently expose a public REST API for Workers AI usage. Options:
+- **Build a gateway** like [this example](https://github.com/cloudflare/ai-gateway)
+- **Use GraphQL Analytics** (requires Cloudflare API token + account ID, limited data)
+- **Feature request** Cloudflare to add a public usage API

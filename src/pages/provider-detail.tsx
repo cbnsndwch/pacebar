@@ -1,13 +1,13 @@
-import { ProviderCard } from "@/components/provider-card"
-import type { PluginDisplayState } from "@/lib/plugin-types"
-import type { DisplayMode, ResetTimerDisplayMode } from "@/lib/settings"
+import { ProviderCard } from "@/components/provider-card";
+import type { PluginDisplayState } from "@/lib/plugin-types";
+import type { DisplayMode, ResetTimerDisplayMode } from "@/lib/settings";
 
 interface ProviderDetailPageProps {
-  plugin: PluginDisplayState | null
-  onRetry?: () => void
-  displayMode: DisplayMode
-  resetTimerDisplayMode: ResetTimerDisplayMode
-  onResetTimerDisplayModeToggle?: () => void
+  plugin: PluginDisplayState | null;
+  onRetry?: () => void;
+  displayMode: DisplayMode;
+  resetTimerDisplayMode: ResetTimerDisplayMode;
+  onResetTimerDisplayModeToggle?: () => void;
 }
 
 export function ProviderDetailPage({
@@ -18,11 +18,7 @@ export function ProviderDetailPage({
   onResetTimerDisplayModeToggle,
 }: ProviderDetailPageProps) {
   if (!plugin) {
-    return (
-      <div className="text-center text-muted-foreground py-8">
-        Provider not found
-      </div>
-    )
+    return <div className="text-center text-muted-foreground py-8">Provider not found</div>;
   }
 
   return (
@@ -43,5 +39,5 @@ export function ProviderDetailPage({
       resetTimerDisplayMode={resetTimerDisplayMode}
       onResetTimerDisplayModeToggle={onResetTimerDisplayModeToggle}
     />
-  )
+  );
 }

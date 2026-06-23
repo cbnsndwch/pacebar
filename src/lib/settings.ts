@@ -22,6 +22,11 @@ export type MenubarIconStyle = "provider" | "bars" | "donut";
 
 export type GlobalShortcut = string | null;
 
+// ─── Leaderboard ─────────────────────────────────────────────────────────────
+export type LeaderboardHandle = string | null;
+export type LeaderboardToken = string | null;
+export type LeaderboardWorkerUrl = string | null;
+
 const SETTINGS_STORE_PATH = "settings.json";
 const PLUGIN_SETTINGS_KEY = "plugins";
 const AUTO_UPDATE_SETTINGS_KEY = "autoUpdateInterval";
@@ -34,6 +39,12 @@ const LEGACY_TRAY_SHOW_PERCENTAGE_KEY = "trayShowPercentage";
 const GLOBAL_SHORTCUT_KEY = "globalShortcut";
 const START_ON_LOGIN_KEY = "startOnLogin";
 
+const LEADERBOARD_HANDLE_KEY = "leaderboard.handle";
+const LEADERBOARD_TOKEN_KEY = "leaderboard.token";
+const LEADERBOARD_WORKER_URL_KEY = "leaderboard.workerUrl";
+const LEADERBOARD_OPT_IN_KEY = "leaderboard.optIn";
+const LEADERBOARD_SHARE_LIST_KEY = "leaderboard.shareList";
+
 export const DEFAULT_AUTO_UPDATE_INTERVAL: AutoUpdateIntervalMinutes = 15;
 export const DEFAULT_THEME_MODE: ThemeMode = "system";
 export const DEFAULT_DISPLAY_MODE: DisplayMode = "left";
@@ -41,6 +52,12 @@ export const DEFAULT_RESET_TIMER_DISPLAY_MODE: ResetTimerDisplayMode = "relative
 export const DEFAULT_MENUBAR_ICON_STYLE: MenubarIconStyle = "provider";
 export const DEFAULT_GLOBAL_SHORTCUT: GlobalShortcut = null;
 export const DEFAULT_START_ON_LOGIN = false;
+
+export const DEFAULT_LEADERBOARD_HANDLE: LeaderboardHandle = null;
+export const DEFAULT_LEADERBOARD_TOKEN: LeaderboardToken = null;
+export const DEFAULT_LEADERBOARD_WORKER_URL: LeaderboardWorkerUrl = null;
+export const DEFAULT_LEADERBOARD_OPT_IN = false;
+export const DEFAULT_LEADERBOARD_SHARE_LIST: string[] = [];
 
 const AUTO_UPDATE_INTERVALS: AutoUpdateIntervalMinutes[] = [5, 15, 30, 60];
 const THEME_MODES: ThemeMode[] = ["system", "light", "dark"];
@@ -60,11 +77,10 @@ export const AUTO_UPDATE_OPTIONS: { value: AutoUpdateIntervalMinutes; label: str
     label: value === 60 ? "1 hour" : `${value} min`,
   }));
 
-export const THEME_OPTIONS: { value: ThemeMode; label: string }[] =
-  THEME_MODES.map((value) => ({
-    value,
-    label: value.charAt(0).toUpperCase() + value.slice(1),
-  }));
+export const THEME_OPTIONS: { value: ThemeMode; label: string }[] = THEME_MODES.map((value) => ({
+  value,
+  label: value.charAt(0).toUpperCase() + value.slice(1),
+}));
 
 export const DISPLAY_MODE_OPTIONS: { value: DisplayMode; label: string }[] = [
   { value: "left", label: "Left" },
@@ -116,8 +132,7 @@ export async function savePluginSettings(settings: PluginSettings): Promise<void
 
 function isAutoUpdateInterval(value: unknown): value is AutoUpdateIntervalMinutes {
   return (
-    typeof value === "number" &&
-    AUTO_UPDATE_INTERVALS.includes(value as AutoUpdateIntervalMinutes)
+    typeof value === "number" && AUTO_UPDATE_INTERVALS.includes(value as AutoUpdateIntervalMinutes)
   );
 }
 
@@ -127,16 +142,14 @@ export async function loadAutoUpdateInterval(): Promise<AutoUpdateIntervalMinute
   return DEFAULT_AUTO_UPDATE_INTERVAL;
 }
 
-export async function saveAutoUpdateInterval(
-  interval: AutoUpdateIntervalMinutes
-): Promise<void> {
+export async function saveAutoUpdateInterval(interval: AutoUpdateIntervalMinutes): Promise<void> {
   await store.set(AUTO_UPDATE_SETTINGS_KEY, interval);
   await store.save();
 }
 
 export function normalizePluginSettings(
   settings: PluginSettings,
-  plugins: PluginMeta[]
+  plugins: PluginMeta[],
 ): PluginSettings {
   const knownIds = plugins.map((plugin) => plugin.id);
   const knownSet = new Set(knownIds);
@@ -166,10 +179,7 @@ export function normalizePluginSettings(
   return { order, disabled };
 }
 
-export function arePluginSettingsEqual(
-  a: PluginSettings,
-  b: PluginSettings
-): boolean {
+export function arePluginSettingsEqual(a: PluginSettings, b: PluginSettings): boolean {
   if (a.order.length !== b.order.length) return false;
   if (a.disabled.length !== b.disabled.length) return false;
   for (let i = 0; i < a.order.length; i += 1) {
@@ -213,8 +223,7 @@ export async function saveDisplayMode(mode: DisplayMode): Promise<void> {
 
 function isResetTimerDisplayMode(value: unknown): value is ResetTimerDisplayMode {
   return (
-    typeof value === "string" &&
-    RESET_TIMER_DISPLAY_MODES.includes(value as ResetTimerDisplayMode)
+    typeof value === "string" && RESET_TIMER_DISPLAY_MODES.includes(value as ResetTimerDisplayMode)
   );
 }
 
@@ -230,10 +239,7 @@ export async function saveResetTimerDisplayMode(mode: ResetTimerDisplayMode): Pr
 }
 
 function isMenubarIconStyle(value: unknown): value is MenubarIconStyle {
-  return (
-    typeof value === "string" &&
-    MENUBAR_ICON_STYLES.includes(value as MenubarIconStyle)
-  );
+  return typeof value === "string" && MENUBAR_ICON_STYLES.includes(value as MenubarIconStyle);
 }
 
 export async function loadMenubarIconStyle(): Promise<MenubarIconStyle> {
@@ -341,4 +347,78 @@ export async function loadStartOnLogin(): Promise<boolean> {
 export async function saveStartOnLogin(value: boolean): Promise<void> {
   await store.set(START_ON_LOGIN_KEY, value);
   await store.save();
+}
+
+// ─── Leaderboard settings ────────────────────────────────────────────────────
+
+export async function loadLeaderboardHandle(): Promise<LeaderboardHandle> {
+  const v = await store.get<unknown>(LEADERBOARD_HANDLE_KEY);
+  return typeof v === "string" ? v : DEFAULT_LEADERBOARD_HANDLE;
+}
+
+export async function saveLeaderboardHandle(handle: LeaderboardHandle): Promise<void> {
+  await store.set(LEADERBOARD_HANDLE_KEY, handle);
+  await store.save();
+}
+
+export async function loadLeaderboardToken(): Promise<LeaderboardToken> {
+  const v = await store.get<unknown>(LEADERBOARD_TOKEN_KEY);
+  return typeof v === "string" ? v : DEFAULT_LEADERBOARD_TOKEN;
+}
+
+export async function saveLeaderboardToken(token: LeaderboardToken): Promise<void> {
+  await store.set(LEADERBOARD_TOKEN_KEY, token);
+  await store.save();
+}
+
+export async function loadLeaderboardWorkerUrl(): Promise<LeaderboardWorkerUrl> {
+  const v = await store.get<unknown>(LEADERBOARD_WORKER_URL_KEY);
+  return typeof v === "string" ? v : DEFAULT_LEADERBOARD_WORKER_URL;
+}
+
+export async function saveLeaderboardWorkerUrl(url: LeaderboardWorkerUrl): Promise<void> {
+  await store.set(LEADERBOARD_WORKER_URL_KEY, url);
+  await store.save();
+}
+
+export async function loadLeaderboardOptIn(): Promise<boolean> {
+  const v = await store.get<unknown>(LEADERBOARD_OPT_IN_KEY);
+  return typeof v === "boolean" ? v : DEFAULT_LEADERBOARD_OPT_IN;
+}
+
+export async function saveLeaderboardOptIn(optIn: boolean): Promise<void> {
+  await store.set(LEADERBOARD_OPT_IN_KEY, optIn);
+  await store.save();
+}
+
+export async function loadLeaderboardShareList(): Promise<string[]> {
+  const v = await store.get<unknown>(LEADERBOARD_SHARE_LIST_KEY);
+  return Array.isArray(v) ? (v as string[]) : DEFAULT_LEADERBOARD_SHARE_LIST;
+}
+
+export async function saveLeaderboardShareList(list: string[]): Promise<void> {
+  await store.set(LEADERBOARD_SHARE_LIST_KEY, list);
+  await store.save();
+}
+
+/**
+ * Write leaderboard prefs to the plugin's dedicated prefs file so
+ * plugin.js can read them without going through the Tauri store API.
+ * Call this whenever any leaderboard setting changes.
+ *
+ * Uses the `write_leaderboard_prefs` Tauri command (no plugin-fs dependency).
+ * The `_appDataDir` parameter is kept for API compatibility but unused.
+ */
+export async function syncLeaderboardPrefsToPlugin(
+  _appDataDir: string,
+  prefs: {
+    handle: LeaderboardHandle;
+    token: LeaderboardToken;
+    workerUrl: LeaderboardWorkerUrl;
+    optIn: boolean;
+    shareList: string[];
+  },
+): Promise<void> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("write_leaderboard_prefs", { data: JSON.stringify(prefs) });
 }

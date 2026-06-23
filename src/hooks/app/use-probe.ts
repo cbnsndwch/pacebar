@@ -1,24 +1,17 @@
-import { useCallback } from "react"
-import { useProbeEvents } from "@/hooks/use-probe-events"
-import {
-  type AutoUpdateIntervalMinutes,
-  type PluginSettings,
-} from "@/lib/settings"
-import { useProbeAutoUpdate } from "@/hooks/app/use-probe-auto-update"
-import { useProbeRefreshActions } from "@/hooks/app/use-probe-refresh-actions"
-import { useProbeState } from "@/hooks/app/use-probe-state"
+import { useCallback } from "react";
+import { useProbeEvents } from "@/hooks/use-probe-events";
+import { type AutoUpdateIntervalMinutes, type PluginSettings } from "@/lib/settings";
+import { useProbeAutoUpdate } from "@/hooks/app/use-probe-auto-update";
+import { useProbeRefreshActions } from "@/hooks/app/use-probe-refresh-actions";
+import { useProbeState } from "@/hooks/app/use-probe-state";
 
 type UseProbeArgs = {
-  pluginSettings: PluginSettings | null
-  autoUpdateInterval: AutoUpdateIntervalMinutes
-  onProbeResult?: () => void
-}
+  pluginSettings: PluginSettings | null;
+  autoUpdateInterval: AutoUpdateIntervalMinutes;
+  onProbeResult?: () => void;
+};
 
-export function useProbe({
-  pluginSettings,
-  autoUpdateInterval,
-  onProbeResult,
-}: UseProbeArgs) {
+export function useProbe({ pluginSettings, autoUpdateInterval, onProbeResult }: UseProbeArgs) {
   const {
     pluginStates,
     pluginStatesRef,
@@ -26,26 +19,22 @@ export function useProbe({
     setLoadingForPlugins,
     setErrorForPlugins,
     handleProbeResult,
-  } = useProbeState({ onProbeResult })
+  } = useProbeState({ onProbeResult });
 
-  const handleBatchComplete = useCallback(() => {}, [])
+  const handleBatchComplete = useCallback(() => {}, []);
 
   const { startBatch } = useProbeEvents({
     onResult: handleProbeResult,
     onBatchComplete: handleBatchComplete,
-  })
+  });
 
-  const {
-    autoUpdateNextAt,
-    setAutoUpdateNextAt,
-    resetAutoUpdateSchedule,
-  } = useProbeAutoUpdate({
+  const { autoUpdateNextAt, setAutoUpdateNextAt, resetAutoUpdateSchedule } = useProbeAutoUpdate({
     pluginSettings,
     autoUpdateInterval,
     setLoadingForPlugins,
     setErrorForPlugins,
     startBatch,
-  })
+  });
 
   const { handleRetryPlugin, handleRefreshAll } = useProbeRefreshActions({
     pluginSettings,
@@ -55,7 +44,7 @@ export function useProbe({
     setLoadingForPlugins,
     setErrorForPlugins,
     startBatch,
-  })
+  });
 
   return {
     pluginStates,
@@ -66,5 +55,5 @@ export function useProbe({
     setAutoUpdateNextAt,
     handleRetryPlugin,
     handleRefreshAll,
-  }
+  };
 }

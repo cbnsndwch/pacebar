@@ -1,25 +1,23 @@
-import * as React from "react"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
-  value?: number
-  indicatorColor?: string
-  markerValue?: number
-  refreshing?: boolean
+  value?: number;
+  indicatorColor?: string;
+  markerValue?: number;
+  refreshing?: boolean;
 }
 
 const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
   ({ className, value = 0, indicatorColor, markerValue, refreshing, ...props }, ref) => {
-    const clamped = Math.min(100, Math.max(0, value))
+    const clamped = Math.min(100, Math.max(0, value));
     const clampedMarker =
       typeof markerValue === "number" && Number.isFinite(markerValue)
         ? Math.min(100, Math.max(0, markerValue))
-        : null
-    const showMarker = clampedMarker !== null && clamped > 0 && clamped < 100
-    const indicatorStyle = indicatorColor
-      ? { backgroundColor: indicatorColor }
-      : undefined
+        : null;
+    const showMarker = clampedMarker !== null && clamped > 0 && clamped < 100;
+    const indicatorStyle = indicatorColor ? { backgroundColor: indicatorColor } : undefined;
     const markerTransform =
       clampedMarker === null
         ? undefined
@@ -27,13 +25,13 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
           ? "translateX(0)"
           : clampedMarker >= 100
             ? "translateX(-100%)"
-            : "translateX(-50%)"
+            : "translateX(-50%)";
     const markerStyle = showMarker
       ? {
           left: `${clampedMarker}%`,
           transform: markerTransform,
         }
-      : undefined
+      : undefined;
 
     return (
       <div
@@ -42,7 +40,10 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
         aria-valuenow={clamped}
         aria-valuemin={0}
         aria-valuemax={100}
-        className={cn("relative h-3 w-full overflow-hidden rounded-full bg-muted dark:bg-[#353537]", className)}
+        className={cn(
+          "relative h-3 w-full overflow-hidden rounded-full bg-muted dark:bg-[#353537]",
+          className,
+        )}
         {...props}
       >
         <div
@@ -67,9 +68,9 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
           </div>
         )}
       </div>
-    )
-  }
-)
-Progress.displayName = "Progress"
+    );
+  },
+);
+Progress.displayName = "Progress";
 
-export { Progress }
+export { Progress };

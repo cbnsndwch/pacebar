@@ -76,14 +76,15 @@ fn route(method: &str, path: &str) -> String {
         };
     }
 
-    if let Some(provider_id) = path.strip_prefix("/v1/usage/") {
-        if !provider_id.is_empty() && !provider_id.contains('/') {
-            return match method {
-                "GET" => handle_get_usage_single(provider_id),
-                "OPTIONS" => response_no_content(),
-                _ => response_method_not_allowed(),
-            };
-        }
+    if let Some(provider_id) = path.strip_prefix("/v1/usage/")
+        && !provider_id.is_empty()
+        && !provider_id.contains('/')
+    {
+        return match method {
+            "GET" => handle_get_usage_single(provider_id),
+            "OPTIONS" => response_no_content(),
+            _ => response_method_not_allowed(),
+        };
     }
 
     response_not_found("not_found")
@@ -155,7 +156,7 @@ fn response_method_not_allowed() -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::super::cache::{cache_state, CachedPluginSnapshot};
+    use super::super::cache::{CachedPluginSnapshot, cache_state};
     use super::*;
     use serial_test::serial;
 

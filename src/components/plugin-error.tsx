@@ -1,12 +1,12 @@
-import { AlertCircle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type PluginErrorProps = {
-  message: string
-}
+  message: string;
+};
 
 function formatMessage(message: string) {
-  const parts = message.split(/`([^`]+)`/)
+  const parts = message.split(/`([^`]+)`/);
   return parts.map((part, index) =>
     index % 2 === 1 ? (
       <code
@@ -17,8 +17,8 @@ function formatMessage(message: string) {
       </code>
     ) : (
       part
-    )
-  )
+    ),
+  );
 }
 
 export function PluginError({ message }: PluginErrorProps) {
@@ -28,7 +28,9 @@ export function PluginError({ message }: PluginErrorProps) {
       className="flex items-center gap-2 [&>svg]:static [&>svg]:translate-y-0 [&>svg~*]:pl-0 [&>svg+div]:translate-y-0"
     >
       <AlertCircle className="h-4 w-4" />
-      <AlertDescription className="select-text cursor-text">{formatMessage(message)}</AlertDescription>
+      <AlertDescription className="select-text cursor-text">
+        {formatMessage(message)}
+      </AlertDescription>
     </Alert>
-  )
+  );
 }

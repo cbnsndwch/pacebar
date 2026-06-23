@@ -1,45 +1,54 @@
-import { Fragment, useMemo } from "react"
-import { AlertCircle, ExternalLink, Hourglass, RefreshCw } from "lucide-react"
-import { openUrl } from "@tauri-apps/plugin-opener"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { SkeletonLines } from "@/components/skeleton-lines"
-import { PluginError } from "@/components/plugin-error"
-import { useNowTicker } from "@/hooks/use-now-ticker"
-import { REFRESH_COOLDOWN_MS, type DisplayMode, type ResetTimerDisplayMode } from "@/lib/settings"
-import type { ManifestLine, MetricLine, PluginLink } from "@/lib/plugin-types"
-import { groupLinesByType } from "@/lib/group-lines-by-type"
-import { clamp01, formatCountNumber, formatFixedPrecisionNumber } from "@/lib/utils"
-import { calculateDeficit, calculatePaceStatus, type PaceStatus } from "@/lib/pace-status"
-import { buildPaceDetailText, formatDeficitText, formatRunsOutText, getPaceStatusText } from "@/lib/pace-tooltip"
-import { formatResetAbsoluteLabel, formatResetRelativeLabel, formatResetTooltipText } from "@/lib/reset-tooltip"
+import { Fragment, useMemo } from "react";
+import { AlertCircle, ExternalLink, Hourglass, RefreshCw } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { SkeletonLines } from "@/components/skeleton-lines";
+import { PluginError } from "@/components/plugin-error";
+import { useNowTicker } from "@/hooks/use-now-ticker";
+import { REFRESH_COOLDOWN_MS, type DisplayMode, type ResetTimerDisplayMode } from "@/lib/settings";
+import type { ManifestLine, MetricLine, PluginLink } from "@/lib/plugin-types";
+import { groupLinesByType } from "@/lib/group-lines-by-type";
+import { clamp01, formatCountNumber, formatFixedPrecisionNumber } from "@/lib/utils";
+import { calculateDeficit, calculatePaceStatus, type PaceStatus } from "@/lib/pace-status";
+import {
+  buildPaceDetailText,
+  formatDeficitText,
+  formatRunsOutText,
+  getPaceStatusText,
+} from "@/lib/pace-tooltip";
+import {
+  formatResetAbsoluteLabel,
+  formatResetRelativeLabel,
+  formatResetTooltipText,
+} from "@/lib/reset-tooltip";
 
 interface ProviderCardProps {
-  name: string
-  plan?: string
-  links?: PluginLink[]
-  showSeparator?: boolean
-  loading?: boolean
-  error?: string | null
-  lines?: MetricLine[]
-  skeletonLines?: ManifestLine[]
-  lastManualRefreshAt?: number | null
-  lastUpdatedAt?: number | null
-  onRetry?: () => void
-  scopeFilter?: "overview" | "all"
-  displayMode: DisplayMode
-  resetTimerDisplayMode?: ResetTimerDisplayMode
-  onResetTimerDisplayModeToggle?: () => void
+  name: string;
+  plan?: string;
+  links?: PluginLink[];
+  showSeparator?: boolean;
+  loading?: boolean;
+  error?: string | null;
+  lines?: MetricLine[];
+  skeletonLines?: ManifestLine[];
+  lastManualRefreshAt?: number | null;
+  lastUpdatedAt?: number | null;
+  onRetry?: () => void;
+  scopeFilter?: "overview" | "all";
+  displayMode: DisplayMode;
+  resetTimerDisplayMode?: ResetTimerDisplayMode;
+  onResetTimerDisplayModeToggle?: () => void;
 }
 
 const PACE_VISUALS: Record<PaceStatus, { dotClass: string }> = {
   ahead: { dotClass: "bg-green-500" },
   "on-track": { dotClass: "bg-yellow-500" },
   behind: { dotClass: "bg-red-500" },
-}
+};
 
 /** Colored dot indicator showing pace status */
 function PaceIndicator({
@@ -47,13 +56,13 @@ function PaceIndicator({
   detailText,
   isLimitReached,
 }: {
-  status: PaceStatus
-  detailText?: string | null
-  isLimitReached?: boolean
+  status: PaceStatus;
+  detailText?: string | null;
+  isLimitReached?: boolean;
 }) {
-  const colorClass = PACE_VISUALS[status].dotClass
+  const colorClass = PACE_VISUALS[status].dotClass;
 
-  const statusText = getPaceStatusText(status)
+  const statusText = getPaceStatusText(status);
 
   return (
     <Tooltip>
@@ -77,18 +86,18 @@ function PaceIndicator({
         )}
       </TooltipContent>
     </Tooltip>
-  )
+  );
 }
 
 function formatRelativeTime(diffMs: number): string {
-  const seconds = Math.floor(Math.max(0, diffMs) / 1000)
-  if (seconds < 60) return "just now"
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  const seconds = Math.floor(Math.max(0, diffMs) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
 
 export function ProviderCard({
@@ -109,44 +118,40 @@ export function ProviderCard({
   onResetTimerDisplayModeToggle,
 }: ProviderCardProps) {
   const cooldownRemainingMs = useMemo(() => {
-    if (!lastManualRefreshAt) return 0
-    const remaining = REFRESH_COOLDOWN_MS - (Date.now() - lastManualRefreshAt)
-    return remaining > 0 ? remaining : 0
-  }, [lastManualRefreshAt])
+    if (!lastManualRefreshAt) return 0;
+    const remaining = REFRESH_COOLDOWN_MS - (Date.now() - lastManualRefreshAt);
+    return remaining > 0 ? remaining : 0;
+  }, [lastManualRefreshAt]);
 
   // Filter lines based on scope - match by label since runtime lines can differ from manifest
   const overviewLabels = new Set(
-    skeletonLines
-      .filter(line => line.scope === "overview")
-      .map(line => line.label)
-  )
-  const filteredSkeletonLines = scopeFilter === "all"
-    ? skeletonLines
-    : skeletonLines.filter(line => line.scope === "overview")
-  const filteredLines = scopeFilter === "all"
-    ? lines
-    : lines.filter(line => overviewLabels.has(line.label))
+    skeletonLines.filter((line) => line.scope === "overview").map((line) => line.label),
+  );
+  const filteredSkeletonLines =
+    scopeFilter === "all"
+      ? skeletonLines
+      : skeletonLines.filter((line) => line.scope === "overview");
+  const filteredLines =
+    scopeFilter === "all" ? lines : lines.filter((line) => overviewLabels.has(line.label));
 
   const hasResetCountdown = filteredLines.some(
-    (line) => line.type === "progress" && Boolean(line.resetsAt)
-  )
+    (line) => line.type === "progress" && Boolean(line.resetsAt),
+  );
 
   // "has ever loaded" — true if either we have a prior success timestamp,
   // or the parent is passing lines directly (tests + legacy state paths).
-  const hasStaleData = lastUpdatedAt != null || filteredLines.length > 0
-  const isRefreshingWithData = loading && hasStaleData
+  const hasStaleData = lastUpdatedAt != null || filteredLines.length > 0;
+  const isRefreshingWithData = loading && hasStaleData;
 
-  const tickerIntervalMs = cooldownRemainingMs > 0 ? 1000 : 30_000
+  const tickerIntervalMs = cooldownRemainingMs > 0 ? 1000 : 30_000;
 
   const now = useNowTicker({
     enabled: cooldownRemainingMs > 0 || hasResetCountdown,
     intervalMs: tickerIntervalMs,
     stopAfterMs: cooldownRemainingMs > 0 && !hasResetCountdown ? cooldownRemainingMs : null,
-  })
+  });
 
-  const inCooldown = lastManualRefreshAt
-    ? now - lastManualRefreshAt < REFRESH_COOLDOWN_MS
-    : false
+  const inCooldown = lastManualRefreshAt ? now - lastManualRefreshAt < REFRESH_COOLDOWN_MS : false;
 
   const visibleLinks = useMemo(
     () =>
@@ -159,33 +164,35 @@ export function ProviderCard({
           (link) =>
             link.label.length > 0 &&
             link.url.length > 0 &&
-            (link.url.startsWith("https://") || link.url.startsWith("http://"))
+            (link.url.startsWith("https://") || link.url.startsWith("http://")),
         ),
-    [links]
-  )
+    [links],
+  );
 
   // Format remaining cooldown time as "Xm Ys"
   const formatRemainingTime = () => {
-    if (!lastManualRefreshAt) return ""
-    const remainingMs = REFRESH_COOLDOWN_MS - (now - lastManualRefreshAt)
-    if (remainingMs <= 0) return ""
-    const totalSeconds = Math.ceil(remainingMs / 1000)
-    const minutes = Math.floor(totalSeconds / 60)
-    const seconds = totalSeconds % 60
+    if (!lastManualRefreshAt) return "";
+    const remainingMs = REFRESH_COOLDOWN_MS - (now - lastManualRefreshAt);
+    if (remainingMs <= 0) return "";
+    const totalSeconds = Math.ceil(remainingMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
     if (minutes > 0) {
-      return `Available in ${minutes}m ${seconds}s`
+      return `Available in ${minutes}m ${seconds}s`;
     }
-    return `Available in ${seconds}s`
-  }
+    return `Available in ${seconds}s`;
+  };
 
   return (
     <div>
       <div className="py-3">
         <div className="flex items-center justify-between mb-2">
           <div className="relative flex items-center">
-            <h2 className="text-lg font-semibold" style={{ transform: "translateZ(0)" }}>{name}</h2>
-            {onRetry && (
-              loading ? (
+            <h2 className="text-lg font-semibold" style={{ transform: "translateZ(0)" }}>
+              {name}
+            </h2>
+            {onRetry &&
+              (loading ? (
                 <Button
                   variant="ghost"
                   size="icon-xs"
@@ -213,9 +220,7 @@ export function ProviderCard({
                       </span>
                     )}
                   />
-                  <TooltipContent side="top">
-                    {formatRemainingTime()}
-                  </TooltipContent>
+                  <TooltipContent side="top">{formatRemainingTime()}</TooltipContent>
                 </Tooltip>
               ) : (
                 <Tooltip>
@@ -228,8 +233,8 @@ export function ProviderCard({
                         size="icon-xs"
                         aria-label="Retry"
                         onClick={(e) => {
-                          e.currentTarget.blur()
-                          onRetry()
+                          e.currentTarget.blur();
+                          onRetry();
                         }}
                         className="opacity-0 hover:opacity-100 focus-visible:opacity-100"
                         style={{ transform: "translateZ(0)", backfaceVisibility: "hidden" }}
@@ -244,15 +249,10 @@ export function ProviderCard({
                     </TooltipContent>
                   )}
                 </Tooltip>
-              )
-            )}
+              ))}
           </div>
           {plan && (
-            <Badge
-              variant="outline"
-              className="truncate min-w-0 max-w-[40%]"
-              title={plan}
-            >
+            <Badge variant="outline" className="truncate min-w-0 max-w-[40%]" title={plan}>
               {plan}
             </Badge>
           )}
@@ -266,7 +266,7 @@ export function ProviderCard({
                 size="xs"
                 className="h-6 max-w-full text-[11px]"
                 onClick={() => {
-                  openUrl(link.url).catch(console.error)
+                  openUrl(link.url).catch(console.error);
                 }}
               >
                 <span className="truncate">{link.label}</span>
@@ -281,10 +281,7 @@ export function ProviderCard({
           <Tooltip>
             <TooltipTrigger
               render={(props) => (
-                <div
-                  {...props}
-                  className="flex items-center gap-1.5 mb-2 text-xs text-destructive"
-                >
+                <div {...props} className="flex items-center gap-1.5 mb-2 text-xs text-destructive">
                   <AlertCircle className="h-3 w-3 flex-shrink-0" />
                   <span className="truncate">{error}</span>
                 </div>
@@ -296,9 +293,7 @@ export function ProviderCard({
           </Tooltip>
         )}
 
-        {loading && !hasStaleData && !error && (
-          <SkeletonLines lines={filteredSkeletonLines} />
-        )}
+        {loading && !hasStaleData && !error && <SkeletonLines lines={filteredSkeletonLines} />}
 
         {hasStaleData && (
           <div className="space-y-4">
@@ -331,15 +326,14 @@ export function ProviderCard({
                     />
                   ))}
                 </Fragment>
-              )
+              ),
             )}
           </div>
         )}
-
       </div>
       {showSeparator && <Separator />}
     </div>
-  )
+  );
 }
 
 function MetricLineRenderer({
@@ -350,12 +344,12 @@ function MetricLineRenderer({
   now,
   refreshing,
 }: {
-  line: MetricLine
-  displayMode: DisplayMode
-  resetTimerDisplayMode: ResetTimerDisplayMode
-  onResetTimerDisplayModeToggle?: () => void
-  now: number
-  refreshing?: boolean
+  line: MetricLine;
+  displayMode: DisplayMode;
+  resetTimerDisplayMode: ResetTimerDisplayMode;
+  onResetTimerDisplayModeToggle?: () => void;
+  now: number;
+  refreshing?: boolean;
 }) {
   if (line.type === "text") {
     return (
@@ -371,10 +365,12 @@ function MetricLineRenderer({
           </span>
         </div>
         {line.subtitle && (
-          <div className="text-[10px] text-muted-foreground text-right -mt-0.5">{line.subtitle}</div>
+          <div className="text-[10px] text-muted-foreground text-right -mt-0.5">
+            {line.subtitle}
+          </div>
         )}
       </div>
-    )
+    );
   }
 
   if (line.type === "badge") {
@@ -385,11 +381,7 @@ function MetricLineRenderer({
           <Badge
             variant="outline"
             className="truncate min-w-0 max-w-[60%]"
-            style={
-              line.color
-                ? { color: line.color, borderColor: line.color }
-                : undefined
-            }
+            style={line.color ? { color: line.color, borderColor: line.color } : undefined}
             title={line.text}
           >
             {line.text}
@@ -399,40 +391,37 @@ function MetricLineRenderer({
           <div className="text-xs text-muted-foreground text-right -mt-0.5">{line.subtitle}</div>
         )}
       </div>
-    )
+    );
   }
 
   if (line.type === "progress") {
-    const resetsAtMs = line.resetsAt ? Date.parse(line.resetsAt) : Number.NaN
-    const periodDurationMs = line.periodDurationMs
-    const hasPaceContext = Number.isFinite(resetsAtMs) && Number.isFinite(periodDurationMs)
-    const hasTimeMarkerContext = hasPaceContext && periodDurationMs! > 0
-    const shownAmount =
-      displayMode === "used"
-        ? line.used
-        : Math.max(0, line.limit - line.used)
-    const percent = Math.round(clamp01(shownAmount / line.limit) * 10000) / 100
-    const leftSuffix = displayMode === "left" ? " left" : ""
+    const resetsAtMs = line.resetsAt ? Date.parse(line.resetsAt) : Number.NaN;
+    const periodDurationMs = line.periodDurationMs;
+    const hasPaceContext = Number.isFinite(resetsAtMs) && Number.isFinite(periodDurationMs);
+    const hasTimeMarkerContext = hasPaceContext && periodDurationMs! > 0;
+    const shownAmount = displayMode === "used" ? line.used : Math.max(0, line.limit - line.used);
+    const percent = Math.round(clamp01(shownAmount / line.limit) * 10000) / 100;
+    const leftSuffix = displayMode === "left" ? " left" : "";
 
     const primaryText =
       line.format.kind === "percent"
         ? `${Math.round(shownAmount)}%${leftSuffix}`
         : line.format.kind === "dollars"
           ? `$${formatFixedPrecisionNumber(shownAmount)}${leftSuffix}`
-          : `${formatCountNumber(shownAmount)} ${line.format.suffix}${leftSuffix}`
+          : `${formatCountNumber(shownAmount)} ${line.format.suffix}${leftSuffix}`;
 
     const resetLabel = line.resetsAt
       ? resetTimerDisplayMode === "absolute"
         ? formatResetAbsoluteLabel(now, line.resetsAt)
         : formatResetRelativeLabel(now, line.resetsAt)
-      : null
+      : null;
     const resetTooltipText = line.resetsAt
       ? formatResetTooltipText({
           nowMs: now,
           resetsAtIso: line.resetsAt,
           visibleMode: resetTimerDisplayMode,
         })
-      : null
+      : null;
 
     const secondaryText =
       resetLabel ??
@@ -440,22 +429,23 @@ function MetricLineRenderer({
         ? `${line.limit}% cap`
         : line.format.kind === "dollars"
           ? `$${formatFixedPrecisionNumber(line.limit)} limit`
-          : `${formatCountNumber(line.limit)} ${line.format.suffix}`)
+          : `${formatCountNumber(line.limit)} ${line.format.suffix}`);
 
     // Calculate pace status if we have reset time and period duration
     const paceResult = hasPaceContext
       ? calculatePaceStatus(line.used, line.limit, resetsAtMs, periodDurationMs!, now)
-      : null
-    const paceStatus = paceResult?.status ?? null
-    const paceMarkerValue = hasTimeMarkerContext && paceStatus && paceStatus !== "on-track"
-      ? (() => {
-          const periodStartMs = resetsAtMs - periodDurationMs!
-          const elapsedFraction = clamp01((now - periodStartMs) / periodDurationMs!)
-          const elapsedPercent = elapsedFraction * 100
-          return displayMode === "used" ? elapsedPercent : 100 - elapsedPercent
-        })()
-      : undefined
-    const isLimitReached = line.used >= line.limit
+      : null;
+    const paceStatus = paceResult?.status ?? null;
+    const paceMarkerValue =
+      hasTimeMarkerContext && paceStatus && paceStatus !== "on-track"
+        ? (() => {
+            const periodStartMs = resetsAtMs - periodDurationMs!;
+            const elapsedFraction = clamp01((now - periodStartMs) / periodDurationMs!);
+            const elapsedPercent = elapsedFraction * 100;
+            return displayMode === "used" ? elapsedPercent : 100 - elapsedPercent;
+          })()
+        : undefined;
+    const isLimitReached = line.used >= line.limit;
     const paceDetailText =
       hasPaceContext && !isLimitReached
         ? buildPaceDetailText({
@@ -467,31 +457,36 @@ function MetricLineRenderer({
             nowMs: now,
             displayMode,
           })
-        : null
+        : null;
 
-    const deficit = hasPaceContext && !isLimitReached
-      ? calculateDeficit(line.used, line.limit, resetsAtMs, periodDurationMs!, now)
-      : null
-    const deficitText = deficit !== null
-      ? formatDeficitText(deficit, line.format, displayMode)
-      : null
-    const runsOutText = hasPaceContext && !isLimitReached
-      ? formatRunsOutText({
-          paceResult,
-          used: line.used,
-          limit: line.limit,
-          periodDurationMs: periodDurationMs!,
-          resetsAtMs,
-          nowMs: now,
-        })
-      : null
+    const deficit =
+      hasPaceContext && !isLimitReached
+        ? calculateDeficit(line.used, line.limit, resetsAtMs, periodDurationMs!, now)
+        : null;
+    const deficitText =
+      deficit !== null ? formatDeficitText(deficit, line.format, displayMode) : null;
+    const runsOutText =
+      hasPaceContext && !isLimitReached
+        ? formatRunsOutText({
+            paceResult,
+            used: line.used,
+            limit: line.limit,
+            periodDurationMs: periodDurationMs!,
+            resetsAtMs,
+            nowMs: now,
+          })
+        : null;
 
     return (
       <div>
         <div className="text-sm font-medium mb-1.5 flex items-center gap-1.5">
           {line.label}
           {paceStatus && (
-            <PaceIndicator status={paceStatus} detailText={paceDetailText} isLimitReached={isLimitReached} />
+            <PaceIndicator
+              status={paceStatus}
+              detailText={paceDetailText}
+              isLimitReached={isLimitReached}
+            />
           )}
         </div>
         <Progress
@@ -501,11 +496,9 @@ function MetricLineRenderer({
           refreshing={refreshing}
         />
         <div className="flex justify-between items-center mt-1.5">
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {primaryText}
-          </span>
-          {secondaryText && (
-            resetTooltipText ? (
+          <span className="text-xs text-muted-foreground tabular-nums">{primaryText}</span>
+          {secondaryText &&
+            (resetTooltipText ? (
               <Tooltip>
                 <TooltipTrigger
                   render={(props) =>
@@ -536,18 +529,13 @@ function MetricLineRenderer({
                 {secondaryText}
               </button>
             ) : (
-              <span className="text-xs text-muted-foreground">
-                {secondaryText}
-              </span>
-            )
-          )}
+              <span className="text-xs text-muted-foreground">{secondaryText}</span>
+            ))}
         </div>
         {(deficitText || runsOutText) && (
           <div className="flex justify-between items-center mt-0.5">
             {deficitText && (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {deficitText}
-              </span>
+              <span className="text-xs text-muted-foreground tabular-nums">{deficitText}</span>
             )}
             {runsOutText && (
               <span className="text-xs text-muted-foreground tabular-nums ml-auto">
@@ -557,8 +545,8 @@ function MetricLineRenderer({
           </div>
         )}
       </div>
-    )
+    );
   }
 
-  return null
+  return null;
 }

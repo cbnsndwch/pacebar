@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "leaderboard",
+  "name": "Hack Night Leaderboard",
+  "version": "0.1.0",
+  "entry": "plugin.js",
+  "icon": "icon.svg",
+  "brandColor": "#f59e0b",
+  "links": [],
+  "lines": [
+    { "type": "text",  "label": "Hack Night", "scope": "overview" },
+    { "type": "text",  "label": "Your Rank",  "scope": "overview", "primaryOrder": 1 },
+    { "type": "text",  "label": "Top Token Burner", "scope": "detail" },
+    { "type": "text",  "label": "Last Reported",    "scope": "detail" }
+  ]
+}

@@ -1,13 +1,15 @@
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
-import { ProviderDetailPage } from "@/pages/provider-detail"
+import { ProviderDetailPage } from "@/pages/provider-detail";
 
 describe("ProviderDetailPage", () => {
   it("shows not found when plugin missing", () => {
-    render(<ProviderDetailPage plugin={null} displayMode="used" resetTimerDisplayMode="relative" />)
-    expect(screen.getByText("Provider not found")).toBeInTheDocument()
-  })
+    render(
+      <ProviderDetailPage plugin={null} displayMode="used" resetTimerDisplayMode="relative" />,
+    );
+    expect(screen.getByText("Provider not found")).toBeInTheDocument();
+  });
 
   it("renders ProviderCard with all scope when plugin present", async () => {
     render(
@@ -22,10 +24,10 @@ describe("ProviderDetailPage", () => {
           lastManualRefreshAt: null,
           lastUpdatedAt: null,
         }}
-      />
-    )
-    expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0)
-  })
+      />,
+    );
+    expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
+  });
 
   it("renders when plugin data is null (still shows provider name)", () => {
     render(
@@ -40,10 +42,10 @@ describe("ProviderDetailPage", () => {
           lastManualRefreshAt: null,
           lastUpdatedAt: null,
         }}
-      />
-    )
-    expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0)
-  })
+      />,
+    );
+    expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
+  });
 
   it("renders quick links when provided by plugin meta", () => {
     render(
@@ -64,8 +66,8 @@ describe("ProviderDetailPage", () => {
           lastManualRefreshAt: null,
           lastUpdatedAt: null,
         }}
-      />
-    )
-    expect(screen.getByRole("button", { name: /status/i })).toBeInTheDocument()
-  })
-})
+      />,
+    );
+    expect(screen.getByRole("button", { name: /status/i })).toBeInTheDocument();
+  });
+});

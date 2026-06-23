@@ -248,7 +248,10 @@ async fn start_probe_batch(
     // Materialize every (plugin, instance) pair into a probe target so that
     // multi-profile plugins (e.g., Claude with claude-profiles) are probed once
     // per profile without leaking the concept up to the frontend.
-    let all_targets: Vec<(plugin_engine::manifest::LoadedPlugin, plugin_engine::profile_discovery::ProfileInstance)> = plugins
+    let all_targets: Vec<(
+        plugin_engine::manifest::LoadedPlugin,
+        plugin_engine::profile_discovery::ProfileInstance,
+    )> = plugins
         .iter()
         .flat_map(|plugin| {
             plugin
@@ -292,10 +295,7 @@ async fn start_probe_batch(
     let response_plugin_ids: Vec<String> = selected_targets
         .iter()
         .map(|(plugin, inst)| {
-            plugin_engine::profile_discovery::full_provider_id(
-                &plugin.manifest.id,
-                &inst.id_suffix,
-            )
+            plugin_engine::profile_discovery::full_provider_id(&plugin.manifest.id, &inst.id_suffix)
         })
         .collect();
 
@@ -386,10 +386,7 @@ async fn start_probe_batch(
 #[tauri::command]
 fn get_log_path(app_handle: tauri::AppHandle) -> Result<String, String> {
     use tauri::Manager;
-    let log_dir = app_handle
-        .path()
-        .app_log_dir()
-        .map_err(|e| e.to_string())?;
+    let log_dir = app_handle.path().app_log_dir().map_err(|e| e.to_string())?;
     let log_file = log_dir.join(format!("{}.log", app_handle.package_info().name));
     Ok(log_file.to_string_lossy().to_string())
 }
@@ -539,7 +536,7 @@ fn find_profile_dir(
                 return inst
                     .env_overrides
                     .get("CLAUDE_CONFIG_DIR")
-                    .map(|dir| std::path::PathBuf::from(dir));
+                    .map(std::path::PathBuf::from);
             }
         }
     }
@@ -549,7 +546,7 @@ fn find_profile_dir(
 /// Update avatar_data_url in-place for the instance matching plugin_id so that
 /// a subsequent list_plugins call reflects the change without re-reading disk.
 fn update_avatar_in_state(
-    plugins: &mut Vec<plugin_engine::manifest::LoadedPlugin>,
+    plugins: &mut [plugin_engine::manifest::LoadedPlugin],
     plugin_id: &str,
     avatar: Option<String>,
 ) {
@@ -602,6 +599,66 @@ fn set_profile_avatar(
     update_avatar_in_state(&mut locked.plugins, &plugin_id, Some(data_url));
 
     log::info!("avatar set for '{}'", plugin_id);
+    Ok(())
+}
+
+/// Write plugin config file to `{app_data_dir}/plugins_data/{plugin_id}/config.json`
+#[tauri::command]
+fn write_plugin_config(
+    app_handle: tauri::AppHandle,
+    plugin_id: String,
+    data: String,
+) -> Result<(), String> {
+    use tauri::Manager;
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("failed to get app data dir: {}", e))?;
+    let plugin_data_dir = app_data_dir.join("plugins_data").join(&plugin_id);
+    std::fs::create_dir_all(&plugin_data_dir)
+        .map_err(|e| format!("failed to create plugin data dir: {}", e))?;
+    let path = plugin_data_dir.join("config.json");
+    std::fs::write(&path, data.as_bytes())
+        .map_err(|e| format!("failed to write plugin config: {}", e))?;
+    log::info!("config written for plugin '{}'", plugin_id);
+    Ok(())
+}
+
+/// Read plugin config file from `{app_data_dir}/plugins_data/{plugin_id}/config.json`
+/// Returns `null` if the file does not exist.
+#[tauri::command]
+fn read_plugin_config(
+    app_handle: tauri::AppHandle,
+    plugin_id: String,
+) -> Result<Option<String>, String> {
+    use tauri::Manager;
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("failed to get app data dir: {}", e))?;
+    let path = app_data_dir.join("plugins_data").join(&plugin_id).join("config.json");
+    if !path.exists() {
+        return Ok(None);
+    }
+    let data = std::fs::read_to_string(&path)
+        .map_err(|e| format!("failed to read plugin config: {}", e))?;
+    Ok(Some(data))
+}
+
+/// Write leaderboard preferences to `{app_data_dir}/leaderboard-prefs.json`
+/// so the leaderboard plugin.js can read them from the QuickJS sandbox.
+#[tauri::command]
+fn write_leaderboard_prefs(app_handle: tauri::AppHandle, data: String) -> Result<(), String> {
+    use tauri::Manager;
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("failed to get app data dir: {}", e))?;
+    std::fs::create_dir_all(&app_data_dir)
+        .map_err(|e| format!("failed to create app data dir: {}", e))?;
+    let path = app_data_dir.join("leaderboard-prefs.json");
+    std::fs::write(&path, data.as_bytes())
+        .map_err(|e| format!("failed to write leaderboard prefs: {}", e))?;
     Ok(())
 }
 
@@ -667,6 +724,9 @@ pub fn run() {
             update_global_shortcut,
             set_profile_avatar,
             remove_profile_avatar,
+            write_leaderboard_prefs,
+            write_plugin_config,
+            read_plugin_config,
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
@@ -735,28 +795,25 @@ pub fn run() {
             {
                 use tauri_plugin_store::StoreExt;
 
-                if let Ok(store) = app.handle().store("settings.json") {
-                    if let Some(shortcut_value) = store.get(GLOBAL_SHORTCUT_STORE_KEY) {
-                        if let Some(shortcut) = shortcut_value.as_str() {
-                            let shortcut = shortcut.trim();
-                            if !shortcut.is_empty() {
-                                let handle = app.handle().clone();
-                                log::info!("Registering initial global shortcut: {}", shortcut);
-                                if let Err(e) = handle.global_shortcut().on_shortcut(
-                                    shortcut,
-                                    |app, _shortcut, event| {
-                                        handle_global_shortcut(app, event);
-                                    },
-                                ) {
-                                    log::warn!("Failed to register initial global shortcut: {}", e);
-                                } else if let Ok(mut managed_shortcut) =
-                                    managed_shortcut_slot().lock()
-                                {
-                                    *managed_shortcut = Some(shortcut.to_string());
-                                } else {
-                                    log::warn!("Failed to store managed shortcut in memory");
-                                }
-                            }
+                if let Ok(store) = app.handle().store("settings.json")
+                    && let Some(shortcut_value) = store.get(GLOBAL_SHORTCUT_STORE_KEY)
+                    && let Some(shortcut) = shortcut_value.as_str()
+                {
+                    let shortcut = shortcut.trim();
+                    if !shortcut.is_empty() {
+                        let handle = app.handle().clone();
+                        log::info!("Registering initial global shortcut: {}", shortcut);
+                        if let Err(e) = handle.global_shortcut().on_shortcut(
+                            shortcut,
+                            |app, _shortcut, event| {
+                                handle_global_shortcut(app, event);
+                            },
+                        ) {
+                            log::warn!("Failed to register initial global shortcut: {}", e);
+                        } else if let Ok(mut managed_shortcut) = managed_shortcut_slot().lock() {
+                            *managed_shortcut = Some(shortcut.to_string());
+                        } else {
+                            log::warn!("Failed to store managed shortcut in memory");
                         }
                     }
                 }
@@ -772,8 +829,8 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        find_profile_dir, update_avatar_in_state,
-        DAILY_ACTIVE_TRACKED_DAY_KEY, seconds_until_next_utc_day, should_track_daily_active,
+        DAILY_ACTIVE_TRACKED_DAY_KEY, find_profile_dir, seconds_until_next_utc_day,
+        should_track_daily_active, update_avatar_in_state,
     };
     use crate::plugin_engine::{
         manifest::{LoadedPlugin, PluginManifest},
@@ -804,7 +861,11 @@ mod tests {
         }
         ProfileInstance {
             id_suffix: suffix.to_string(),
-            display_label: if suffix.is_empty() { None } else { Some(suffix.to_string()) },
+            display_label: if suffix.is_empty() {
+                None
+            } else {
+                Some(suffix.to_string())
+            },
             env_overrides,
             avatar_data_url: None,
         }
@@ -854,9 +915,20 @@ mod tests {
                 make_instance("work", Some("/profiles/work")),
             ],
         )];
-        update_avatar_in_state(&mut plugins, "claude:work", Some("data:image/png;base64,abc".to_string()));
-        let inst = plugins[0].instances.iter().find(|i| i.id_suffix == "work").unwrap();
-        assert_eq!(inst.avatar_data_url.as_deref(), Some("data:image/png;base64,abc"));
+        update_avatar_in_state(
+            &mut plugins,
+            "claude:work",
+            Some("data:image/png;base64,abc".to_string()),
+        );
+        let inst = plugins[0]
+            .instances
+            .iter()
+            .find(|i| i.id_suffix == "work")
+            .unwrap();
+        assert_eq!(
+            inst.avatar_data_url.as_deref(),
+            Some("data:image/png;base64,abc")
+        );
     }
 
     #[test]

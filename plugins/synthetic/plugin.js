@@ -49,11 +49,7 @@
   }
 
   function hasUsableRollingFiveHourLimit(value) {
-    return (
-      value &&
-      typeof value.max === "number" &&
-      typeof value.remaining === "number"
-    );
+    return value && typeof value.max === "number" && typeof value.remaining === "number";
   }
 
   function hasUsableWeeklyTokenLimit(value) {
@@ -145,7 +141,7 @@
       });
       resp = result.resp;
       json = result.json;
-    } catch (e) {
+    } catch {
       throw "Request failed. Check your connection.";
     }
 
@@ -168,37 +164,38 @@
     if (hasUsableRollingFiveHourLimit(json.rollingFiveHourLimit)) {
       var rfl = json.rollingFiveHourLimit;
       var rflUsed = Math.max(0, rfl.max - rfl.remaining);
-      lines.push(ctx.line.progress({
-        label: "5h Rate Limit",
-        used: rflUsed,
-        limit: rfl.max,
-        format: { kind: "count", suffix: "requests" },
-      }));
+      lines.push(
+        ctx.line.progress({
+          label: "5h Rate Limit",
+          used: rflUsed,
+          limit: rfl.max,
+          format: { kind: "count", suffix: "requests" },
+        }),
+      );
     }
 
     // Mana Bar — longer-term weekly budget
     if (hasUsableWeeklyTokenLimit(json.weeklyTokenLimit)) {
       var pct = json.weeklyTokenLimit.percentRemaining;
       var manaUsed = Math.max(0, Math.round(100 - pct));
-      lines.push(ctx.line.progress({
-        label: "Mana Bar",
-        used: manaUsed,
-        limit: 100,
-        format: { kind: "percent" },
-      }));
+      lines.push(
+        ctx.line.progress({
+          label: "Mana Bar",
+          used: manaUsed,
+          limit: 100,
+          format: { kind: "percent" },
+        }),
+      );
     }
 
     // Rate Limited badge — only when actively limited
-    if (
-      json.rollingFiveHourLimit &&
-      json.rollingFiveHourLimit.limited === true
-    ) {
+    if (json.rollingFiveHourLimit && json.rollingFiveHourLimit.limited === true) {
       lines.push(
         ctx.line.badge({
           label: "Rate Limited",
           text: "Rate limited",
           color: "#ef4444",
-        })
+        }),
       );
     }
 
@@ -220,7 +217,12 @@
     }
 
     // Free Tool Calls — legacy only, zeroed out on v3
-    if (!onV3 && json.freeToolCalls && typeof json.freeToolCalls.limit === "number" && json.freeToolCalls.limit > 0) {
+    if (
+      !onV3 &&
+      json.freeToolCalls &&
+      typeof json.freeToolCalls.limit === "number" &&
+      json.freeToolCalls.limit > 0
+    ) {
       var ftc = json.freeToolCalls;
       var ftcOpts = {
         label: "Free Tool Calls",
@@ -234,11 +236,7 @@
     }
 
     // Search — hourly search quota (detail)
-    if (
-      json.search &&
-      json.search.hourly &&
-      typeof json.search.hourly.limit === "number"
-    ) {
+    if (json.search && json.search.hourly && typeof json.search.hourly.limit === "number") {
       var srch = json.search.hourly;
       var srchOpts = {
         label: "Search",

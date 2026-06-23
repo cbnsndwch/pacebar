@@ -1,12 +1,12 @@
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
-import { OverviewPage } from "@/pages/overview"
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { OverviewPage } from "@/pages/overview";
 
 describe("OverviewPage", () => {
   it("renders empty state", () => {
-    render(<OverviewPage plugins={[]} displayMode="used" resetTimerDisplayMode="relative" />)
-    expect(screen.getByText("No providers enabled")).toBeInTheDocument()
-  })
+    render(<OverviewPage plugins={[]} displayMode="used" resetTimerDisplayMode="relative" />);
+    expect(screen.getByText("No providers enabled")).toBeInTheDocument();
+  });
 
   it("renders provider cards", () => {
     const plugins = [
@@ -18,10 +18,10 @@ describe("OverviewPage", () => {
         lastManualRefreshAt: null,
         lastUpdatedAt: null,
       },
-    ]
-    render(<OverviewPage plugins={plugins} displayMode="used" resetTimerDisplayMode="relative" />)
-    expect(screen.getByText("Alpha")).toBeInTheDocument()
-  })
+    ];
+    render(<OverviewPage plugins={plugins} displayMode="used" resetTimerDisplayMode="relative" />);
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
+  });
 
   it("only shows overview-scoped lines", () => {
     const plugins = [
@@ -49,13 +49,13 @@ describe("OverviewPage", () => {
         lastManualRefreshAt: null,
         lastUpdatedAt: null,
       },
-    ]
-    render(<OverviewPage plugins={plugins} displayMode="used" resetTimerDisplayMode="relative" />)
-    expect(screen.getByText("Primary")).toBeInTheDocument()
-    expect(screen.getByText("Shown")).toBeInTheDocument()
-    expect(screen.queryByText("Secondary")).not.toBeInTheDocument()
-    expect(screen.queryByText("Hidden")).not.toBeInTheDocument()
-  })
+    ];
+    render(<OverviewPage plugins={plugins} displayMode="used" resetTimerDisplayMode="relative" />);
+    expect(screen.getByText("Primary")).toBeInTheDocument();
+    expect(screen.getByText("Shown")).toBeInTheDocument();
+    expect(screen.queryByText("Secondary")).not.toBeInTheDocument();
+    expect(screen.queryByText("Hidden")).not.toBeInTheDocument();
+  });
 
   it("does not show provider quick links in combined view", () => {
     const plugins = [
@@ -73,9 +73,9 @@ describe("OverviewPage", () => {
         lastManualRefreshAt: null,
         lastUpdatedAt: null,
       },
-    ]
+    ];
 
-    render(<OverviewPage plugins={plugins} displayMode="used" resetTimerDisplayMode="relative" />)
-    expect(screen.queryByRole("button", { name: /status/i })).toBeNull()
-  })
-})
+    render(<OverviewPage plugins={plugins} displayMode="used" resetTimerDisplayMode="relative" />);
+    expect(screen.queryByRole("button", { name: /status/i })).toBeNull();
+  });
+});

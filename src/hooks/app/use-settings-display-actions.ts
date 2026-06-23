@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback } from "react";
 import {
   saveDisplayMode,
   saveMenubarIconStyle,
@@ -8,18 +8,18 @@ import {
   type MenubarIconStyle,
   type ResetTimerDisplayMode,
   type ThemeMode,
-} from "@/lib/settings"
+} from "@/lib/settings";
 
-type ScheduleTrayIconUpdate = (reason: "probe" | "settings" | "init", delayMs?: number) => void
+type ScheduleTrayIconUpdate = (reason: "probe" | "settings" | "init", delayMs?: number) => void;
 
 type UseSettingsDisplayActionsArgs = {
-  setThemeMode: (value: ThemeMode) => void
-  setDisplayMode: (value: DisplayMode) => void
-  resetTimerDisplayMode: ResetTimerDisplayMode
-  setResetTimerDisplayMode: (value: ResetTimerDisplayMode) => void
-  setMenubarIconStyle: (value: MenubarIconStyle) => void
-  scheduleTrayIconUpdate: ScheduleTrayIconUpdate
-}
+  setThemeMode: (value: ThemeMode) => void;
+  setDisplayMode: (value: DisplayMode) => void;
+  resetTimerDisplayMode: ResetTimerDisplayMode;
+  setResetTimerDisplayMode: (value: ResetTimerDisplayMode) => void;
+  setMenubarIconStyle: (value: MenubarIconStyle) => void;
+  scheduleTrayIconUpdate: ScheduleTrayIconUpdate;
+};
 
 export function useSettingsDisplayActions({
   setThemeMode,
@@ -29,40 +29,52 @@ export function useSettingsDisplayActions({
   setMenubarIconStyle,
   scheduleTrayIconUpdate,
 }: UseSettingsDisplayActionsArgs) {
-  const handleThemeModeChange = useCallback((mode: ThemeMode) => {
-    setThemeMode(mode)
-    void saveThemeMode(mode).catch((error) => {
-      console.error("Failed to save theme mode:", error)
-    })
-  }, [setThemeMode])
+  const handleThemeModeChange = useCallback(
+    (mode: ThemeMode) => {
+      setThemeMode(mode);
+      void saveThemeMode(mode).catch((error) => {
+        console.error("Failed to save theme mode:", error);
+      });
+    },
+    [setThemeMode],
+  );
 
-  const handleDisplayModeChange = useCallback((mode: DisplayMode) => {
-    setDisplayMode(mode)
-    scheduleTrayIconUpdate("settings", 0)
-    void saveDisplayMode(mode).catch((error) => {
-      console.error("Failed to save display mode:", error)
-    })
-  }, [scheduleTrayIconUpdate, setDisplayMode])
+  const handleDisplayModeChange = useCallback(
+    (mode: DisplayMode) => {
+      setDisplayMode(mode);
+      scheduleTrayIconUpdate("settings", 0);
+      void saveDisplayMode(mode).catch((error) => {
+        console.error("Failed to save display mode:", error);
+      });
+    },
+    [scheduleTrayIconUpdate, setDisplayMode],
+  );
 
-  const handleResetTimerDisplayModeChange = useCallback((mode: ResetTimerDisplayMode) => {
-    setResetTimerDisplayMode(mode)
-    void saveResetTimerDisplayMode(mode).catch((error) => {
-      console.error("Failed to save reset timer display mode:", error)
-    })
-  }, [setResetTimerDisplayMode])
+  const handleResetTimerDisplayModeChange = useCallback(
+    (mode: ResetTimerDisplayMode) => {
+      setResetTimerDisplayMode(mode);
+      void saveResetTimerDisplayMode(mode).catch((error) => {
+        console.error("Failed to save reset timer display mode:", error);
+      });
+    },
+    [setResetTimerDisplayMode],
+  );
 
   const handleResetTimerDisplayModeToggle = useCallback(() => {
-    const next = resetTimerDisplayMode === "relative" ? "absolute" : "relative"
-    handleResetTimerDisplayModeChange(next)
-  }, [handleResetTimerDisplayModeChange, resetTimerDisplayMode])
+    const next = resetTimerDisplayMode === "relative" ? "absolute" : "relative";
+    handleResetTimerDisplayModeChange(next);
+  }, [handleResetTimerDisplayModeChange, resetTimerDisplayMode]);
 
-  const handleMenubarIconStyleChange = useCallback((style: MenubarIconStyle) => {
-    setMenubarIconStyle(style)
-    scheduleTrayIconUpdate("settings", 0)
-    void saveMenubarIconStyle(style).catch((error) => {
-      console.error("Failed to save menubar icon style:", error)
-    })
-  }, [scheduleTrayIconUpdate, setMenubarIconStyle])
+  const handleMenubarIconStyleChange = useCallback(
+    (style: MenubarIconStyle) => {
+      setMenubarIconStyle(style);
+      scheduleTrayIconUpdate("settings", 0);
+      void saveMenubarIconStyle(style).catch((error) => {
+        console.error("Failed to save menubar icon style:", error);
+      });
+    },
+    [scheduleTrayIconUpdate, setMenubarIconStyle],
+  );
 
   return {
     handleThemeModeChange,
@@ -70,5 +82,5 @@ export function useSettingsDisplayActions({
     handleResetTimerDisplayModeChange,
     handleResetTimerDisplayModeToggle,
     handleMenubarIconStyleChange,
-  }
+  };
 }

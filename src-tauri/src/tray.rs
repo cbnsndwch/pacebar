@@ -193,11 +193,11 @@ pub fn create(app_handle: &AppHandle) -> tauri::Result<()> {
         .on_tray_icon_event(|tray, event| {
             let app_handle = tray.app_handle();
 
-            if let TrayIconEvent::Click { button_state, .. } = event {
-                if button_state == MouseButtonState::Up {
-                    log::debug!("tray click");
-                    toggle_panel(app_handle);
-                }
+            if let TrayIconEvent::Click { button_state, .. } = event
+                && button_state == MouseButtonState::Up
+            {
+                log::debug!("tray click");
+                toggle_panel(app_handle);
             }
         })
         .build(app_handle)?;

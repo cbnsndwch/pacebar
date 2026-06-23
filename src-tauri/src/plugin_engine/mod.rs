@@ -10,11 +10,11 @@ pub fn initialize_plugins(
     app_data_dir: &Path,
     resource_dir: &Path,
 ) -> (PathBuf, Vec<LoadedPlugin>) {
-    if let Some(dev_dir) = find_dev_plugins_dir() {
-        if !is_dir_empty(&dev_dir) {
-            let plugins = manifest::load_plugins_from_dir(&dev_dir);
-            return (dev_dir, plugins);
-        }
+    if let Some(dev_dir) = find_dev_plugins_dir()
+        && !is_dir_empty(&dev_dir)
+    {
+        let plugins = manifest::load_plugins_from_dir(&dev_dir);
+        return (dev_dir, plugins);
     }
 
     let install_dir = app_data_dir.join("plugins");
@@ -100,15 +100,15 @@ fn copy_dir_recursive(src: &Path, dst: &Path) {
                         continue;
                     }
                     copy_dir_recursive(&src_path, &dst_path);
-                } else if file_type.is_file() {
-                    if let Err(err) = std::fs::copy(&src_path, &dst_path) {
-                        log::warn!(
-                            "failed to copy {} to {}: {}",
-                            src_path.display(),
-                            dst_path.display(),
-                            err
-                        );
-                    }
+                } else if file_type.is_file()
+                    && let Err(err) = std::fs::copy(&src_path, &dst_path)
+                {
+                    log::warn!(
+                        "failed to copy {} to {}: {}",
+                        src_path.display(),
+                        dst_path.display(),
+                        err
+                    );
                 }
             }
         }

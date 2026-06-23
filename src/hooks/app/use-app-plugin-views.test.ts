@@ -1,8 +1,8 @@
-import { renderHook, waitFor } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
-import { useAppPluginViews } from "@/hooks/app/use-app-plugin-views"
-import type { PluginMeta } from "@/lib/plugin-types"
-import type { PluginSettings } from "@/lib/settings"
+import { renderHook, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { useAppPluginViews } from "@/hooks/app/use-app-plugin-views";
+import type { PluginMeta } from "@/lib/plugin-types";
+import type { PluginSettings } from "@/lib/settings";
 
 function createPluginMeta(id: string, name: string, extra?: Partial<PluginMeta>): PluginMeta {
   return {
@@ -14,7 +14,7 @@ function createPluginMeta(id: string, name: string, extra?: Partial<PluginMeta>)
     primaryCandidates: [],
     supportsAvatar: false,
     ...extra,
-  }
+  };
 }
 
 describe("useAppPluginViews", () => {
@@ -22,12 +22,9 @@ describe("useAppPluginViews", () => {
     const pluginSettings: PluginSettings = {
       order: ["codex", "cursor"],
       disabled: ["cursor"],
-    }
+    };
 
-    const pluginsMeta = [
-      createPluginMeta("cursor", "Cursor"),
-      createPluginMeta("codex", "Codex"),
-    ]
+    const pluginsMeta = [createPluginMeta("cursor", "Cursor"), createPluginMeta("codex", "Codex")];
 
     const { result } = renderHook(() =>
       useAppPluginViews({
@@ -44,12 +41,12 @@ describe("useAppPluginViews", () => {
             lastUpdatedAt: null,
           },
         },
-      })
-    )
+      }),
+    );
 
-    expect(result.current.displayPlugins).toHaveLength(1)
-    expect(result.current.displayPlugins[0]?.meta.id).toBe("codex")
-    expect(result.current.displayPlugins[0]?.loading).toBe(true)
+    expect(result.current.displayPlugins).toHaveLength(1);
+    expect(result.current.displayPlugins[0]?.meta.id).toBe("codex");
+    expect(result.current.displayPlugins[0]?.loading).toBe(true);
     expect(result.current.navPlugins).toEqual([
       {
         id: "codex",
@@ -57,15 +54,15 @@ describe("useAppPluginViews", () => {
         iconUrl: "/codex.svg",
         brandColor: "#000000",
       },
-    ])
-  })
+    ]);
+  });
 
   it("falls back to home when active provider becomes disabled", async () => {
-    const setActiveView = vi.fn()
+    const setActiveView = vi.fn();
     const pluginSettings: PluginSettings = {
       order: ["codex"],
       disabled: ["codex"],
-    }
+    };
 
     renderHook(() =>
       useAppPluginViews({
@@ -74,17 +71,17 @@ describe("useAppPluginViews", () => {
         pluginSettings,
         pluginsMeta: [createPluginMeta("codex", "Codex")],
         pluginStates: {},
-      })
-    )
+      }),
+    );
 
     await waitFor(() => {
-      expect(setActiveView).toHaveBeenCalledWith("home")
-    })
-  })
+      expect(setActiveView).toHaveBeenCalledWith("home");
+    });
+  });
 
   it("does not fall back while plugin settings are still loading", async () => {
-    const setActiveView = vi.fn()
-    const pluginsMeta = [createPluginMeta("codex", "Codex")]
+    const setActiveView = vi.fn();
+    const pluginsMeta = [createPluginMeta("codex", "Codex")];
     const { rerender } = renderHook(
       ({ pluginSettings }: { pluginSettings: PluginSettings | null }) =>
         useAppPluginViews({
@@ -94,25 +91,25 @@ describe("useAppPluginViews", () => {
           pluginsMeta,
           pluginStates: {},
         }),
-      { initialProps: { pluginSettings: null } }
-    )
+      { initialProps: { pluginSettings: null } },
+    );
 
-    expect(setActiveView).not.toHaveBeenCalled()
+    expect(setActiveView).not.toHaveBeenCalled();
 
     rerender({
       pluginSettings: {
         order: ["codex"],
         disabled: ["codex"],
       },
-    })
+    });
 
     await waitFor(() => {
-      expect(setActiveView).toHaveBeenCalledWith("home")
-    })
-  })
+      expect(setActiveView).toHaveBeenCalledWith("home");
+    });
+  });
 
   it("forwards avatarUrl from PluginMeta into NavPlugin", () => {
-    const avatarUrl = "data:image/png;base64,abc"
+    const avatarUrl = "data:image/png;base64,abc";
     const { result } = renderHook(() =>
       useAppPluginViews({
         activeView: "home",
@@ -120,10 +117,10 @@ describe("useAppPluginViews", () => {
         pluginSettings: { order: ["codex"], disabled: [] },
         pluginsMeta: [createPluginMeta("codex", "Codex", { avatarUrl })],
         pluginStates: {},
-      })
-    )
-    expect(result.current.navPlugins[0]?.avatarUrl).toBe(avatarUrl)
-  })
+      }),
+    );
+    expect(result.current.navPlugins[0]?.avatarUrl).toBe(avatarUrl);
+  });
 
   it("navPlugin avatarUrl is undefined when PluginMeta has none", () => {
     const { result } = renderHook(() =>
@@ -133,16 +130,16 @@ describe("useAppPluginViews", () => {
         pluginSettings: { order: ["codex"], disabled: [] },
         pluginsMeta: [createPluginMeta("codex", "Codex")],
         pluginStates: {},
-      })
-    )
-    expect(result.current.navPlugins[0]?.avatarUrl).toBeUndefined()
-  })
+      }),
+    );
+    expect(result.current.navPlugins[0]?.avatarUrl).toBeUndefined();
+  });
 
   it("returns selected plugin for active provider view", () => {
     const pluginSettings: PluginSettings = {
       order: ["codex"],
       disabled: [],
-    }
+    };
 
     const { result } = renderHook(() =>
       useAppPluginViews({
@@ -151,9 +148,9 @@ describe("useAppPluginViews", () => {
         pluginSettings,
         pluginsMeta: [createPluginMeta("codex", "Codex")],
         pluginStates: {},
-      })
-    )
+      }),
+    );
 
-    expect(result.current.selectedPlugin?.meta.id).toBe("codex")
-  })
-})
+    expect(result.current.selectedPlugin?.meta.id).toBe("codex");
+  });
+});
