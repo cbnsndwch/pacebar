@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "test": "vitest",
     "types": "wrangler types",
     "db:create": "wrangler d1 create pacebar-leaderboard",
     "db:migrate": "wrangler d1 execute pacebar-leaderboard --file schema.sql",
