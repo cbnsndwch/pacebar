@@ -129,11 +129,12 @@ globalThis.__pacebar_plugin = {
       };
     }
 
-    // ── Build provider payload from local cache ──
+    // ── Build provider/model payload from local cache ──
     const snapshots = loadCache(ctx);
     const shareList = Array.isArray(prefs.shareList) ? new Set(prefs.shareList) : null;
 
     const providers = [];
+    const models = [];
     let totalTokens = 0;
     let totalDollars = 0;
 
@@ -153,6 +154,33 @@ globalThis.__pacebar_plugin = {
           dollarsSpent: dollars,
         });
       }
+
+      // Per-model snapshots: currently one aggregate model per provider.
+      // Future plugins can expose richer modelUsage in the cache snapshot.
+      const snapModels = snap.modelUsage;
+      if (snapModels && typeof snapModels === "object") {
+        for (const [modelId, m] of Object.entries(snapModels)) {
+          models.push({
+            providerId: id,
+            modelId,
+            modelName: m.modelName || modelId,
+            tokensIn: typeof m.tokensIn === "number" ? m.tokensIn : null,
+            tokensOut: typeof m.tokensOut === "number" ? m.tokensOut : null,
+            tokensTotal: typeof m.tokensTotal === "number" ? m.tokensTotal : null,
+            dollarsSpent: typeof m.dollarsSpent === "number" ? m.dollarsSpent : null,
+          });
+        }
+      } else {
+        models.push({
+          providerId: id,
+          modelId: "total",
+          modelName: snap.displayName || id,
+          tokensIn: null,
+          tokensOut: null,
+          tokensTotal: tokens,
+          dollarsSpent: dollars,
+        });
+      }
     }
 
     // ── Report to CF Worker ──
@@ -162,6 +190,7 @@ globalThis.__pacebar_plugin = {
         handle: prefs.handle,
         submittedAt: ctx.nowIso,
         providers,
+        models,
       });
       reportOk = resp.status >= 200 && resp.status < 300;
     } catch (err) {

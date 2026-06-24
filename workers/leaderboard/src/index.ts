@@ -1,16 +1,12 @@
 import type { D1Database, ExecutionContext, ScheduledController } from "@cloudflare/workers-types";
 
-import {
-  getSyncState,
-  recordSyncFailure,
-  recordSyncSuccess,
-  upsertHacknight,
-} from "./lib/db";
+import { getSyncState, recordSyncFailure, recordSyncSuccess, upsertHacknight } from "./lib/db";
 import { fetchLumaHacknights } from "./lib/luma";
 import {
   handleHacknightByNumber,
   handleHacknightCurrent,
   handleHacknightList,
+  handleHacknightWinners,
 } from "./routes/hacknight";
 import { handleLeaderboard } from "./routes/leaderboard";
 import { handleReport } from "./routes/report";
@@ -143,6 +139,12 @@ export default {
     const hnMatch = pathname.match(/^\/api\/v1\/hacknight\/(\d+)$/);
     if (req.method === "GET" && hnMatch) {
       return cors(await handleHacknightByNumber(req, env.DB, parseInt(hnMatch[1], 10)));
+    }
+
+    // GET /api/v1/hacknight/:number/winners
+    const hnWinnersMatch = pathname.match(/^\/api\/v1\/hacknight\/(\d+)\/winners$/);
+    if (req.method === "GET" && hnWinnersMatch) {
+      return cors(await handleHacknightWinners(req, env.DB, parseInt(hnWinnersMatch[1], 10)));
     }
 
     return json({ error: "not found" }, 404);

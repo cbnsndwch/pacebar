@@ -5,6 +5,7 @@ import {
   getUpcomingHacknights,
   listHacknights,
   getHacknightByNumber,
+  getHacknightWinners,
 } from "../lib/db";
 
 export async function handleHacknightCurrent(_req: Request, db: D1Database): Promise<Response> {
@@ -34,6 +35,17 @@ export async function handleHacknightByNumber(
   const hn = await getHacknightByNumber(db, number);
   if (!hn) return jsonError("not found", 404);
   return json(hn);
+}
+
+export async function handleHacknightWinners(
+  _req: Request,
+  db: D1Database,
+  number: number,
+): Promise<Response> {
+  const hn = await getHacknightByNumber(db, number);
+  if (!hn) return jsonError("not found", 404);
+  const winners = await getHacknightWinners(db, hn.id);
+  return json({ hacknight: hn, winners });
 }
 
 function json(data: unknown, status = 200): Response {

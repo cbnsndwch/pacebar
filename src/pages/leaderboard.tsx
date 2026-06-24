@@ -7,10 +7,13 @@ import { useNowTicker } from "@/hooks/use-now-ticker";
 import {
   fetchCurrentHacknight,
   fetchLeaderboard,
+  fetchModelLeaderboard,
   type HacknightCurrentResponse,
   type LeaderboardEntry,
+  type LeaderboardGroupBy,
   type LeaderboardMetric,
   type LeaderboardWindow,
+  type ModelLeaderboardEntry,
 } from "@/lib/leaderboard-api";
 import { cn } from "@/lib/utils";
 import { ErrorReport } from "@/components/error-report";
@@ -30,9 +33,83 @@ const METRIC_OPTIONS: { value: LeaderboardMetric; label: string }[] = [
   { value: "score", label: "Score" },
 ];
 
+const MODEL_METRIC_OPTIONS: { value: LeaderboardMetric; label: string }[] = [
+  { value: "tokens", label: "Tokens" },
+  { value: "dollars", label: "Dollars" },
+];
+
+const GROUP_OPTIONS: { value: LeaderboardGroupBy; label: string }[] = [
+  { value: "users", label: "People" },
+  { value: "model", label: "Models" },
+];
+
 const REFRESH_INTERVAL_MS = 60_000;
 // While no session is live, poll less often just to notice one starting.
 const IDLE_REFRESH_INTERVAL_MS = 5 * 60_000;
+
+function formatTokens(n: number): string {
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+  return String(n);
+}
+
+function rankBadge(rank: number): string {
+  if (rank === 1) return "🥇";
+  if (rank === 2) return "🥈";
+  if (rank === 3) return "🥉";
+  return `#${rank}`;
+}
+
+function ModelLeaderboardTable({
+  entries,
+  metric,
+}: {
+  entries: ModelLeaderboardEntry[];
+  metric: LeaderboardMetric;
+}) {
+  if (entries.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground text-center py-6">
+        No model entries yet — be the first to report!
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-0.5">
+      {entries.map((entry) => {
+        const value =
+          metric === "dollars"
+            ? `$${entry.dollars_spent.toFixed(2)}`
+            : `${formatTokens(entry.tokens_used)} tokens`;
+        const topLabel = entry.top_handle
+          ? `${entry.top_handle} · ${formatTokens(entry.top_tokens)}t`
+          : "—";
+        return (
+          <div
+            key={entry.model_key}
+            className="flex flex-col gap-0.5 px-3 py-2 rounded-md text-sm hover:bg-muted/50"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-7 shrink-0 text-center tabular-nums">{rankBadge(entry.rank)}</span>
+              <span className="flex-1 truncate font-medium">
+                {entry.model_name ?? entry.model_id}
+              </span>
+              <span className="tabular-nums text-muted-foreground">{value}</span>
+            </div>
+            <div className="flex items-center pl-10 text-xs text-muted-foreground">
+              <span className="flex-1 truncate">Top: {topLabel}</span>
+              <span className="tabular-nums">
+                {entry.users} user{entry.users !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function LeaderboardPage() {
   const { leaderboardWorkerUrl, leaderboardToken, leaderboardHandle, leaderboardOptIn } =
@@ -47,7 +124,9 @@ export function LeaderboardPage() {
 
   const [selectedWindow, setSelectedWindow] = useState<LeaderboardWindow>("hacknight");
   const [selectedMetric, setSelectedMetric] = useState<LeaderboardMetric>("tokens");
+  const [selectedGroupBy, setSelectedGroupBy] = useState<LeaderboardGroupBy>("users");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [modelEntries, setModelEntries] = useState<ModelLeaderboardEntry[]>([]);
   const [hacknight, setHacknight] = useState<HacknightCurrentResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,8 +140,11 @@ export function LeaderboardPage() {
     intervalMs: inSession ? REFRESH_INTERVAL_MS : IDLE_REFRESH_INTERVAL_MS,
   });
 
-  // Also track when the user changes the window/metric tabs
-  const fetchKey = `${selectedWindow}:${selectedMetric}:${tick}`;
+  // Model leaderboards only make sense for hack night windows right now.
+  const effectiveGroupBy = selectedWindow === "hacknight" ? selectedGroupBy : "users";
+
+  // Also track when the user changes the window/metric/group tabs
+  const fetchKey = `${selectedWindow}:${selectedMetric}:${effectiveGroupBy}:${tick}`;
   const fetchKeyRef = useRef(fetchKey);
   fetchKeyRef.current = fetchKey;
 
@@ -78,18 +160,32 @@ export function LeaderboardPage() {
       try {
         const [hn, lb] = await Promise.all([
           fetchCurrentHacknight(leaderboardWorkerUrl, leaderboardToken),
-          fetchLeaderboard(
-            leaderboardWorkerUrl,
-            leaderboardToken,
-            selectedWindow,
-            selectedMetric,
-            // Pass the active hack night number when viewing hack night window
-            selectedWindow === "hacknight" ? undefined : undefined,
-          ),
+          effectiveGroupBy === "model"
+            ? fetchModelLeaderboard(
+                leaderboardWorkerUrl,
+                leaderboardToken,
+                selectedWindow,
+                selectedMetric,
+                selectedWindow === "hacknight" ? undefined : undefined,
+              )
+            : fetchLeaderboard(
+                leaderboardWorkerUrl,
+                leaderboardToken,
+                selectedWindow,
+                selectedMetric,
+                selectedWindow === "hacknight" ? undefined : undefined,
+                "users",
+              ),
         ]);
         if (cancelled) return;
         setHacknight(hn);
-        setEntries(lb.entries);
+        if (effectiveGroupBy === "model") {
+          setModelEntries((lb as { entries: ModelLeaderboardEntry[] }).entries);
+          setEntries([]);
+        } else {
+          setEntries((lb as { entries: LeaderboardEntry[] }).entries);
+          setModelEntries([]);
+        }
       } catch (err) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : "Failed to load leaderboard");
@@ -104,6 +200,17 @@ export function LeaderboardPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaderboardWorkerUrl, leaderboardToken, leaderboardOptIn, fetchKey]);
+
+  // If the model view is active with an unsupported metric, fall back to tokens.
+  useEffect(() => {
+    if (
+      effectiveGroupBy === "model" &&
+      selectedMetric !== "tokens" &&
+      selectedMetric !== "dollars"
+    ) {
+      setSelectedMetric("tokens");
+    }
+  }, [effectiveGroupBy, selectedMetric]);
 
   // ── Early-exit states ──────────────────────────────────────────────────────
 
@@ -160,10 +267,7 @@ export function LeaderboardPage() {
               {upcoming.map((s) => {
                 const start = new Date(s.starts_at);
                 return (
-                  <li
-                    key={s.number}
-                    className="flex items-center justify-between gap-2 text-xs"
-                  >
+                  <li key={s.number} className="flex items-center justify-between gap-2 text-xs">
                     <span className="flex items-center gap-1.5 min-w-0">
                       <span className="font-medium truncate">Hack Night #{s.number}</span>
                       {s.is_special && (
@@ -242,7 +346,7 @@ export function LeaderboardPage() {
       {/* Metric tabs */}
       <div className="bg-muted/50 rounded-lg p-1">
         <div className="flex gap-1" role="radiogroup" aria-label="Leaderboard metric">
-          {METRIC_OPTIONS.map((opt) => {
+          {(effectiveGroupBy === "model" ? MODEL_METRIC_OPTIONS : METRIC_OPTIONS).map((opt) => {
             const isActive = opt.value === selectedMetric;
             return (
               <Button
@@ -262,6 +366,31 @@ export function LeaderboardPage() {
         </div>
       </div>
 
+      {/* Group tabs (People vs Models) — only for hack night */}
+      {selectedWindow === "hacknight" && (
+        <div className="bg-muted/50 rounded-lg p-1">
+          <div className="flex gap-1" role="radiogroup" aria-label="Leaderboard group">
+            {GROUP_OPTIONS.map((opt) => {
+              const isActive = opt.value === selectedGroupBy;
+              return (
+                <Button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  variant={isActive ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={() => setSelectedGroupBy(opt.value)}
+                >
+                  {opt.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Results */}
       {error ? (
         <ErrorReport
@@ -272,22 +401,28 @@ export function LeaderboardPage() {
               workerUrl: leaderboardWorkerUrl,
               window: selectedWindow,
               metric: selectedMetric,
+              groupBy: effectiveGroupBy,
               optIn: leaderboardOptIn,
             },
           }}
         />
-      ) : loading && entries.length === 0 ? (
+      ) : loading && entries.length === 0 && modelEntries.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-4">Loading…</p>
-      ) : entries.length === 0 ? (
+      ) : entries.length === 0 && modelEntries.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 px-4 text-center">
           <Trophy className="size-8 text-muted-foreground" />
           <p className="text-sm font-medium">No rankings yet</p>
           <p className="text-xs text-muted-foreground leading-relaxed">
             This board ranks AI-coding usage among hello_miami builders. While participation is on,
             your usage is shared automatically during Hack Nights (Tuesday &amp; Thursday evenings,
-            ET). {inSession ? "A session is live — be the first on the board!" : "Check back during the next Hack Night to compete."}
+            ET).{" "}
+            {inSession
+              ? "A session is live — be the first on the board!"
+              : "Check back during the next Hack Night to compete."}
           </p>
         </div>
+      ) : effectiveGroupBy === "model" ? (
+        <ModelLeaderboardTable entries={modelEntries} metric={selectedMetric} />
       ) : (
         <LeaderboardTable entries={entries} handle={leaderboardHandle} metric={selectedMetric} />
       )}

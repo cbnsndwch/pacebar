@@ -2,6 +2,17 @@
 
 export type LeaderboardWindow = "hacknight" | "daily" | "weekly" | "monthly";
 export type LeaderboardMetric = "tokens" | "dollars" | "providers" | "score";
+export type LeaderboardGroupBy = "users" | "model";
+
+export interface PerModelUsage {
+  provider_id: string;
+  model_id: string;
+  model_name: string | null;
+  tokens_total: number;
+  tokens_in: number | null;
+  tokens_out: number | null;
+  dollars_spent: number;
+}
 
 export interface LeaderboardEntry {
   rank: number;
@@ -10,12 +21,29 @@ export interface LeaderboardEntry {
   dollars_spent: number;
   providers_active: number;
   score: number;
+  models?: Record<string, PerModelUsage>;
 }
 
-export interface LeaderboardResponse {
+export interface ModelLeaderboardEntry {
+  rank: number;
+  model_key: string;
+  provider_id: string;
+  model_id: string;
+  model_name: string | null;
+  tokens_used: number;
+  dollars_spent: number;
+  users: number;
+  top_handle: string | null;
+  top_tokens: number;
+}
+
+export interface LeaderboardResponse<T = LeaderboardEntry> {
   window: string;
+  windowKey: string;
   metric: string;
-  entries: LeaderboardEntry[];
+  groupBy: LeaderboardGroupBy;
+  entries: T[];
+  fetchedAt: string;
 }
 
 export interface HacknightInfo {
@@ -33,6 +61,16 @@ export interface HacknightCurrentResponse {
   upcoming?: HacknightInfo[];
 }
 
+export interface HacknightWinner {
+  id: number;
+  hacknight_id: number;
+  category: "overall" | "model";
+  metric: string;
+  handle: string;
+  value: number;
+  computed_at: string;
+}
+
 function makeHeaders(token: string | null): HeadersInit {
   const h: Record<string, string> = { "Content-Type": "application/json" };
   if (token) h["X-Invite-Token"] = token;
@@ -45,9 +83,10 @@ export async function fetchLeaderboard(
   window: LeaderboardWindow,
   metric: LeaderboardMetric,
   hacknightN?: number,
+  groupBy: LeaderboardGroupBy = "users",
 ): Promise<LeaderboardResponse> {
   const base = workerUrl.replace(/\/$/, "");
-  let qs = `window=${window}&metric=${metric}`;
+  let qs = `window=${window}&metric=${metric}&groupBy=${groupBy}`;
   if (window === "hacknight" && hacknightN != null) {
     qs += `&n=${hacknightN}`;
   }
@@ -56,6 +95,25 @@ export async function fetchLeaderboard(
   });
   if (!res.ok) throw new Error(`Leaderboard fetch failed: ${res.status}`);
   return res.json() as Promise<LeaderboardResponse>;
+}
+
+export async function fetchModelLeaderboard(
+  workerUrl: string,
+  token: string | null,
+  window: LeaderboardWindow,
+  metric: LeaderboardMetric = "tokens",
+  hacknightN?: number,
+): Promise<LeaderboardResponse<ModelLeaderboardEntry>> {
+  const base = workerUrl.replace(/\/$/, "");
+  let qs = `window=${window}&metric=${metric}&groupBy=model`;
+  if (window === "hacknight" && hacknightN != null) {
+    qs += `&n=${hacknightN}`;
+  }
+  const res = await fetch(`${base}/api/v1/leaderboard?${qs}`, {
+    headers: makeHeaders(token),
+  });
+  if (!res.ok) throw new Error(`Model leaderboard fetch failed: ${res.status}`);
+  return res.json() as Promise<LeaderboardResponse<ModelLeaderboardEntry>>;
 }
 
 export async function fetchCurrentHacknight(
@@ -68,4 +126,17 @@ export async function fetchCurrentHacknight(
   });
   if (!res.ok) throw new Error(`Hacknight fetch failed: ${res.status}`);
   return res.json() as Promise<HacknightCurrentResponse>;
+}
+
+export async function fetchHacknightWinners(
+  workerUrl: string,
+  token: string | null,
+  number: number,
+): Promise<{ hacknight: HacknightInfo; winners: HacknightWinner[] }> {
+  const base = workerUrl.replace(/\/$/, "");
+  const res = await fetch(`${base}/api/v1/hacknight/${number}/winners`, {
+    headers: makeHeaders(token),
+  });
+  if (!res.ok) throw new Error(`Hacknight winners fetch failed: ${res.status}`);
+  return res.json() as Promise<{ hacknight: HacknightInfo; winners: HacknightWinner[] }>;
 }

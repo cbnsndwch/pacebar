@@ -1,6 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
-import { upsertReport, getHacknightForTime } from "../lib/db";
+import { upsertReport, getHacknightForTime, insertModelUsageSnapshot } from "../lib/db";
 import { standardWindows } from "../lib/windows";
 
 interface ProviderPayload {
@@ -11,10 +11,21 @@ interface ProviderPayload {
   dollarsSpent: number;
 }
 
+interface ModelPayload {
+  providerId: string;
+  modelId: string;
+  modelName?: string | null;
+  tokensIn?: number | null;
+  tokensOut?: number | null;
+  tokensTotal?: number | null;
+  dollarsSpent?: number | null;
+}
+
 interface ReportPayload {
   handle: string;
   submittedAt: string;
   providers: ProviderPayload[];
+  models?: ModelPayload[];
 }
 
 function isString(v: unknown): v is string {
@@ -39,7 +50,7 @@ export async function handleReport(req: Request, db: D1Database): Promise<Respon
     return jsonError("missing required fields: handle, submittedAt, providers[]", 400);
   }
 
-  const { handle, submittedAt, providers } = body as ReportPayload;
+  const { handle, submittedAt, providers, models } = body as ReportPayload;
 
   const cleanHandle = handle.trim().slice(0, 64);
   if (!cleanHandle) return jsonError("handle must not be empty", 400);
@@ -104,10 +115,69 @@ export async function handleReport(req: Request, db: D1Database): Promise<Respon
 
   await Promise.all(upserts);
 
+  // ── Persist per-model usage snapshots ──────────────────────────────────────
+  const snapshotModels = buildSnapshotModels(models, cleanProviders);
+  await Promise.all(
+    snapshotModels.map((m) =>
+      insertModelUsageSnapshot(db, {
+        handle: cleanHandle,
+        provider_id: m.providerId,
+        model_id: m.modelId,
+        model_name: m.modelName ?? null,
+        recorded_at: submittedAt,
+        tokens_in: m.tokensIn ?? null,
+        tokens_out: m.tokensOut ?? null,
+        tokens_total: m.tokensTotal ?? 0,
+        dollars_spent: m.dollarsSpent ?? 0,
+        raw_json: JSON.stringify(m),
+      }),
+    ),
+  );
+
   return json({
     ok: true,
     windows: standard.map((w) => w.key).concat(hn ? ["hacknight"] : []),
   });
+}
+
+function buildSnapshotModels(
+  models: ModelPayload[] | undefined,
+  providers: ProviderPayload[],
+): ModelPayload[] {
+  if (models && Array.isArray(models) && models.length > 0) {
+    const out: ModelPayload[] = [];
+    for (const m of models) {
+      if (!m || typeof m !== "object") continue;
+      const providerId = typeof m.providerId === "string" ? m.providerId : "unknown";
+      const modelId = typeof m.modelId === "string" ? m.modelId : "unknown";
+      out.push({
+        providerId,
+        modelId,
+        modelName: typeof m.modelName === "string" ? m.modelName : null,
+        tokensIn: typeof m.tokensIn === "number" ? Math.max(0, Math.round(m.tokensIn)) : null,
+        tokensOut: typeof m.tokensOut === "number" ? Math.max(0, Math.round(m.tokensOut)) : null,
+        tokensTotal:
+          typeof m.tokensTotal === "number"
+            ? Math.max(0, Math.round(m.tokensTotal))
+            : typeof m.tokensIn === "number" && typeof m.tokensOut === "number"
+              ? Math.max(0, Math.round(m.tokensIn + m.tokensOut))
+              : 0,
+        dollarsSpent: typeof m.dollarsSpent === "number" ? Math.max(0, m.dollarsSpent) : null,
+      });
+    }
+    return out;
+  }
+
+  // Fallback: one model per provider using the provider aggregate.
+  return providers.map((p) => ({
+    providerId: p.id,
+    modelId: "total",
+    modelName: p.displayName || null,
+    tokensIn: null,
+    tokensOut: null,
+    tokensTotal: p.tokensUsed,
+    dollarsSpent: p.dollarsSpent,
+  }));
 }
 
 function json(data: unknown, status = 200): Response {
