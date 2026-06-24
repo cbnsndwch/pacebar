@@ -2091,6 +2091,33 @@ fn run_ccusage_with_runner_timeout(
     }
 }
 
+/// Log a non-sensitive summary of a successful ccusage result so verbose logs
+/// reveal whether the runner returned empty/zero-token data (the usual cause of
+/// "token usage always 0"). Token counts and dates are not secrets.
+fn log_ccusage_result_summary(plugin_id: &str, data: &serde_json::Value) {
+    let daily = data.get("daily").and_then(|d| d.as_array());
+    let count = daily.map(|d| d.len()).unwrap_or(0);
+    let total_tokens: u64 = daily
+        .map(|days| {
+            days.iter()
+                .filter_map(|day| day.get("totalTokens").and_then(serde_json::Value::as_u64))
+                .sum()
+        })
+        .unwrap_or(0);
+    let latest_date = daily
+        .and_then(|d| d.first())
+        .and_then(|day| day.get("date"))
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("none");
+    log::info!(
+        "[plugin:{}] ccusage result: {} day(s), {} total tokens, latest date={}",
+        plugin_id,
+        count,
+        total_tokens,
+        latest_date
+    );
+}
+
 fn run_ccusage_query_with_runners<F>(
     runners: Vec<(CcusageRunnerKind, String)>,
     opts: &CcusageQueryOpts,
@@ -2129,6 +2156,7 @@ where
                         continue;
                     }
                 };
+                log_ccusage_result_summary(plugin_id, &data);
                 return serde_json::json!({ "status": "ok", "data": data }).to_string();
             }
             CcusageRunnerResult::Failed => {}
