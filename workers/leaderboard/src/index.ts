@@ -1,11 +1,6 @@
 import type { D1Database, ExecutionContext, ScheduledController } from "@cloudflare/workers-types";
 
-import {
-  getSyncState,
-  recordSyncFailure,
-  recordSyncSuccess,
-  upsertHacknight,
-} from "./lib/db";
+import { getSyncState, recordSyncFailure, recordSyncSuccess, upsertHacknight } from "./lib/db";
 import { fetchLumaHacknights } from "./lib/luma";
 import {
   handleHacknightByNumber,

@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildDiagnosticBlob,
-  decodeDiagnosticBlob,
-  DIAGNOSTIC_BLOB_PREFIX,
-} from "./diagnostics";
+import { buildDiagnosticBlob, decodeDiagnosticBlob, DIAGNOSTIC_BLOB_PREFIX } from "./diagnostics";
 
 describe("diagnostics blob", () => {
   it("round-trips a report through build/decode", () => {

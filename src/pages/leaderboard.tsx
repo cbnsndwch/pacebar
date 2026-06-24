@@ -160,10 +160,7 @@ export function LeaderboardPage() {
               {upcoming.map((s) => {
                 const start = new Date(s.starts_at);
                 return (
-                  <li
-                    key={s.number}
-                    className="flex items-center justify-between gap-2 text-xs"
-                  >
+                  <li key={s.number} className="flex items-center justify-between gap-2 text-xs">
                     <span className="flex items-center gap-1.5 min-w-0">
                       <span className="font-medium truncate">Hack Night #{s.number}</span>
                       {s.is_special && (
@@ -285,7 +282,10 @@ export function LeaderboardPage() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             This board ranks AI-coding usage among hello_miami builders. While participation is on,
             your usage is shared automatically during Hack Nights (Tuesday &amp; Thursday evenings,
-            ET). {inSession ? "A session is live — be the first on the board!" : "Check back during the next Hack Night to compete."}
+            ET).{" "}
+            {inSession
+              ? "A session is live — be the first on the board!"
+              : "Check back during the next Hack Night to compete."}
           </p>
         </div>
       ) : (

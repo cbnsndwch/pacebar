@@ -20,8 +20,7 @@ const MAP = {
   },
   "proxy.md": {
     dest: "features/proxy.mdx",
-    description:
-      "Route provider and plugin HTTP requests through a SOCKS5 or HTTP proxy.",
+    description: "Route provider and plugin HTTP requests through a SOCKS5 or HTTP proxy.",
   },
   "plugins/api.md": {
     dest: "plugins/api.mdx",
@@ -29,8 +28,7 @@ const MAP = {
   },
   "plugins/schema.md": {
     dest: "plugins/schema.mdx",
-    description:
-      "Plugin structure, plugin.json manifest, output schema, and lifecycle.",
+    description: "Plugin structure, plugin.json manifest, output schema, and lifecycle.",
   },
   "app-state-architecture.md": {
     dest: "contributing/app-state-architecture.mdx",
@@ -91,7 +89,10 @@ function convert(srcRel, { dest, description }) {
   const lines = raw.split("\n");
 
   // Pull title from first `# H1`, strip it.
-  let title = dest.split("/").pop().replace(/\.mdx$/, "");
+  let title = dest
+    .split("/")
+    .pop()
+    .replace(/\.mdx$/, "");
   const h1Idx = lines.findIndex((l) => /^#\s+/.test(l));
   if (h1Idx !== -1) {
     title = lines[h1Idx].replace(/^#\s+/, "").trim();

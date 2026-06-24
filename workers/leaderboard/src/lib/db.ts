@@ -38,9 +38,6 @@ export async function upsertHacknight(
   db: D1Database,
   row: Omit<HacknightRow, "id">,
 ): Promise<void> {
-
-
-    
   await db
     .prepare(`
       INSERT INTO hacknights (number, title, is_special, starts_at, ends_at)
@@ -146,11 +143,7 @@ export interface SyncStateRow {
 }
 
 /** Record a successful Luma sync (clears any prior error). */
-export async function recordSyncSuccess(
-  db: D1Database,
-  count: number,
-  at: string,
-): Promise<void> {
+export async function recordSyncSuccess(db: D1Database, count: number, at: string): Promise<void> {
   await db
     .prepare(`
       INSERT INTO sync_state (id, last_attempt_at, last_ok_at, last_count, last_error)
