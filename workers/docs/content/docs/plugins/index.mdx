@@ -1,0 +1,39 @@
+---
+title: Plugins
+description: How PaceBar's plugin system works — providers are sandboxed JavaScript plugins with a host API.
+---
+
+import { Cards, Card } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+Every provider in PaceBar is a **plugin**: a small JavaScript file that runs in
+an isolated sandbox and returns usage data. New providers can be added without
+rebuilding the app.
+
+## The model
+
+When PaceBar refreshes, each enabled plugin runs in a **fresh QuickJS sandbox**
+with no shared state. PaceBar injects a host API (`ctx.host.*`) for HTTP,
+filesystem, keychain, SQLite, and more, then calls the plugin's `probe(ctx)`.
+The plugin returns a list of metric **lines** — progress bars, text, and badges —
+which the UI renders.
+
+```
+refresh → fresh sandbox per plugin → inject ctx.host.* → probe(ctx) → { lines }
+```
+
+Plugins declare their output shape in `plugin.json` so the UI can show loading
+skeletons instantly while probes run.
+
+## Where to go next
+
+<Cards>
+  <Card title="Plugin schema" href="/docs/plugins/schema" description="plugin.json manifest, the output schema, and lifecycle." />
+  <Card title="Host API reference" href="/docs/plugins/api" description="Everything available on ctx.host.* and the ctx helpers." />
+  <Card title="Authoring a plugin" href="/docs/plugins/authoring" description="Build and test your own provider plugin step by step." />
+</Cards>
+
+<Callout>
+  Plugins are currently bundled with the app as the API stabilizes. They'll
+  become loadable from outside the app once that work lands.
+</Callout>

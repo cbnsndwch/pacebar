@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { getTrayPrimaryBars } from "@/lib/tray-primary-progress";
+import { formatTrayCountText, getTrayPrimaryBars } from "@/lib/tray-primary-progress";
+
+describe("formatTrayCountText", () => {
+  it("abbreviates by magnitude", () => {
+    expect(formatTrayCountText(0)).toBe("0");
+    expect(formatTrayCountText(950)).toBe("950");
+    expect(formatTrayCountText(12300)).toBe("12.3K");
+    expect(formatTrayCountText(1234567)).toBe("1.2M");
+    expect(formatTrayCountText(3_400_000_000)).toBe("3.4B");
+  });
+
+  it("handles non-finite input", () => {
+    expect(formatTrayCountText(Number.NaN)).toBe("0");
+    expect(formatTrayCountText(Number.POSITIVE_INFINITY)).toBe("0");
+  });
+});
 
 describe("getTrayPrimaryBars", () => {
   it("returns empty when settings missing", () => {
@@ -301,5 +316,41 @@ describe("getTrayPrimaryBars", () => {
       pluginStates: {},
     });
     expect(bars).toEqual([]);
+  });
+
+  it("derives abbreviated text (no fraction) for a capless count primary", () => {
+    const bars = getTrayPrimaryBars({
+      pluginsMeta: [
+        {
+          id: "cf",
+          name: "Cloudflare",
+          iconUrl: "",
+          primaryCandidates: ["Tokens"],
+          lines: [],
+        },
+      ],
+      pluginSettings: { order: ["cf"], disabled: [] },
+      pluginStates: {
+        cf: {
+          data: {
+            providerId: "cf",
+            displayName: "Cloudflare",
+            iconUrl: "",
+            lines: [
+              {
+                type: "progress",
+                label: "Tokens",
+                used: 1234567,
+                limit: 0,
+                format: { kind: "count", suffix: "tokens" },
+              },
+            ],
+          },
+          loading: false,
+          error: null,
+        },
+      },
+    });
+    expect(bars).toEqual([{ id: "cf", fraction: undefined, text: "1.2M" }]);
   });
 });

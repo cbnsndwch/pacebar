@@ -1,0 +1,448 @@
+---
+title: "Rebrand: OpenUsage → PaceBar"
+description: "The OpenUsage -> PaceBar rebrand: identifiers, bundle ID, namespaces."
+---
+
+## Context
+
+This repo is a fork of `robinebers/openusage` (an AI subscription/usage tracker
+Tauri app). The original project ships a `TRADEMARK.md` that **explicitly
+prohibits forks from using the OpenUsage name, logo, or visual identity**, and
+asks forks to:
+
+1. Choose a different name
+2. Remove the OpenUsage logo and branding
+3. Clearly state the project is a fork and not the official OpenUsage
+
+The fork has been diverging from upstream (different roadmap, different
+maintainer). To respect the trademark policy and establish independent product
+identity, we need to:
+
+- Rename the product to **PaceBar** everywhere (~730 occurrences across 92
+  files, plus a Rust lib name and a JS plugin global namespace)
+- Switch bundle identifier to `dev.cbnsndwch.pacebar`
+- Rename the GitHub repo to `cbnsndwch/pacebar`
+- Set `@cbnsndwch` as sole maintainer
+- Replace `TRADEMARK.md` with a `NOTICE.md` that **retains attribution and
+  acknowledgement** to the original copyright holders (Robin Ebers et al.) per
+  MIT license requirements
+- Stage all of this on a new feature branch
+
+## Decisions (locked in with user)
+
+| Decision | Value |
+|---|---|
+| Product name | **PaceBar** |
+| Lowercase / package name | `pacebar` |
+| Plugin global namespace | `__pacebar_plugin` |
+| Bundle identifier | `dev.cbnsndwch.pacebar` |
+| Rust lib name | `pacebar_lib` |
+| GitHub repo target | `cbnsndwch/pacebar` (rename) |
+| Website | `cbnsndwch.io` |
+| Sole maintainer | `@cbnsndwch` |
+| Icons | User will supply new artwork; plan leaves a TODO marker |
+| Credits to originals | Retained in `NOTICE.md` + About dialog "Originally based on..." line |
+
+## Branch
+
+```
+git checkout -b rebrand/pacebar
+```
+
+All work below lands on this branch. No commits to `main` until rebrand is
+complete and verified.
+
+## Implementation phases
+
+### Phase A — App metadata & manifests (CRITICAL)
+
+Files (manual edits, exact values):
+
+- `package.json` — `"name": "pacebar"`
+- `src-tauri/Cargo.toml` — `name = "pacebar"`, `description = "PaceBar — pace
+  your AI subscription usage"`, `authors = ["Serge the Lion <oss@cbnsndwch.io>"]`,
+  `[lib] name = "pacebar_lib"`
+- `src-tauri/src/main.rs` — change `openusage_lib::run()` →
+  `pacebar_lib::run()`
+- `src-tauri/tauri.conf.json` — `productName: "PaceBar"`, `identifier:
+  "dev.cbnsndwch.pacebar"`, window `title: "PaceBar"`, updater endpoint →
+  `https://github.com/cbnsndwch/pacebar/releases/latest/download/latest.json`
+- `index.html` — `<title>PaceBar</title>`
+- `Cargo.lock`, `bun.lock` — regenerated on next build/install (don't hand-edit)
+
+**Migration note**: changing the bundle ID from `com.sunstory.openusage` to
+`dev.cbnsndwch.pacebar` means existing installs of this fork (any 0.7.x build
+shipped under the old ID) will NOT auto-update to PaceBar. Acceptable per
+AGENTS.md ("typically used by 2-5 people, internally only"); document a
+one-time manual reinstall in the release notes for v1.0.0.
+
+### Phase B — Plugin runtime namespace rename
+
+The plugin loader injects a global `__openusage_plugin` that every plugin
+script assigns to. This is a hard contract between the Rust runtime and the
+JS plugin IIFE.
+
+**Mechanical find/replace** of `__openusage_plugin` → `__pacebar_plugin`
+across exactly 39 files:
+
+- `src-tauri/src/plugin_engine/runtime.rs` (host injection point)
+- `plugins/*/plugin.js` (19 plugin sources)
+- `plugins/*/plugin.test.js` (18 test files)
+- `plugins/test-helpers.js` (if it references the namespace — verify)
+- `docs/plugins/schema.md` and `.cursor/commands/pr-review.md` (doc references)
+
+Verification: `grep -r __openusage_plugin` returns zero matches; full vitest
+suite passes; bundled plugin smoke test (`bun run bundle:plugins` then app
+launch) loads at least one plugin (Claude is the canonical sanity check).
+
+### Phase C — User-facing UI strings
+
+Files with brand text shown to the user:
+
+- `src/components/about-dialog.tsx` — replace "OpenUsage" h2/alt with
+  "PaceBar"; replace creator block with: maintainer line for
+  `cbnsndwch` (linked to https://github.com/cbnsndwch), GitHub link to
+  `https://github.com/cbnsndwch/pacebar`, and a small "Originally based on
+  OpenUsage by Robin Ebers" attribution line linking to the original repo.
+- `src/components/about-dialog.test.tsx` — update assertions
+- `src/components/changelog-dialog.tsx` + test — update any "OpenUsage" copy
+- `src/components/panel-footer.tsx` + test — update brand strings
+- `src/components/side-nav.tsx` + test — update brand strings
+- `src/pages/settings.tsx` — update brand strings
+- `src/hooks/use-changelog.ts` + test — update any embedded brand strings
+- `src/hooks/app/use-tray-icon.ts` — update any brand strings
+- `src/lib/tray-tooltip.ts` + test — tooltip text shown by tray icon
+- `src/App.test.tsx` — assertion updates
+- `src-tauri/src/tray.rs` — tray menu / labels
+- `src-tauri/src/panel.rs` — any panel-rendered strings
+- `src-tauri/src/config.rs` — any embedded app-name strings
+- `src-tauri/src/local_http_api/cache.rs` — any cache-key/header references
+- `src-tauri/src/plugin_engine/profile_discovery.rs` — embedded references
+
+For each: read the file, replace user-visible "OpenUsage" → "PaceBar". Where
+"openusage" is part of an internal identifier (cache key, log target, IPC
+event name), choose case-by-case: rename if cheap, discuss if it would break
+on-disk state for existing users. **Default to rename** since we're already
+breaking on-disk identity via bundle ID change.
+
+### Phase D — Documentation
+
+- `README.md` — full rewrite of intro, name, links, sponsors. Keep the
+  "Inspired by CodexBar by @steipete" line (it's pre-existing attribution to
+  a third party, not OpenUsage branding). Add a clear "This is an independent
+  fork of OpenUsage by Robin Ebers — not endorsed by or affiliated with the
+  upstream project" line near the top.
+- `CONTRIBUTING.md` — replace all `robinebers/openusage` GitHub URLs →
+  `cbnsndwch/pacebar`; replace 3-person maintainers list with single
+  `@cbnsndwch` entry.
+- `AGENTS.md` — change `# OpenUsage` heading to `# PaceBar`. Leave the rest
+  intact (it's process guidance, not branding).
+- `CLAUDE.md` — no change needed (just points to AGENTS.md).
+- `docs/capture-logs.md` — update macOS log path:
+  `~/Library/Logs/com.sunstory.openusage` → `~/Library/Logs/dev.cbnsndwch.pacebar`
+- `docs/local-http-api.md`, `docs/proxy.md`, `docs/plugins/api.md`,
+  `docs/plugins/schema.md` — replace product name references
+- `docs/providers/*.md` (claude, codex, copilot, cursor, jetbrains-ai-assistant,
+  kiro, opencode-go, zai) — replace product name references in each
+- `CHANGELOG.md` — **leave historical entries alone** (the
+  `robinebers/openusage` commit links genuinely point to commits that exist
+  there; rewriting them would lie about provenance). Add a new top entry for
+  the rebrand release that explains the rename.
+
+### Phase E — Repository / GitHub / CI
+
+- `.github/CODEOWNERS` — `* @cbnsndwch`
+- `SECURITY.md` — replace upstream security URL with
+  `https://github.com/cbnsndwch/pacebar/security`; replace any contact addr
+  with `oss@cbnsndwch.io`
+- `CODE_OF_CONDUCT.md` — change contact email from `rob@robinebers.com` to
+  `oss@cbnsndwch.io`
+- `.github/ISSUE_TEMPLATE/*.yml` (bug_report, feature_request, new_provider,
+  config) — replace any "OpenUsage" mentions
+- `.codex/environments/environment.toml` — replace any embedded brand strings
+- `.cursor/commands/pr-review.md` — update plugin-review references to use
+  `__pacebar_plugin`
+- GitHub Actions workflows under `.github/workflows/*` — review release/build
+  workflows for hardcoded `openusage` strings (artifact names, release titles,
+  updater endpoint paths). Update to `pacebar` where present.
+- **GitHub repo rename** (manual, performed by user on github.com):
+  `cbnsndwch/openusage` → `cbnsndwch/pacebar`. GitHub auto-creates a redirect
+  from the old URL, but in-code references must point to the new canonical
+  URL. Schedule this rename to happen in the same PR/release as the in-code
+  rebrand to avoid a window where URLs in the binary point to a non-existent
+  repo.
+
+### Phase F — Trademark file & credits
+
+- **Delete `TRADEMARK.md`** — it is the upstream project's trademark policy
+  about the OpenUsage brand. It does not apply to PaceBar.
+- **Create `NOTICE.md`** at repo root with attribution:
+
+  ```markdown
+  # Notice
+
+  PaceBar is an independent fork of [OpenUsage](https://github.com/robinebers/openusage),
+  originally created by Robin Ebers and contributors and licensed under the
+  MIT License.
+
+  This fork is **not endorsed by, affiliated with, or an official continuation
+  of OpenUsage**. The OpenUsage name, logo, and visual identity remain
+  trademarks of Robin Ebers; PaceBar uses a distinct name, logo, and identity
+  per the upstream trademark policy.
+
+  Original copyright notice (retained per MIT license terms):
+
+  > MIT License
+  > Copyright (c) 2026 Robin Ebers
+  > [full original LICENSE text]
+
+  ## Acknowledgements
+
+  - Robin Ebers ([@robinebers](https://github.com/robinebers)) — original
+    creator
+  - [@validatedev](https://github.com/validatedev),
+    [@davidarny](https://github.com/davidarny) — original co-maintainers
+  - [@steipete](https://github.com/steipete) — CodexBar, an inspiration for
+    OpenUsage
+  ```
+
+- **`LICENSE`** — keep MIT terms unchanged but update the copyright line to
+  cover both parties:
+
+  ```
+  Copyright (c) 2026 Robin Ebers (original work)
+  Copyright (c) 2026 cbnsndwch LLC (PaceBar fork and modifications)
+  ```
+
+  This is the standard pattern for MIT forks and satisfies both the original
+  attribution requirement and establishes new copyright in the modifications.
+
+### Phase G — Test data scrubbing
+
+- `src-tauri/src/plugin_engine/host_api.rs` (lines 3137, 3145, 3311, 3319) —
+  replace test data `rob@sunstory.com` and the test name "Robin Ebers" with
+  generic placeholders (`test@example.com`, `Test User`). These are PII-shaped
+  test fixtures, not production strings; keeping them advertises the original
+  author's email in the source tree.
+
+### Phase H — Icons & visual brand assets
+
+User will supply new artwork. Plan leaves the following as a **TODO checklist
+in the rebrand PR description** (do not block the metadata/text rebrand on
+icons; ship a placeholder build first if needed):
+
+- `src-tauri/icons/icon.icns` (macOS app icon)
+- `src-tauri/icons/icon.ico` (Windows app icon)
+- `src-tauri/icons/icon.png`, `tray-icon.png`, and all sized PNGs
+  (32x32, 128x128, 128x128@2x, plus the iOS/Android subdirectories if mobile
+  is in scope)
+- `public/icon.png` (used by the About dialog `<img src="/icon.png">`)
+- `public/favicon.svg`
+- Any files under `src-tauri/icons/Exported/` (design source exports — review
+  and replace)
+
+**Until new icons are dropped in**, mark the rebrand as "code complete,
+artwork pending" and do not produce a v1.0.0 release.
+
+#### Artwork generation — prompts for Arrow 1.1 (Quiver AI)
+
+Artwork will be generated with **Arrow 1.1** by Quiver AI (SVG-native model).
+SVG output is then rasterized to the PNG sizes the icon directory expects
+(via `rsvg-convert` or Inkscape CLI) and bundled into `.icns` / `.ico`.
+
+**Visual concept**: a stoic analog tachometer / RPM gauge (F1 / Need for
+Speed / GTA dashboard lineage) wrapped in **Final Fantasy VI SNES menu**
+chrome — dark navy panel, double-rule borders, pixel/serif typography with
+1px hard offset shadows. Utilitarian, restrained, deliberate.
+
+**Palette**:
+- Panel background: `#0b1736` (deep midnight navy), optional gradient to `#142554`
+- Border rules, tick marks, numerals: `#f8e9c4` (cream)
+- Text shadow: `#000814`
+- Needle, danger arc, active readout segments: `#f59e0b` (Tailwind `amber-500`)
+- Inactive readout / dial face shading: `#1f3565`
+
+**Reference image to attach**: a screenshot capturing the FFVI menu vibe
+(dark blue panels, double-rule frames, cream text) — Arrow 1.1 supports up
+to 4 references, Arrow 1.1 Max up to 16. Pass as `references` in the API call.
+
+**Recommended API parameters**: `model: "arrow-1.1"`, `temperature: 0.4`,
+`top_p: 0.95`, `n: 3` (cherry-pick best output).
+
+**Shared `instructions` parameter** (use for all three prompts below):
+
+> Use clean SVG primitives (rect, circle, line, path) — not one giant path.
+> Production-ready structure: grouped layers, named where meaningful, no
+> inline raster, no filters that won't rasterize cleanly. Geometric and
+> deliberate, not hand-drawn. Crisp 1px hard offset shadows on text only
+> (no blurs). Tick marks and rules align to a pixel grid. No gradients on
+> small elements; gradients only on the main dial face if at all. Stoic and
+> utilitarian — restraint over decoration.
+
+##### Prompt 1 — App icon (full color, 1024×1024 master)
+
+```
+A square app icon for "PaceBar," a desktop app that tracks AI subscription
+usage. Subject: a stoic analog tachometer/RPM gauge inspired by F1, Need for
+Speed, and GTA dashboards — semicircular 180° dial occupying the upper two
+thirds of the canvas, with evenly spaced tick marks, numbered intervals (0,
+25, 50, 75, 100), and a sharp triangular needle resting at roughly the 70%
+position. The lower third holds a small rectangular digital readout panel.
+
+Style: Final Fantasy VI SNES menu aesthetic — the gauge sits inside a
+rounded-square panel with a double-rule border (outer thin line, inner
+thicker line, 2-3px gap between), the way FFVI's blue menu windows are
+drawn. Pixel-precise geometry, no anti-aliased curves on the chrome.
+Utilitarian and stoic; no flourishes.
+
+Color palette:
+- Background panel: deep midnight navy #0b1736 with a subtle vertical
+  gradient to #142554
+- Border rules and tick marks: cream #f8e9c4
+- Numbers and readout digits: cream #f8e9c4 with a 1px hard offset shadow
+  in #000814
+- Needle, danger-zone arc (last 20% of the dial), and the digital readout's
+  active segments: amber #f59e0b
+- Inactive readout segments and dial face shading: muted #1f3565
+
+Composition: centered, fills the canvas with ~8% inner padding, perfectly
+square, designed to read clearly at 128px and still hold detail at 1024px.
+The silhouette must be a rounded square — macOS-style icon shape.
+
+Text integration: the digital readout displays "78%" in a pixel/bitmap
+sans-serif. A small label "PACE" sits above the readout in cream pixel type.
+No other text on the icon.
+```
+
+##### Prompt 2 — Tray icon (macOS template image)
+
+**Critical constraint**: macOS only auto-inverts a tray icon if it's a
+**template image** — pure black on transparent, no color, no gradients.
+Anything else (even a single amber stroke) renders literally on dark-mode
+menu bars and looks broken. The tray icon stays monochrome by design; do
+**not** try to color-match it to the app icon.
+
+```
+A monochrome tray-bar icon for macOS, designed as a template image. Subject:
+the same tachometer dial as the PaceBar app icon, radically simplified —
+just a 180° semicircular arc with five tick marks (longer ticks at 0% and
+100%, shorter at 25/50/75) and a single sharp triangular needle pointing to
+roughly 70%.
+
+Style: solid silhouette, single fill color #000000, no strokes, no
+gradients, no text, no background panel. Every shape is a filled primitive
+(arcs converted to filled crescents, ticks as filled rects, needle as a
+filled triangle). Designed to be rendered by macOS as a template image so
+the OS handles light/dark mode coloring automatically.
+
+Composition: centered in a 22×22 viewBox, with 2px of inner padding on all
+sides. Stroke widths effectively no thinner than 2px so the icon survives
+at 16pt menu-bar size. No detail that disappears below 22px tall.
+
+Text integration: none.
+```
+
+##### Prompt 3 — Favicon (16/32px-ready)
+
+```
+A favicon version of the PaceBar tachometer — even simpler than the tray
+icon. Subject: a 180° gauge arc with just three ticks (0, 50, 100) and a
+needle at 70%, sitting on a solid rounded-square background.
+
+Style: two-color flat icon, no gradients, no text, no shadows. Pixel-aligned
+to a 32×32 grid (designed so it remains legible when rasterized to 16×16).
+
+Color palette:
+- Rounded-square background: #0b1736
+- Arc, ticks, and needle: amber #f59e0b
+
+Composition: centered, fills the canvas with 2px inner padding, rounded
+square with ~6px corner radius on a 32×32 grid.
+
+Text integration: none.
+```
+
+##### Generation workflow
+
+1. Generate **Prompt 1** first with `n: 3` — pick the winning output. This
+   locks the dial geometry (proportions, tick spacing, needle shape).
+2. Use the chosen Prompt 1 SVG **as an additional reference image** when
+   generating Prompts 2 and 3 (alongside the FFVI screenshot). Arrow 1.1's
+   reference adherence keeps the dial consistent across all three assets.
+3. Rasterize each SVG to the PNG sizes the icon directory expects; bundle
+   `.icns` (macOS) and `.ico` (Windows) from those PNGs.
+4. Drop assets into `src-tauri/icons/` and `public/` per the file list above
+   and run `pnpm tauri dev` to confirm the tray template image picks up
+   light/dark mode correctly.
+
+### Phase I — Version bump & release prep
+
+- `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` — bump
+  version to `1.0.0` (signals the rebrand is a major break: new bundle ID,
+  new product identity, no auto-update path from 0.7.x).
+- Add a top-of-CHANGELOG.md entry describing the rebrand and the manual
+  reinstall requirement.
+
+## Mechanical sweep (recommended execution order)
+
+1. Phase A first — locks in the new identity in metadata.
+2. Phase B next — global find/replace `__openusage_plugin` → `__pacebar_plugin`.
+3. Phase C + D + E in parallel — these are independent text edits.
+4. Phase F + G — small, focused.
+5. Run full test suite (`pnpm test`).
+6. Run `bun run bundle:plugins` and launch the dev app (`pnpm tauri dev`) to
+   sanity-check tray icon, About dialog, plugin loading.
+7. Phase H (icons) when artwork lands.
+8. Phase I (version bump) immediately before the release commit.
+
+## Critical files list
+
+These are the files where a missed change has the highest blast radius:
+
+| File | Why it matters |
+|---|---|
+| `src-tauri/tauri.conf.json` | Bundle ID, updater endpoint, window title — wrong values brick auto-update or installer |
+| `src-tauri/Cargo.toml` | Lib name change must match the import in `main.rs` or build fails |
+| `src-tauri/src/main.rs` | Imports `pacebar_lib` (formerly `openusage_lib`) |
+| `src-tauri/src/plugin_engine/runtime.rs` | Host side of the `__pacebar_plugin` contract — must match all 19 plugin scripts |
+| `plugins/*/plugin.js` (19 files) | Client side of the namespace contract |
+| `package.json` | npm package name |
+| `LICENSE` + `NOTICE.md` | Legal compliance with MIT + upstream trademark policy |
+| `.github/workflows/*` | CI release artifact paths and updater publishing |
+
+## Verification
+
+**Code-level**:
+- `grep -ri openusage` → only acceptable matches are: (a) historical
+  CHANGELOG.md entries, (b) the `NOTICE.md` attribution line, (c) the
+  `README.md` "fork of OpenUsage" line, (d) any commit links in CHANGELOG.md
+- `grep -r __openusage_plugin` → zero matches
+- `grep -r robinebers/openusage` → only acceptable matches are NOTICE.md and
+  CHANGELOG.md historical commit links
+- `grep -r com.sunstory.openusage` → zero matches
+- `grep -r rob@sunstory.com` → zero matches
+
+**Build-level**:
+- `cargo check` from `src-tauri/` succeeds (lib rename didn't break imports)
+- `pnpm test` — full vitest suite green
+- `pnpm tauri build --debug` succeeds and produces a signed installer with the
+  new bundle ID
+
+**Runtime-level** (manual smoke test):
+- Launch `pnpm tauri dev`
+- Tray icon appears (placeholder OK if icons not yet swapped)
+- Click tray → panel opens with title bar showing "PaceBar"
+- Open Settings → About → confirms "PaceBar v1.0.0", maintainer
+  `@cbnsndwch`, attribution line "Originally based on OpenUsage by Robin
+  Ebers"
+- Add at least one provider plugin (Claude is the canonical test) — confirm
+  it loads (validates the `__pacebar_plugin` global rename worked end-to-end)
+- macOS only: confirm logs land in `~/Library/Logs/dev.cbnsndwch.pacebar/`
+  (validates bundle ID change took effect)
+
+**GitHub-level** (after merge):
+- Rename repo on github.com → `cbnsndwch/pacebar`
+- Confirm updater endpoint `https://github.com/cbnsndwch/pacebar/releases/latest/download/latest.json`
+  resolves
+- Tag and ship v1.0.0 release with explicit "manual reinstall required" note
+  for any existing 0.7.x users

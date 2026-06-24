@@ -2,6 +2,8 @@
 
 See your usage at a glance from your menu bar. No digging through dashboards.
 
+📖 **Full documentation: [pacebar.cbnsndwch.dev](https://pacebar.cbnsndwch.dev)**
+
 > **Disclaimer:** PaceBar is an independent fork of [OpenUsage](https://github.com/robinebers/openusage) by Robin Ebers — not endorsed by or affiliated with the upstream project.
 
 <!-- ![PaceBar Screenshot](screenshot.png) -->
@@ -21,27 +23,27 @@ PaceBar lives in your menu bar and shows you how much of your AI coding subscrip
 - **Global shortcut.** Toggle the panel from anywhere with a customizable keyboard shortcut.
 - **Lightweight.** Opens instantly, stays out of your way.
 - **Plugin-based.** New providers get added without updating the whole app.
-- **[Local HTTP API](docs/local-http-api.md).** Other apps can read your usage data from `127.0.0.1:6736`.
-- **[Proxy support](docs/proxy.md).** Route provider HTTP requests through a SOCKS5 or HTTP proxy.
+- **[Local HTTP API](https://pacebar.cbnsndwch.dev/docs/features/local-http-api).** Other apps can read your usage data from `127.0.0.1:6736`.
+- **[Proxy support](https://pacebar.cbnsndwch.dev/docs/features/proxy).** Route provider HTTP requests through a SOCKS5 or HTTP proxy.
 
 ## Supported Providers
 
-- [**Amp**](docs/providers/amp.md) / free tier, bonus, credits
-- [**Antigravity**](docs/providers/antigravity.md) / all models
-- [**Cloudflare AI (Gateway)**](docs/providers/cloudflare-ai.md) / self-hosted Worker w/ metering, spend, daily burn
-- [**Claude**](docs/providers/claude.md) / session, weekly, extra usage, local token usage (ccusage); multi-profile via [claude-code-profiles](https://github.com/quinnjr/claude-code-profiles)
-- [**Codex**](docs/providers/codex.md) / session, weekly, reviews, credits
-- [**Copilot**](docs/providers/copilot.md) / premium, chat, completions
-- [**Cursor**](docs/providers/cursor.md) / credits, total usage, auto usage, API usage, on-demand, CLI auth
-- [**Factory / Droid**](docs/providers/factory.md) / standard, premium tokens
-- [**Gemini**](docs/providers/gemini.md) / pro, flash, workspace/free/paid tier
-- [**JetBrains AI Assistant**](docs/providers/jetbrains-ai-assistant.md) / quota, remaining
-- [**Kiro**](docs/providers/kiro.md) / credits, bonus credits, overages
-- [**Kimi Code**](docs/providers/kimi.md) / session, weekly
-- [**MiniMax**](docs/providers/minimax.md) / coding plan session
-- [**OpenCode Go**](docs/providers/opencode-go.md) / 5h, weekly, monthly spend limits
-- [**Windsurf**](docs/providers/windsurf.md) / prompt credits, flex credits
-- [**Z.ai**](docs/providers/zai.md) / session, weekly, web searches
+- [**Amp**](https://pacebar.cbnsndwch.dev/docs/providers/amp) / free tier, bonus, credits
+- [**Antigravity**](https://pacebar.cbnsndwch.dev/docs/providers/antigravity) / all models
+- [**Cloudflare AI (Gateway)**](https://pacebar.cbnsndwch.dev/docs/providers/cloudflare-ai) / self-hosted Worker w/ metering, spend, daily burn, windowed token count (1h/24h/7d); gateway URL + key set in settings
+- [**Claude**](https://pacebar.cbnsndwch.dev/docs/providers/claude) / session, weekly, extra usage, local token usage (ccusage); multi-profile via [claude-code-profiles](https://github.com/quinnjr/claude-code-profiles)
+- [**Codex**](https://pacebar.cbnsndwch.dev/docs/providers/codex) / session, weekly, reviews, credits
+- [**Copilot**](https://pacebar.cbnsndwch.dev/docs/providers/copilot) / premium, chat, completions
+- [**Cursor**](https://pacebar.cbnsndwch.dev/docs/providers/cursor) / credits, total usage, auto usage, API usage, on-demand, CLI auth
+- [**Factory / Droid**](https://pacebar.cbnsndwch.dev/docs/providers/factory) / standard, premium tokens
+- [**Gemini**](https://pacebar.cbnsndwch.dev/docs/providers/gemini) / pro, flash, workspace/free/paid tier
+- [**JetBrains AI Assistant**](https://pacebar.cbnsndwch.dev/docs/providers/jetbrains-ai-assistant) / quota, remaining
+- [**Kiro**](https://pacebar.cbnsndwch.dev/docs/providers/kiro) / credits, bonus credits, overages
+- [**Kimi Code**](https://pacebar.cbnsndwch.dev/docs/providers/kimi) / session, weekly
+- [**MiniMax**](https://pacebar.cbnsndwch.dev/docs/providers/minimax) / coding plan session
+- [**OpenCode Go**](https://pacebar.cbnsndwch.dev/docs/providers/opencode-go) / 5h, weekly, monthly spend limits
+- [**Windsurf**](https://pacebar.cbnsndwch.dev/docs/providers/windsurf) / prompt credits, flex credits
+- [**Z.ai**](https://pacebar.cbnsndwch.dev/docs/providers/zai) / session, weekly, web searches
 
 Community contributions welcome.
 
@@ -63,7 +65,7 @@ Plugins are currently bundled as the API stabilizes; they will become loadable f
 
 ### How to Contribute
 
-- **Add a provider.** Each one is just a plugin. See the [Plugin API](docs/plugins/api.md).
+- **Add a provider.** Each one is just a plugin. See the [Plugin API](https://pacebar.cbnsndwch.dev/docs/plugins/api).
 - **Fix a bug.** PRs welcome. Provide before/after screenshots.
 - **Request a feature.** [Open an issue](https://github.com/cbnsndwch/pacebar/issues/new) and make your case.
 

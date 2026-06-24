@@ -1,0 +1,9 @@
+{
+  "title": "Contributing",
+  "pages": [
+    "fork-branding",
+    "app-state-architecture",
+    "capture-logs",
+    "windows-store-distribution"
+  ]
+}

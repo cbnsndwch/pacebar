@@ -1,0 +1,40 @@
+---
+title: Installation
+description: Download PaceBar for macOS or Windows, install it, and let it keep itself up to date.
+---
+
+PaceBar is a small menu-bar / system-tray app for macOS and Windows.
+
+## Download
+
+Grab the latest build from the
+[releases page](https://github.com/cbnsndwch/pacebar/releases/latest):
+
+- **macOS** — Apple Silicon & Intel (`.dmg`)
+- **Windows** — x64 (`.msi` and NSIS `.exe`)
+
+Install it once and you're set — PaceBar **auto-updates** in the background, so
+you stay on the latest release without reinstalling.
+
+## First launch
+
+On first launch, PaceBar appears in your menu bar (macOS) or system tray
+(Windows). Click the icon to open the panel, then head to
+[Quick start](/docs/getting-started/quick-start) to enable the providers you use.
+
+## Start on login
+
+PaceBar can launch automatically when you log in. Toggle **Start on login** in
+Settings → System. It's off by default.
+
+## Staying up to date
+
+Updates are delivered through the app's built-in updater and verified against
+the project's signing key. When a new version is available it downloads and
+installs on the next launch — no manual steps.
+
+## Building from source
+
+PaceBar is built with Tauri v2 (Rust + React + TypeScript), Vite, Tailwind, and
+Bun. See the [README](https://github.com/cbnsndwch/pacebar#build-from-source)
+for prerequisites and build steps.

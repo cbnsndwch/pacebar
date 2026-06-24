@@ -1,0 +1,19 @@
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "account_id": "2762e11135a6c3145300ccb70c44ae81",
+    "name": "pacebar-docs",
+    "main": "./workers/app.ts",
+    "compatibility_date": "2025-10-08",
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
+    "observability": {
+        "enabled": true
+    },
+    "routes": [
+        {
+            "pattern": "pacebar.cbnsndwch.dev",
+            "custom_domain": true
+        }
+    ]
+}

@@ -22,8 +22,8 @@ export function formatTrayTooltip(bars: TrayPrimaryBar[], pluginsMeta: PluginMet
   for (const bar of bars) {
     const meta = metaById.get(bar.id);
     if (meta) {
-      const percent = formatTrayPercentText(bar.fraction);
-      lines.push(`${meta.name}: ${percent}`);
+      const value = bar.text ?? formatTrayPercentText(bar.fraction);
+      lines.push(`${meta.name}: ${value}`);
     }
   }
   return lines.join("\n");

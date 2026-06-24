@@ -1,0 +1,36 @@
+---
+title: Multiple Claude profiles
+description: Track several Claude profiles separately, each as its own card with its own avatar.
+---
+
+If you use more than one Claude login — for example a personal and a work
+profile — PaceBar can track each one separately.
+
+## How it works
+
+PaceBar discovers profiles created by
+[`claude-code-profiles`](https://github.com/quinnjr/claude-code-profiles)
+(`claudep`) and shows a **separate card per profile**. Each card probes Claude
+with `CLAUDE_CONFIG_DIR` pointed at that profile's directory.
+
+Profile directories:
+
+- **Windows:** `%LOCALAPPDATA%\claude-profiles\<name>\`
+- **macOS / Linux:** `$XDG_DATA_HOME/claude-profiles/<name>/`
+  (default `~/.local/share/claude-profiles/`)
+
+Your default `~/.claude` config is always shown alongside any discovered
+profiles.
+
+## Avatars
+
+Give each profile a face so the cards are easy to tell apart. Pick an image from
+the profile card; PaceBar stores it as `avatar.png` / `avatar.jpg` inside the
+profile directory. Remove it any time to go back to the default.
+
+Avatars are only offered for profiles whose directory PaceBar can write to.
+
+## See also
+
+- [Claude provider](/docs/providers/claude) — the underlying API, token
+  locations, and refresh behavior.

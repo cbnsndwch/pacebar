@@ -1,0 +1,58 @@
+---
+title: Hack-night leaderboard
+description: Opt in to share your daily token burn and spend on a hack-night leaderboard. Off by default.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+PaceBar includes an **opt-in** leaderboard for hack nights and friendly
+token-burning competition. It is **off by default** and shares nothing until you
+turn it on.
+
+<Callout type="info">
+  Nothing leaves your machine unless you explicitly opt in and pick what to
+  share. The leaderboard is a separate, self-hosted Cloudflare Worker.
+</Callout>
+
+## Turn it on
+
+Open **Settings → Leaderboard** and:
+
+1. Enable the leaderboard (**opt-in**).
+2. Set a **handle** — the name shown on the board.
+3. Paste the **invite token** for the event you're joining.
+4. Choose what to **share** from your enabled providers.
+
+PaceBar then periodically reports your selected metrics (typically daily spend
+and token usage) to the leaderboard worker.
+
+## What's shared
+
+- Only the metrics you select in the **share list**.
+- Your chosen handle — not your account details or credentials.
+- Aggregated daily spend / tokens, not per-request data.
+
+Turn the leaderboard off to stop reporting immediately.
+
+## Hack nights
+
+The leaderboard groups results by **hack night**. The worker syncs the event
+calendar daily, so the board knows which event is current and can show standings
+per event.
+
+## Self-hosting the worker
+
+The leaderboard is a Cloudflare Worker backed by D1, living in
+[`workers/leaderboard`](https://github.com/cbnsndwch/pacebar/tree/main/workers/leaderboard).
+It exposes a small JSON API:
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /api/v1/health` | Health + last calendar sync (no auth) |
+| `POST /api/v1/report` | Submit a usage snapshot (invite token) |
+| `GET /api/v1/leaderboard` | Current standings by metric |
+| `GET /api/v1/hacknight/current` | The active hack night |
+| `GET /api/v1/hacknight/list` | All known hack nights |
+
+Point PaceBar at your own deployment by setting the worker URL in the
+leaderboard settings.

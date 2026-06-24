@@ -54,7 +54,7 @@ describe("cloudflare-ai plugin", () => {
     const result = plugin.probe(ctx);
     expect(ctx.host.http.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "https://my-gateway.example.com/api/stats",
+        url: "https://my-gateway.example.com/api/stats?window=24h",
         headers: expect.objectContaining({ Authorization: "Bearer secret-key" }),
       }),
     );
@@ -85,7 +85,149 @@ describe("cloudflare-ai plugin", () => {
     plugin.probe(ctx);
     expect(ctx.host.http.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "https://cf-ai-gateway.flux-505.workers.dev/api/stats",
+        url: "https://cf-ai-gateway.flux-505.workers.dev/api/stats?window=24h",
+      }),
+    );
+  });
+
+  it("reads auth token from ~/.config/opencode/opencode.json", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://cf-ai-gateway.flux-505.workers.dev";
+      return null;
+    });
+    ctx.host.fs.exists.mockImplementation((path) => {
+      if (path.includes(".config/opencode/opencode.json")) return true;
+      return false;
+    });
+    ctx.host.fs.readText.mockImplementation((path) => {
+      if (path.includes(".config/opencode/opencode.json")) {
+        return JSON.stringify({
+          provider: {
+            "cf-gateway": {
+              options: {
+                baseURL: "https://cf-ai-gateway.flux-505.workers.dev/v1",
+                apiKey: "opencode-secret-key",
+              },
+            },
+          },
+        });
+      }
+      return null;
+    });
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10, burn_per_day_usd: 1 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer opencode-secret-key" }),
+      }),
+    );
+  });
+
+  it("reads auth token from ~/cloudflare-ai/opencode.json", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://cf-ai-gateway.flux-505.workers.dev";
+      return null;
+    });
+    ctx.host.fs.exists.mockImplementation((path) => {
+      if (path.includes("cloudflare-ai/opencode.json")) return true;
+      return false;
+    });
+    ctx.host.fs.readText.mockImplementation((path) => {
+      if (path.includes("cloudflare-ai/opencode.json")) {
+        return JSON.stringify({
+          provider: {
+            "cf-gateway": {
+              options: {
+                baseURL: "https://cf-ai-gateway.flux-505.workers.dev/v1",
+                apiKey: "cf-ai-secret-key",
+              },
+            },
+          },
+        });
+      }
+      return null;
+    });
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10, burn_per_day_usd: 1 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer cf-ai-secret-key" }),
+      }),
+    );
+  });
+
+  it("resolves {env:...} placeholders in apiKey", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://cf-ai-gateway.flux-505.workers.dev";
+      if (name === "MY_API_KEY") return "resolved-from-env";
+      return null;
+    });
+    ctx.host.fs.exists.mockImplementation((path) => {
+      if (path.includes(".config/opencode/opencode.json")) return true;
+      return false;
+    });
+    ctx.host.fs.readText.mockImplementation((path) => {
+      if (path.includes(".config/opencode/opencode.json")) {
+        return JSON.stringify({
+          provider: {
+            "cf-gateway": {
+              options: {
+                baseURL: "https://cf-ai-gateway.flux-505.workers.dev/v1",
+                apiKey: "{env:MY_API_KEY}",
+              },
+            },
+          },
+        });
+      }
+      return null;
+    });
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10, burn_per_day_usd: 1 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer resolved-from-env" }),
+      }),
+    );
+  });
+
+  it("reads gatewayUrl from plugin config.json", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockReturnValue(null);
+    ctx.host.fs.exists.mockImplementation((path) => path.endsWith("config.json"));
+    ctx.host.fs.readText.mockImplementation((path) => {
+      if (path.endsWith("config.json")) {
+        return JSON.stringify({
+          gatewayUrl: "https://configured-gateway.workers.dev",
+          routerKey: "config-secret-key",
+        });
+      }
+      return null;
+    });
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10, burn_per_day_usd: 1 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "https://configured-gateway.workers.dev/api/stats?window=24h",
+        headers: expect.objectContaining({ Authorization: "Bearer config-secret-key" }),
       }),
     );
   });
@@ -114,7 +256,7 @@ describe("cloudflare-ai plugin", () => {
     plugin.probe(ctx);
     expect(ctx.host.http.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "https://gateway.example.com/api/stats",
+        url: "https://gateway.example.com/api/stats?window=24h",
       }),
     );
   });
@@ -145,6 +287,136 @@ describe("cloudflare-ai plugin", () => {
     expect(spendLine).toBeTruthy();
     expect(spendLine.type).toBe("text");
     expect(spendLine.value).toBe("$1234.56");
+  });
+
+  it("reads gatewayUrl and routerKey from plugin config.json", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockReturnValue(null);
+    ctx.host.fs.writeText(
+      "/tmp/pacebar-test/plugin/config.json",
+      JSON.stringify({
+        gatewayUrl: "https://configured-gateway.workers.dev",
+        routerKey: "config-secret-key",
+      }),
+    );
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10, burn_per_day_usd: 1 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "https://configured-gateway.workers.dev/api/stats?window=24h",
+        headers: expect.objectContaining({ Authorization: "Bearer config-secret-key" }),
+      }),
+    );
+  });
+
+  it("prefers the settings config.json routerKey over opencode.json apiKey", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockReturnValue(null);
+    // Settings UI persisted both URL and key to the plugin config.json.
+    ctx.host.fs.writeText(
+      "/tmp/pacebar-test/plugin/config.json",
+      JSON.stringify({
+        gatewayUrl: "https://configured-gateway.workers.dev",
+        routerKey: "config-secret-key",
+      }),
+    );
+    // A stale opencode.json is also present with a different key.
+    ctx.host.fs.writeText(
+      "~/.config/opencode/opencode.json",
+      JSON.stringify({
+        provider: {
+          "cf-gateway": {
+            options: {
+              baseURL: "https://configured-gateway.workers.dev/v1",
+              apiKey: "opencode-secret-key",
+            },
+          },
+        },
+      }),
+    );
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    // The config.json key must win so it stays paired with the config.json URL.
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer config-secret-key" }),
+      }),
+    );
+  });
+
+  it("applies the configured token window to the stats URL", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://example.com";
+      if (name === "CF_ROUTER_KEY") return "key";
+      return null;
+    });
+    ctx.host.fs.writeText("/tmp/pacebar-test/plugin/config.json", JSON.stringify({ window: "7d" }));
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://example.com/api/stats?window=7d" }),
+    );
+  });
+
+  it("falls back to the 24h window when the configured value is invalid", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://example.com";
+      if (name === "CF_ROUTER_KEY") return "key";
+      return null;
+    });
+    ctx.host.fs.writeText(
+      "/tmp/pacebar-test/plugin/config.json",
+      JSON.stringify({ window: "bogus" }),
+    );
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({ cap_usd: 100, spent_usd: 10 }),
+    });
+    const plugin = await loadPlugin();
+    plugin.probe(ctx);
+    expect(ctx.host.http.request).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://example.com/api/stats?window=24h" }),
+    );
+  });
+
+  it("emits a capless Tokens count line as the menu-bar primary", async () => {
+    const ctx = makeCtx();
+    ctx.host.env.get.mockImplementation((name) => {
+      if (name === "CF_GATEWAY_URL") return "https://example.com";
+      if (name === "CF_ROUTER_KEY") return "key";
+      return null;
+    });
+    ctx.host.http.request.mockReturnValue({
+      status: 200,
+      bodyText: JSON.stringify({
+        cap_usd: 100,
+        spent_usd: 10,
+        total_tokens_in: 1000000,
+        total_tokens_out: 234567,
+      }),
+    });
+    const plugin = await loadPlugin();
+    const result = plugin.probe(ctx);
+    const tokens = result.lines.find((l) => l.label === "Tokens");
+    expect(tokens).toBeTruthy();
+    expect(tokens.type).toBe("progress");
+    expect(tokens.used).toBe(1234567);
+    expect(tokens.limit).toBe(0);
+    expect(tokens.format).toEqual({ kind: "count", suffix: "tokens" });
   });
 
   it("renders the remaining amount when display is 'remaining'", async () => {

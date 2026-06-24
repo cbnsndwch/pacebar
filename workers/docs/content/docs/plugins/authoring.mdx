@@ -1,0 +1,128 @@
+---
+title: Authoring a plugin
+description: Build, test, and bundle your own PaceBar provider plugin.
+---
+
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+This guide walks through writing a provider plugin. For the full contract, see
+the [plugin schema](/docs/plugins/schema) and the
+[host API reference](/docs/plugins/api).
+
+## Anatomy
+
+A plugin is a directory with three files:
+
+```
+plugins/<id>/
+  plugin.json    manifest (required)
+  plugin.js      entry script (required)
+  icon.svg       icon, currentColor (required)
+```
+
+<Steps>
+
+<Step>
+
+### Write the manifest
+
+`plugin.json` declares your id, name, and the **shape** of your output so the UI
+can render skeletons before the probe finishes:
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "my-provider",
+  "name": "My Provider",
+  "version": "0.0.1",
+  "entry": "plugin.js",
+  "icon": "icon.svg",
+  "lines": [
+    { "type": "badge", "label": "Plan", "scope": "overview" },
+    { "type": "progress", "label": "Usage", "scope": "overview", "primary": true },
+    { "type": "text", "label": "Details", "scope": "detail" }
+  ]
+}
+```
+
+Mark one `progress` line `primary` to surface it in the
+[tray icon](/docs/features/tray).
+
+</Step>
+
+<Step>
+
+### Implement the probe
+
+Register on the global object and return metric lines. Use the host API for I/O —
+plugins can't reach the network or disk directly.
+
+```javascript
+globalThis.__pacebar_plugin = {
+  id: "my-provider",
+  probe(ctx) {
+    let resp;
+    try {
+      resp = ctx.host.http.request({
+        method: "GET",
+        url: "https://api.example.com/usage",
+        timeoutMs: 5000,
+      });
+    } catch (e) {
+      throw "Request failed. Check your connection.";
+    }
+    if (resp.status !== 200) throw "Request failed (HTTP " + resp.status + ").";
+
+    const data = JSON.parse(resp.bodyText);
+    return {
+      lines: [
+        ctx.line.badge({ label: "Plan", text: data.plan }),
+        ctx.line.progress({
+          label: "Usage",
+          used: data.used,
+          limit: data.limit,
+          format: { kind: "percent" },
+        }),
+      ],
+    };
+  },
+};
+```
+
+</Step>
+
+<Step>
+
+### Add an icon
+
+Provide `icon.svg` using `fill="currentColor"` so it themes correctly in light
+and dark mode. Set the provider's real brand color in the manifest where
+applicable.
+
+</Step>
+
+<Step>
+
+### Bundle it
+
+Bundled plugins live under `src-tauri/resources/bundled_plugins/<id>/`. Run the
+bundling script and PaceBar will pick up the new provider:
+
+```sh
+bun run bundle:plugins
+```
+
+</Step>
+
+</Steps>
+
+## Tips
+
+- Wrap host calls in `try/catch` and throw **short, user-friendly strings**
+  (not `Error` objects) — the message becomes the error badge.
+- Validate API responses before reading nested fields.
+- Keep probes fast; users wait on every refresh.
+- Use `ctx.app.pluginDataDir` for any per-plugin state.
+
+See the [host API reference](/docs/plugins/api) for the full `ctx.host.*`
+surface (HTTP, filesystem, crypto, keychain, SQLite, env, and `ccusage`).

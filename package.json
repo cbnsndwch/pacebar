@@ -1,6 +1,6 @@
 {
   "name": "pacebar",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -21,7 +21,7 @@
     "format:check": "oxfmt --check \"src/**/*.{ts,tsx}\" \"plugins/**/*.js\" \"scripts/**/*.{js,mjs,cjs,ts}\" \"workers/**/*.{ts,tsx}\" \"*.{js,mjs,cjs,ts}\"",
     "lint": "bun run lint:ts && bun run lint:rust",
     "lint:ts": "oxlint",
-    "lint:rust": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+    "lint:rust": "cd src-tauri && cargo clippy --all-targets -- -D warnings",
     "tauri": "tauri"
   },
   "dependencies": {

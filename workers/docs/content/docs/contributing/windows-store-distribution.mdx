@@ -1,0 +1,54 @@
+---
+title: "Windows Store Distribution & SmartScreen"
+description: "Notes on distributing PaceBar through the Windows ecosystem."
+---
+
+## Problem
+
+Distributing unsigned `.exe` / NSIS installers triggers Microsoft Defender SmartScreen:
+
+> "Windows protected your PC — Unknown publisher"
+
+This is a friction point for end users and cannot be dismissed without clicking "More info → Run anyway."
+
+## Options
+
+### Option A — Code-signing certificate (direct distribution)
+
+Sign the installer so SmartScreen recognizes a known publisher.
+
+| Certificate type | Cost | SmartScreen reputation |
+|---|---|---|
+| EV (Extended Validation) | ~$300–500/yr | Immediate — no warning on first install |
+| OV (Organization Validation) | ~$100–200/yr | Builds over time; warning persists until enough installs accumulate |
+
+**Integration in CI:**
+- Store cert as a GitHub Actions secret (PFX + password, or thumbprint if using Azure Trusted Signing)
+- Set `WINDOWS_CERTIFICATE_THUMBPRINT` (or equivalent) in the publish workflow env block
+- Tauri picks it up automatically during `tauri build`
+
+Suitable if you want to keep direct `.exe` / NSIS distribution.
+
+### Option B — Windows Store (MSIX) ← recommended
+
+Apps installed from the Store are always trusted. No certificate needed, no SmartScreen warning.
+
+**What's already done:**
+- `tauri.conf.json` has `targets: "all"`, which includes MSIX output
+- MIT license permits selling (keep the bundled `LICENSE` file — Tauri does this automatically)
+- The upstream project explicitly does not support Windows, making a paid Windows build a reasonable value proposition
+
+**What's needed to publish:**
+1. Microsoft Partner Center account — one-time $19 individual fee
+2. Privacy policy URL (can be a simple GitHub page)
+3. Store listing assets: screenshots, icon, short description
+4. MSIX must declare a `PublisherDisplayName` — set in `tauri.conf.json` under `bundle.windows.nsis` or a dedicated MSIX block
+5. Submit for review — typically 1–3 business days first time
+
+**Pricing model considered:** $4.99/yr subscription via Store in-app purchase or paid app listing. Covers ongoing Windows maintenance work.
+
+**Microsoft's revenue share:** 15% (for apps earning under $1M/yr).
+
+## Recommendation
+
+Go the Store route — it solves SmartScreen and monetization in one step, and the MSIX artifact is already being built. Direct NSIS installer can remain available for technical users who want to self-install.

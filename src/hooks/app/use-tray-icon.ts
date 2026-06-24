@@ -227,7 +227,8 @@ export function useTrayIcon({
       const providerIconUrl = trayProviderId
         ? pluginsMetaRef.current.find((plugin) => plugin.id === trayProviderId)?.iconUrl
         : undefined;
-      const providerPercentText = formatTrayPercentText(providerBars[0]?.fraction);
+      const providerPercentText =
+        providerBars[0]?.text ?? formatTrayPercentText(providerBars[0]?.fraction);
 
       const nextPreview: TraySettingsPreview = {
         bars: barsForPreview,

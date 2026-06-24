@@ -2,16 +2,24 @@ import { useState, useEffect } from "react";
 
 export type CloudflareAIDisplayMode = "spent" | "remaining" | "burn" | "percent";
 
+export type CloudflareAIWindow = "1h" | "24h" | "7d";
+
 export type CloudflareAISettings = {
   display: CloudflareAIDisplayMode;
   showLimit: boolean;
   capOverride: number | null;
+  gatewayUrl: string | null;
+  routerKey: string | null;
+  window: CloudflareAIWindow;
 };
 
 export const DEFAULT_CLOUDFLARE_AI_SETTINGS: CloudflareAISettings = {
   display: "spent",
   showLimit: false,
   capOverride: null,
+  gatewayUrl: null,
+  routerKey: null,
+  window: "24h",
 };
 
 export function useCloudflareAISettings() {
@@ -34,6 +42,9 @@ export function useCloudflareAISettings() {
             display: parsed.display ?? "spent",
             showLimit: parsed.showLimit ?? false,
             capOverride: parsed.capOverride ?? null,
+            gatewayUrl: parsed.gatewayUrl ?? null,
+            routerKey: parsed.routerKey ?? null,
+            window: parsed.window ?? "24h",
           });
         }
       } catch (e) {
