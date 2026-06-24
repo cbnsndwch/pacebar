@@ -1485,7 +1485,7 @@ fn ls_parse_listening_ports(output: &str) -> Vec<i32> {
 const CCUSAGE_VERSION: &str = "18.0.10";
 const CCUSAGE_CLAUDE_PACKAGE_NAME: &str = "ccusage";
 const CCUSAGE_CODEX_PACKAGE_NAME: &str = "@ccusage/codex";
-const CCUSAGE_TIMEOUT_SECS: u64 = 15;
+const CCUSAGE_TIMEOUT_SECS: u64 = 60;
 const CCUSAGE_POLL_INTERVAL_MS: u64 = 100;
 
 #[cfg(windows)]
@@ -3835,7 +3835,7 @@ Saved lockfile
         );
         assert_eq!(
             format_ccusage_timeout(std::time::Duration::from_secs(CCUSAGE_TIMEOUT_SECS)),
-            "15s"
+            "60s"
         );
     }
 
