@@ -1,0 +1,9 @@
+/node_modules/
+/build/
+.react-router/
+.source/
+.wrangler/
+worker-configuration.d.ts
+*.tsbuildinfo
+.DS_Store
+*.log
