@@ -15,7 +15,7 @@
     "fumadocs-core": "^16.10.5",
     "fumadocs-mdx": "^15.0.12",
     "fumadocs-ui": "^16.10.5",
-    "isbot": "^5.1.43",
+    "isbot": "^5.1.44",
     "lucide-react": "^1.7.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.42.2",
-    "@cloudflare/workers-types": "^4.20241224.0",
+    "@cloudflare/workers-types": "^4.20260624.1",
     "@react-router/dev": "^8.0.1",
     "@tailwindcss/vite": "^4.3.1",
     "@types/mdx": "^2.0.14",
