@@ -1,0 +1,35 @@
+---
+title: Introduction
+description: PaceBar tracks all your AI coding subscriptions in one place — usage at a glance from your menu bar.
+---
+
+import { Cards, Card } from "fumadocs-ui/components/card";
+
+PaceBar lives in your menu bar and shows how much of your AI coding
+subscriptions you've used. Progress bars, badges, and clear labels — no mental
+math, no digging through dashboards.
+
+It's an independent fork of [OpenUsage](https://github.com/robinebers/openusage)
+by Robin Ebers, rebuilt with a plugin-based provider system, a local HTTP API,
+proxy support, multi-profile tracking, and an opt-in hack-night leaderboard.
+
+## What it does
+
+- **One glance.** All your AI tools in one panel, with up to four primary
+  progress bars rendered right into the tray icon.
+- **Always up to date.** Refreshes automatically on a schedule you pick.
+- **Global shortcut.** Toggle the panel from anywhere.
+- **Plugin-based.** New providers ship as plugins — no app rebuild needed.
+- **Local & private.** Reads credentials already on your machine; an optional
+  local HTTP API lets other apps read the same data.
+
+## Start here
+
+<Cards>
+  <Card title="Installation" href="/docs/getting-started/installation" description="Download, install, and let PaceBar keep itself up to date." />
+  <Card title="Quick start" href="/docs/getting-started/quick-start" description="Enable providers and arrange your panel in a couple of minutes." />
+  <Card title="Providers" href="/docs/providers" description="Every supported AI coding subscription and what it tracks." />
+  <Card title="Features" href="/docs/features" description="Tray bars, global shortcut, multi-profile, leaderboard, and more." />
+  <Card title="Plugins" href="/docs/plugins" description="Write your own provider plugin against the host API." />
+  <Card title="Contributing" href="/docs/contributing/fork-branding" description="Architecture notes and how to help." />
+</Cards>

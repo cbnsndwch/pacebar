@@ -1,0 +1,13 @@
+{
+  "title": "Features",
+  "pages": [
+    "index",
+    "tray",
+    "global-shortcut",
+    "multi-profile",
+    "leaderboard",
+    "local-http-api",
+    "proxy",
+    "logging"
+  ]
+}

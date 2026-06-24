@@ -1,0 +1,34 @@
+---
+title: Logging & diagnostics
+description: Adjust log verbosity from the tray and capture logs when filing a bug report.
+---
+
+PaceBar writes logs you can use to diagnose problems or attach to a bug report.
+
+## Set the log level
+
+From the tray menu, open **Debug Level** and choose a verbosity:
+
+`Error` · `Warn` · `Info` · `Debug` · `Trace`
+
+The default is **Error** (quietest). The level you pick is remembered across
+restarts. Raise it to **Debug** or **Trace** when reproducing an issue, then
+lower it again afterward.
+
+## Where logs live
+
+Logs are written to the app's log directory and rotated so they stay small.
+Sensitive values (such as proxy credentials and some paths) are redacted.
+
+For exact locations and step-by-step capture instructions, see
+[Capturing logs](/docs/contributing/capture-logs).
+
+## Filing a bug
+
+When something goes wrong:
+
+1. Set the log level to **Debug**.
+2. Reproduce the problem.
+3. Grab the log file (see [Capturing logs](/docs/contributing/capture-logs)).
+4. Open an issue with the relevant excerpt at
+   [github.com/cbnsndwch/pacebar/issues](https://github.com/cbnsndwch/pacebar/issues/new).

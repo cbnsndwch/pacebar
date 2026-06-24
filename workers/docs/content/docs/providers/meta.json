@@ -1,0 +1,24 @@
+{
+  "title": "Providers",
+  "pages": [
+    "index",
+    "amp",
+    "antigravity",
+    "claude",
+    "cloudflare-ai",
+    "codex",
+    "copilot",
+    "cursor",
+    "factory",
+    "gemini",
+    "jetbrains-ai-assistant",
+    "kimi",
+    "kiro",
+    "minimax",
+    "opencode-go",
+    "perplexity",
+    "synthetic",
+    "windsurf",
+    "zai"
+  ]
+}

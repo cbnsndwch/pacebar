@@ -1,0 +1,42 @@
+---
+title: Tray icon & bars
+description: The menu-bar / system-tray icon, its context menu, and up to four primary progress bars for at-a-glance usage.
+---
+
+PaceBar lives in your menu bar (macOS) or system tray (Windows). The icon is
+more than a launcher — it can show your most important usage right in the tray.
+
+## Primary progress bars
+
+A plugin can mark **one** of its progress lines as `primary`. PaceBar renders
+that bar directly into the tray icon, so you can see usage without opening the
+panel.
+
+- Up to **four** enabled providers with a primary bar are drawn, in your chosen
+  order.
+- Only `progress` lines can be primary; the flag is ignored on other line types.
+- Before the first refresh, a bar shows as an empty track.
+
+Reorder providers in Settings to control which four appear and in what order.
+See [plugin schema](/docs/plugins/schema#primary-progress-tray-icon) for how a
+plugin declares its primary line.
+
+## Click behavior
+
+- **Left-click** toggles the panel open/closed.
+- **Right-click** opens the context menu.
+
+## Context menu
+
+The tray menu gives quick access to:
+
+- **Show Stats** — open the panel
+- **Go to Settings**
+- **Debug Level** — set log verbosity (see [Logging](/docs/features/logging))
+- **About PaceBar**
+- **Quit**
+
+## Icons
+
+PaceBar uses a template (monochrome) icon on macOS so it adapts to light/dark
+menu bars, and a full-color icon on Windows.
