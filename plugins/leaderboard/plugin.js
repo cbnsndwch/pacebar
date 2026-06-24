@@ -138,6 +138,8 @@ globalThis.__pacebar_plugin = {
     let totalDollars = 0;
 
     for (const [id, snap] of Object.entries(snapshots)) {
+      // The leaderboard is the board itself, never a provider it reports against.
+      if (id === "leaderboard") continue;
       if (shareList && !shareList.has(id)) continue;
       const { tokens, dollars } = extractProviderUsage(snap);
       totalTokens += tokens;
