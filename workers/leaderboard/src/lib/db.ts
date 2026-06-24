@@ -38,6 +38,9 @@ export async function upsertHacknight(
   db: D1Database,
   row: Omit<HacknightRow, "id">,
 ): Promise<void> {
+
+
+    
   await db
     .prepare(`
       INSERT INTO hacknights (number, title, is_special, starts_at, ends_at)

@@ -2,11 +2,19 @@
   const CONFIG_PATH = "~/cloudflare-ai/opencode.json";
   const USAGE_PATH = "/api/stats";
 
+  const WINDOWS = { "1h": "last hour", "24h": "last 24h", "7d": "last 7 days" };
+
+  function normalizeWindow(value) {
+    const w = String(value || "").trim();
+    return WINDOWS[w] ? w : "24h";
+  }
+
   function getConfig(ctx) {
     const defaults = {
       display: "spent", // "spent" | "remaining" | "burn" | "percent"
       showLimit: false, // show "of $X" suffix?
       capOverride: null, // override gateway's cap_usd
+      window: "24h", // token window: "1h" | "24h" | "7d"
     };
     try {
       const configPath = ctx.app.pluginDataDir + "/config.json";
@@ -38,6 +46,40 @@
       if (url) return url.replace(/\/+$/, "");
     }
 
+    // Check plugin config.json (set via Pacebar settings UI)
+    try {
+      const configPath = ctx.app.pluginDataDir + "/config.json";
+      if (ctx.host.fs.exists(configPath)) {
+        const raw = ctx.host.fs.readText(configPath);
+        const config = ctx.util.tryParseJson(raw);
+        if (config && config.gatewayUrl) {
+          const base = String(config.gatewayUrl).trim().replace(/\/+$/, "");
+          if (base) return base;
+        }
+      }
+    } catch (e) {}
+
+    // Try ~/.config/opencode/opencode.json first
+    try {
+      if (ctx.host.fs.exists("~/.config/opencode/opencode.json")) {
+        const raw = ctx.host.fs.readText("~/.config/opencode/opencode.json");
+        const config = ctx.util.tryParseJson(raw);
+        if (
+          config &&
+          config.provider &&
+          config.provider["cf-gateway"] &&
+          config.provider["cf-gateway"].options &&
+          config.provider["cf-gateway"].options.baseURL
+        ) {
+          let base = String(config.provider["cf-gateway"].options.baseURL).trim();
+          base = base.replace(/\/+$/, "");
+          if (base.endsWith("/v1")) base = base.slice(0, -3);
+          if (base) return base;
+        }
+      }
+    } catch (e) {}
+
+    // Fallback to ~/cloudflare-ai/opencode.json
     try {
       if (ctx.host.fs.exists(CONFIG_PATH)) {
         const raw = ctx.host.fs.readText(CONFIG_PATH);
@@ -60,6 +102,41 @@
     return null;
   }
 
+  function resolveEnvPlaceholders(ctx, str) {
+    // Handle opencode's {env:VARNAME} syntax
+    if (str && typeof str === "string") {
+      const m = str.match(/^\{env:(.+)}$/);
+      if (m) {
+        try {
+          return String(ctx.host.env.get(m[1]) || "").trim();
+        } catch (e) {
+          return "";
+        }
+      }
+    }
+    return str;
+  }
+
+  function readOpenCodeApiKey(ctx, configPath) {
+    try {
+      if (ctx.host.fs.exists(configPath)) {
+        const raw = ctx.host.fs.readText(configPath);
+        const config = ctx.util.tryParseJson(raw);
+        if (
+          config &&
+          config.provider &&
+          config.provider["cf-gateway"] &&
+          config.provider["cf-gateway"].options &&
+          config.provider["cf-gateway"].options.apiKey
+        ) {
+          const key = String(config.provider["cf-gateway"].options.apiKey).trim();
+          return resolveEnvPlaceholders(ctx, key);
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
   function getAuthToken(ctx) {
     let token = null;
     try {
@@ -67,6 +144,8 @@
     } catch (e) {}
     if (token) return String(token).trim();
 
+    // Check plugin config.json (set via Pacebar settings UI).
+    // Mirrors getGatewayUrl precedence so a settings-configured URL and key stay paired.
     try {
       const configPath = ctx.app.pluginDataDir + "/config.json";
       if (ctx.host.fs.exists(configPath)) {
@@ -77,6 +156,12 @@
         }
       }
     } catch (e) {}
+
+    token = readOpenCodeApiKey(ctx, "~/.config/opencode/opencode.json");
+    if (token) return token;
+
+    token = readOpenCodeApiKey(ctx, "~/cloudflare-ai/opencode.json");
+    if (token) return token;
 
     return null;
   }
@@ -108,6 +193,7 @@
           display: "spent",
           showLimit: false,
           capOverride: null,
+          window: "24h",
         };
         ctx.host.fs.writeText(configPath, JSON.stringify(template, null, 2));
         ctx.host.log.info("Created template config: " + configPath);
@@ -160,7 +246,8 @@
         };
       }
 
-      const statsUrl = gatewayUrl + USAGE_PATH;
+      const window = normalizeWindow(cfg.window);
+      const statsUrl = gatewayUrl + USAGE_PATH + "?window=" + window;
       let resp;
       try {
         resp = ctx.host.http.request({
@@ -220,6 +307,21 @@
       const remaining = cap - spent;
       const burn = Number(data.burn_per_day_usd) || 0;
       const pct = cap > 0 ? (spent / cap) * 100 : 0;
+      const windowLabel = WINDOWS[window];
+      const tin = Number(data.total_tokens_in) || 0;
+      const tout = Number(data.total_tokens_out) || 0;
+      const totalTokens = tin + tout;
+
+      // Primary metric (drives the menu bar): windowed token count.
+      // Capless count line -> rendered as a plain value row, not a progress bar.
+      lines.push(
+        ctx.line.progress({
+          label: "Tokens",
+          used: totalTokens,
+          limit: 0,
+          format: { kind: "count", suffix: "tokens" },
+        }),
+      );
 
       // Main display line (configurable)
       let mainLabel = "Spend";
@@ -290,12 +392,11 @@
 
       const reqs = Number(data.total_requests);
       if (Number.isFinite(reqs) && reqs > 0) {
-        const tin = Number(data.total_tokens_in) || 0;
-        const tout = Number(data.total_tokens_out) || 0;
         lines.push(
           ctx.line.text({
             label: "Requests",
-            value: String(reqs) + " \u00b7 " + fmtTokens(tin + tout) + " tokens",
+            value: String(reqs) + " \u00b7 " + fmtTokens(totalTokens) + " tokens",
+            subtitle: windowLabel,
           }),
         );
       }

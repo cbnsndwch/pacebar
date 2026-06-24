@@ -30,7 +30,7 @@ PaceBar lives in your menu bar and shows you how much of your AI coding subscrip
 
 - [**Amp**](https://pacebar.cbnsndwch.dev/docs/providers/amp) / free tier, bonus, credits
 - [**Antigravity**](https://pacebar.cbnsndwch.dev/docs/providers/antigravity) / all models
-- [**Cloudflare AI (Gateway)**](https://pacebar.cbnsndwch.dev/docs/providers/cloudflare-ai) / self-hosted Worker w/ metering, spend, daily burn
+- [**Cloudflare AI (Gateway)**](https://pacebar.cbnsndwch.dev/docs/providers/cloudflare-ai) / self-hosted Worker w/ metering, spend, daily burn, windowed token count (1h/24h/7d); gateway URL + key set in settings
 - [**Claude**](https://pacebar.cbnsndwch.dev/docs/providers/claude) / session, weekly, extra usage, local token usage (ccusage); multi-profile via [claude-code-profiles](https://github.com/quinnjr/claude-code-profiles)
 - [**Codex**](https://pacebar.cbnsndwch.dev/docs/providers/codex) / session, weekly, reviews, credits
 - [**Copilot**](https://pacebar.cbnsndwch.dev/docs/providers/copilot) / premium, chat, completions

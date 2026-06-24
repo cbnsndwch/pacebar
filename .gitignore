@@ -19,6 +19,7 @@ tmpcov-gem
 .local/
 .conductor/
 .claude/settings.local.json
+.claude/worktrees
 .idea
 .DS_Store
 *.suo

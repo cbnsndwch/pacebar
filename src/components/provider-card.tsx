@@ -395,6 +395,24 @@ function MetricLineRenderer({
   }
 
   if (line.type === "progress") {
+    // Capless count (e.g. token totals with no cap) — render as a plain value row, not a bar.
+    if (line.format.kind === "count" && line.limit <= 0) {
+      const countText = `${formatCountNumber(line.used)} ${line.format.suffix}`;
+      return (
+        <div>
+          <div className="flex justify-between items-center h-[18px]">
+            <span className="text-xs text-muted-foreground flex-shrink-0">{line.label}</span>
+            <span
+              className="text-xs text-muted-foreground truncate min-w-0 max-w-[60%] text-right"
+              title={countText}
+            >
+              {countText}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
     const resetsAtMs = line.resetsAt ? Date.parse(line.resetsAt) : Number.NaN;
     const periodDurationMs = line.periodDurationMs;
     const hasPaceContext = Number.isFinite(resetsAtMs) && Number.isFinite(periodDurationMs);

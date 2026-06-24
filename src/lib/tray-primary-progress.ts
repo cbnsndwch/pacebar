@@ -12,7 +12,19 @@ type PluginState = {
 export type TrayPrimaryBar = {
   id: string;
   fraction?: number;
+  /** Verbatim menu-bar text for capless count metrics (e.g. "1.2M"). Overrides percent. */
+  text?: string;
 };
+
+/** Abbreviate a count for the menu bar: 1234567 -> "1.2M". */
+export function formatTrayCountText(value: number): string {
+  if (!Number.isFinite(value)) return "0";
+  const abs = Math.abs(value);
+  if (abs >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+  if (abs >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (abs >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
+  return String(Math.round(value));
+}
 
 type ProgressLine = Extract<
   PluginOutput["lines"][number],
@@ -58,6 +70,7 @@ export function getTrayPrimaryBars(args: {
     const data = state?.data ?? null;
 
     let fraction: number | undefined;
+    let text: string | undefined;
     if (data) {
       // Find first candidate that exists in runtime data
       const primaryLabel = meta.primaryCandidates.find((label) =>
@@ -67,15 +80,20 @@ export function getTrayPrimaryBars(args: {
         const primaryLine = data.lines.find(
           (line): line is ProgressLine => isProgressLine(line) && line.label === primaryLabel,
         );
-        if (primaryLine && primaryLine.limit > 0) {
-          const shownAmount =
-            displayMode === "used" ? primaryLine.used : primaryLine.limit - primaryLine.used;
-          fraction = clamp01(shownAmount / primaryLine.limit);
+        if (primaryLine) {
+          if (primaryLine.format?.kind === "count" && primaryLine.limit <= 0) {
+            // Capless count: show the raw abbreviated number, no percent.
+            text = formatTrayCountText(primaryLine.used);
+          } else if (primaryLine.limit > 0) {
+            const shownAmount =
+              displayMode === "used" ? primaryLine.used : primaryLine.limit - primaryLine.used;
+            fraction = clamp01(shownAmount / primaryLine.limit);
+          }
         }
       }
     }
 
-    out.push({ id, fraction });
+    out.push({ id, fraction, text });
     if (out.length >= maxBars) break;
   }
 
