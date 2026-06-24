@@ -20,6 +20,7 @@ import { GripVertical, ImagePlus, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { GlobalShortcutSection } from "@/components/global-shortcut-section";
+import { DebugLoggingSection } from "@/components/debug-logging-section";
 import { getBarFillLayout, getTrayIconSizePx } from "@/lib/tray-bars-icon";
 import {
   AUTO_UPDATE_OPTIONS,
@@ -813,6 +814,7 @@ export function SettingsPage({
           </div>
         </div>
       </section>
+      <DebugLoggingSection />
       <section>
         <h3 className="text-lg font-semibold mb-0">Plugins</h3>
         <p className="text-sm text-muted-foreground mb-2">Your AI coding lineup</p>

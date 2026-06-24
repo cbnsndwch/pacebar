@@ -38,6 +38,12 @@ const LEGACY_TRAY_ICON_STYLE_KEY = "trayIconStyle";
 const LEGACY_TRAY_SHOW_PERCENTAGE_KEY = "trayShowPercentage";
 const GLOBAL_SHORTCUT_KEY = "globalShortcut";
 const START_ON_LOGIN_KEY = "startOnLogin";
+const LOG_LEVEL_KEY = "logLevel";
+
+// Verbose logging maps to the shared `logLevel` store key (also driven by the
+// tray "Debug Level" menu). On = "trace" (everything), off = "error" (default).
+const VERBOSE_LOG_LEVEL = "trace";
+const QUIET_LOG_LEVEL = "error";
 
 const LEADERBOARD_HANDLE_KEY = "leaderboard.handle";
 const LEADERBOARD_TOKEN_KEY = "leaderboard.token";
@@ -347,6 +353,22 @@ export async function loadStartOnLogin(): Promise<boolean> {
 export async function saveStartOnLogin(value: boolean): Promise<void> {
   await store.set(START_ON_LOGIN_KEY, value);
   await store.save();
+}
+
+export async function loadVerboseLogging(): Promise<boolean> {
+  const stored = await store.get<unknown>(LOG_LEVEL_KEY);
+  // "debug" and "trace" are the verbose levels; anything else counts as off.
+  return stored === "debug" || stored === "trace";
+}
+
+/**
+ * Toggle verbose debug logging. Delegates to the `set_log_level` Tauri command,
+ * which both persists `logLevel` to settings.json and applies it to the running
+ * logger so verbose output starts immediately (no restart needed).
+ */
+export async function setVerboseLogging(enabled: boolean): Promise<void> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("set_log_level", { level: enabled ? VERBOSE_LOG_LEVEL : QUIET_LOG_LEVEL });
 }
 
 // ─── Leaderboard settings ────────────────────────────────────────────────────

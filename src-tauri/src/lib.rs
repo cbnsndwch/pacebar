@@ -391,6 +391,16 @@ fn get_log_path(app_handle: tauri::AppHandle) -> Result<String, String> {
     Ok(log_file.to_string_lossy().to_string())
 }
 
+/// Set the runtime log level and persist it (shared with the tray "Debug Level" menu).
+/// The settings page uses this to toggle verbose debug logging on/off.
+#[tauri::command]
+fn set_log_level(app_handle: tauri::AppHandle, level: String) -> Result<(), String> {
+    let parsed = tray::level_filter_from_str(&level)
+        .ok_or_else(|| format!("invalid log level: {}", level))?;
+    tray::set_stored_log_level(&app_handle, parsed);
+    Ok(())
+}
+
 /// Update the global shortcut registration.
 /// Pass `null` to disable the shortcut, or a shortcut string like "CommandOrControl+Shift+U".
 #[cfg(desktop)]
@@ -636,7 +646,10 @@ fn read_plugin_config(
         .path()
         .app_data_dir()
         .map_err(|e| format!("failed to get app data dir: {}", e))?;
-    let path = app_data_dir.join("plugins_data").join(&plugin_id).join("config.json");
+    let path = app_data_dir
+        .join("plugins_data")
+        .join(&plugin_id)
+        .join("config.json");
     if !path.exists() {
         return Ok(None);
     }
@@ -721,6 +734,7 @@ pub fn run() {
             start_probe_batch,
             list_plugins,
             get_log_path,
+            set_log_level,
             update_global_shortcut,
             set_profile_avatar,
             remove_profile_avatar,

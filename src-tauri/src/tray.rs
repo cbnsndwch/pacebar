@@ -26,7 +26,21 @@ fn get_stored_log_level(app_handle: &AppHandle) -> log::LevelFilter {
     }
 }
 
-fn set_stored_log_level(app_handle: &AppHandle, level: log::LevelFilter) {
+/// Parse a stored log-level string into a `LevelFilter`.
+/// Used by both the tray menu and the settings-page toggle.
+pub(crate) fn level_filter_from_str(value: &str) -> Option<log::LevelFilter> {
+    match value.trim() {
+        "error" => Some(log::LevelFilter::Error),
+        "warn" => Some(log::LevelFilter::Warn),
+        "info" => Some(log::LevelFilter::Info),
+        "debug" => Some(log::LevelFilter::Debug),
+        "trace" => Some(log::LevelFilter::Trace),
+        "off" => Some(log::LevelFilter::Off),
+        _ => None,
+    }
+}
+
+pub(crate) fn set_stored_log_level(app_handle: &AppHandle, level: log::LevelFilter) {
     let level_str = match level {
         log::LevelFilter::Error => "error",
         log::LevelFilter::Warn => "warn",
