@@ -1,27 +1,32 @@
 {
-  "name": "pacebar-leaderboard",
-  "main": "src/index.ts",
-  "compatibility_date": "2024-09-23",
-  "compatibility_flags": ["nodejs_compat"],
-  "routes": [
-    {
-      "pattern": "ai-leaderboard.helloworld.miami",
-      "custom_domain": true
+    "account_id": "13871994064312e4422bf06e84b36513",
+    "name": "pacebar-leaderboard",
+    "main": "src/index.ts",
+    "compatibility_date": "2024-09-23",
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
+    "routes": [
+        {
+            "pattern": "ai-leaderboard.helloworld.miami",
+            "custom_domain": true
+        },
+        {
+            "pattern": "token-maxxing.helloworld.miami",
+            "custom_domain": true
+        }
+    ],
+    "triggers": {
+        // daily at 08:00 UTC — sync Luma calendar
+        "crons": [
+            "0 8 * * *"
+        ]
     },
-    {
-      "pattern": "token-maxxing.helloworld.miami",
-      "custom_domain": true
-    }
-  ],
-  "triggers": {
-    // daily at 08:00 UTC — sync Luma calendar
-    "crons": ["0 8 * * *"]
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "pacebar-leaderboard",
-      "database_id": "d63b2087-ac16-4f17-bae7-499e938e13f6"
-    }
-  ]
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "pacebar-leaderboard",
+            "database_id": "d63b2087-ac16-4f17-bae7-499e938e13f6"
+        }
+    ]
 }
