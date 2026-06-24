@@ -213,6 +213,22 @@ describe("SettingsPage", () => {
     expect(screen.queryByText("Show percentage")).not.toBeInTheDocument();
   });
 
+  it("excludes the leaderboard plugin from Providers to Share but keeps it in the lineup", () => {
+    render(
+      <SettingsPage
+        {...defaultProps}
+        plugins={[
+          { id: "a", name: "Alpha", enabled: true },
+          { id: "leaderboard", name: "Hack Night Leaderboard", enabled: true },
+        ]}
+      />,
+    );
+    // A normal provider shows twice: Providers to Share + the Plugins lineup.
+    expect(screen.getAllByText("Alpha")).toHaveLength(2);
+    // The leaderboard is the board itself — only the lineup, never as a provider.
+    expect(screen.getAllByText("Hack Night Leaderboard")).toHaveLength(1);
+  });
+
   it("toggles start on login checkbox", async () => {
     const onStartOnLoginChange = vi.fn();
     render(<SettingsPage {...defaultProps} onStartOnLoginChange={onStartOnLoginChange} />);

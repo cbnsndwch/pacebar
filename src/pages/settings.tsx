@@ -52,6 +52,10 @@ interface PluginConfig {
   avatarUrl?: string;
 }
 
+// The leaderboard plugin aggregates and displays standings — it is not a usage
+// source, so it must never list itself among the providers shared to the board.
+const LEADERBOARD_PLUGIN_ID = "leaderboard";
+
 const TRAY_PREVIEW_SIZE_PX = getTrayIconSizePx(1);
 
 const PREVIEW_BAR_TRACK_PX = 20;
@@ -434,6 +438,10 @@ export function SettingsPage({
     }),
   );
 
+  // The leaderboard plugin is the board itself, not a usage source — exclude it
+  // from the "Providers to Share" list (it stays in the draggable lineup below).
+  const shareableProviders = plugins.filter((plugin) => plugin.id !== LEADERBOARD_PLUGIN_ID);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -658,13 +666,13 @@ export function SettingsPage({
             />
             Share my usage during hack nights
           </label>
-          {plugins.length > 0 && (
+          {shareableProviders.length > 0 && (
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Providers to Share
               </label>
               <div className="space-y-1">
-                {plugins.map((plugin) => {
+                {shareableProviders.map((plugin) => {
                   const isShared = leaderboardShareList.includes(plugin.id);
                   return (
                     <label
