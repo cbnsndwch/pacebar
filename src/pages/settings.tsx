@@ -702,9 +702,7 @@ export function SettingsPage({
       </section>
       <section>
         <h3 className="text-lg font-semibold mb-0">Cloudflare AI (Gateway)</h3>
-        <p className="text-sm text-muted-foreground mb-2">
-          Connect your self-hosted AI gateway
-        </p>
+        <p className="text-sm text-muted-foreground mb-2">Connect your self-hosted AI gateway</p>
         <div className="space-y-3">
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">

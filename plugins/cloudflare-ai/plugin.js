@@ -48,13 +48,13 @@
 
     // Check plugin config.json (set via Pacebar settings UI)
     try {
-      const configPath = ctx.app.pluginDataDir + "/config.json"
+      const configPath = ctx.app.pluginDataDir + "/config.json";
       if (ctx.host.fs.exists(configPath)) {
-        const raw = ctx.host.fs.readText(configPath)
-        const config = ctx.util.tryParseJson(raw)
+        const raw = ctx.host.fs.readText(configPath);
+        const config = ctx.util.tryParseJson(raw);
         if (config && config.gatewayUrl) {
-          const base = String(config.gatewayUrl).trim().replace(/\/+$/, "")
-          if (base) return base
+          const base = String(config.gatewayUrl).trim().replace(/\/+$/, "");
+          if (base) return base;
         }
       }
     } catch (e) {}
@@ -62,14 +62,19 @@
     // Try ~/.config/opencode/opencode.json first
     try {
       if (ctx.host.fs.exists("~/.config/opencode/opencode.json")) {
-        const raw = ctx.host.fs.readText("~/.config/opencode/opencode.json")
-        const config = ctx.util.tryParseJson(raw)
-        if (config && config.provider && config.provider["cf-gateway"] &&
-            config.provider["cf-gateway"].options && config.provider["cf-gateway"].options.baseURL) {
-          let base = String(config.provider["cf-gateway"].options.baseURL).trim()
-          base = base.replace(/\/+$/, "")
-          if (base.endsWith("/v1")) base = base.slice(0, -3)
-          if (base) return base
+        const raw = ctx.host.fs.readText("~/.config/opencode/opencode.json");
+        const config = ctx.util.tryParseJson(raw);
+        if (
+          config &&
+          config.provider &&
+          config.provider["cf-gateway"] &&
+          config.provider["cf-gateway"].options &&
+          config.provider["cf-gateway"].options.baseURL
+        ) {
+          let base = String(config.provider["cf-gateway"].options.baseURL).trim();
+          base = base.replace(/\/+$/, "");
+          if (base.endsWith("/v1")) base = base.slice(0, -3);
+          if (base) return base;
         }
       }
     } catch (e) {}
@@ -100,27 +105,36 @@
   function resolveEnvPlaceholders(ctx, str) {
     // Handle opencode's {env:VARNAME} syntax
     if (str && typeof str === "string") {
-      const m = str.match(/^\{env:(.+)}$/)
+      const m = str.match(/^\{env:(.+)}$/);
       if (m) {
-        try { return String(ctx.host.env.get(m[1]) || "").trim() } catch (e) { return "" }
+        try {
+          return String(ctx.host.env.get(m[1]) || "").trim();
+        } catch (e) {
+          return "";
+        }
       }
     }
-    return str
+    return str;
   }
 
   function readOpenCodeApiKey(ctx, configPath) {
     try {
       if (ctx.host.fs.exists(configPath)) {
-        const raw = ctx.host.fs.readText(configPath)
-        const config = ctx.util.tryParseJson(raw)
-        if (config && config.provider && config.provider["cf-gateway"] &&
-            config.provider["cf-gateway"].options && config.provider["cf-gateway"].options.apiKey) {
-          const key = String(config.provider["cf-gateway"].options.apiKey).trim()
-          return resolveEnvPlaceholders(ctx, key)
+        const raw = ctx.host.fs.readText(configPath);
+        const config = ctx.util.tryParseJson(raw);
+        if (
+          config &&
+          config.provider &&
+          config.provider["cf-gateway"] &&
+          config.provider["cf-gateway"].options &&
+          config.provider["cf-gateway"].options.apiKey
+        ) {
+          const key = String(config.provider["cf-gateway"].options.apiKey).trim();
+          return resolveEnvPlaceholders(ctx, key);
         }
       }
     } catch (e) {}
-    return null
+    return null;
   }
 
   function getAuthToken(ctx) {
@@ -130,12 +144,8 @@
     } catch (e) {}
     if (token) return String(token).trim();
 
-    token = readOpenCodeApiKey(ctx, "~/.config/opencode/opencode.json")
-    if (token) return token
-
-    token = readOpenCodeApiKey(ctx, "~/cloudflare-ai/opencode.json")
-    if (token) return token
-
+    // Check plugin config.json (set via Pacebar settings UI).
+    // Mirrors getGatewayUrl precedence so a settings-configured URL and key stay paired.
     try {
       const configPath = ctx.app.pluginDataDir + "/config.json";
       if (ctx.host.fs.exists(configPath)) {
@@ -146,6 +156,12 @@
         }
       }
     } catch (e) {}
+
+    token = readOpenCodeApiKey(ctx, "~/.config/opencode/opencode.json");
+    if (token) return token;
+
+    token = readOpenCodeApiKey(ctx, "~/cloudflare-ai/opencode.json");
+    if (token) return token;
 
     return null;
   }
