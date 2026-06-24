@@ -1,15 +1,18 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
 import {
+  buildModelEntries,
+  buildUserEntries,
+  type LeaderboardMetric,
+  type UserUsage,
+} from "../lib/leaderboard-helpers";
+import {
   getHacknightByNumber,
   getHacknightUsage,
   getLeaderboard,
   hasHacknightWinners,
   recordHacknightWinner,
   type HacknightRow,
-  type LeaderboardEntry,
-  type LeaderboardMetric,
-  type UserUsage,
 } from "../lib/db";
 import { dailyWindow, monthlyWindow, weeklyWindow } from "../lib/windows";
 
@@ -18,10 +21,6 @@ const VALID_METRICS: LeaderboardMetric[] = ["tokens", "dollars", "providers", "s
 function parseMetric(raw: string | null): LeaderboardMetric {
   if (raw && (VALID_METRICS as string[]).includes(raw)) return raw as LeaderboardMetric;
   return "tokens";
-}
-
-interface ExtendedLeaderboardEntry extends LeaderboardEntry {
-  models?: Record<string, UserUsage["models"][string]>;
 }
 
 export async function handleLeaderboard(req: Request, db: D1Database): Promise<Response> {
@@ -103,72 +102,17 @@ async function resolveHacknight(db: D1Database, nRaw: string | null): Promise<Ha
     return getHacknightByNumber(db, number);
   }
 
-  // Default: latest hack night that has any reports.
+  // Default: latest hack night that has any reports. We must look up the
+  // hack night's published `number` from the reports FK (`hacknight_id`).
   const latest = await db
     .prepare(
-      `SELECT hacknight_id FROM reports WHERE window_type = 'hacknight' ORDER BY submitted_at DESC LIMIT 1`,
+      `SELECT h.number FROM reports r JOIN hacknights h ON r.hacknight_id = h.id WHERE r.window_type = 'hacknight' ORDER BY r.submitted_at DESC LIMIT 1`,
     )
-    .first<{ hacknight_id: number }>();
-  if (latest?.hacknight_id) {
-    return getHacknightByNumber(db, latest.hacknight_id);
+    .first<{ number: number }>();
+  if (latest?.number) {
+    return getHacknightByNumber(db, latest.number);
   }
   return null;
-}
-
-function buildUserEntries(
-  usage: Awaited<ReturnType<typeof getHacknightUsage>>,
-  metric: LeaderboardMetric,
-) {
-  const list: ExtendedLeaderboardEntry[] = Object.values(usage.byHandle).map((u) => ({
-    rank: 0,
-    handle: u.handle,
-    tokens_used: u.tokens_total,
-    dollars_spent: u.dollars_spent,
-    providers_active: u.providers_active,
-    score: u.score,
-    models: u.models,
-  }));
-
-  list.sort((a, b) => {
-    switch (metric) {
-      case "dollars":
-        return b.dollars_spent - a.dollars_spent;
-      case "providers":
-        return b.providers_active - a.providers_active;
-      case "score":
-        return b.score - a.score;
-      case "tokens":
-      default:
-        return b.tokens_used - a.tokens_used;
-    }
-  });
-
-  return list.map((e, idx) => ({ ...e, rank: idx + 1 }));
-}
-
-function buildModelEntries(
-  usage: Awaited<ReturnType<typeof getHacknightUsage>>,
-  metric: LeaderboardMetric,
-) {
-  const list = Object.values(usage.byModel).map((m) => ({
-    rank: 0,
-    model_key: m.modelKey,
-    provider_id: m.provider_id,
-    model_id: m.model_id,
-    model_name: m.model_name,
-    tokens_used: m.tokens_total,
-    dollars_spent: m.dollars_spent,
-    users: m.users,
-    top_handle: m.topHandle,
-    top_tokens: m.topTokens,
-  }));
-
-  list.sort((a, b) => {
-    if (metric === "dollars") return b.dollars_spent - a.dollars_spent;
-    return b.tokens_used - a.tokens_used;
-  });
-
-  return list.map((e, idx) => ({ ...e, rank: idx + 1 }));
 }
 
 async function maybeArchiveWinners(

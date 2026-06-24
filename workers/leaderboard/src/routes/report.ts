@@ -1,5 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
+import { buildSnapshotModels } from "../lib/leaderboard-helpers";
 import { upsertReport, getHacknightForTime, insertModelUsageSnapshot } from "../lib/db";
 import { standardWindows } from "../lib/windows";
 
@@ -138,46 +139,6 @@ export async function handleReport(req: Request, db: D1Database): Promise<Respon
     ok: true,
     windows: standard.map((w) => w.key).concat(hn ? ["hacknight"] : []),
   });
-}
-
-function buildSnapshotModels(
-  models: ModelPayload[] | undefined,
-  providers: ProviderPayload[],
-): ModelPayload[] {
-  if (models && Array.isArray(models) && models.length > 0) {
-    const out: ModelPayload[] = [];
-    for (const m of models) {
-      if (!m || typeof m !== "object") continue;
-      const providerId = typeof m.providerId === "string" ? m.providerId : "unknown";
-      const modelId = typeof m.modelId === "string" ? m.modelId : "unknown";
-      out.push({
-        providerId,
-        modelId,
-        modelName: typeof m.modelName === "string" ? m.modelName : null,
-        tokensIn: typeof m.tokensIn === "number" ? Math.max(0, Math.round(m.tokensIn)) : null,
-        tokensOut: typeof m.tokensOut === "number" ? Math.max(0, Math.round(m.tokensOut)) : null,
-        tokensTotal:
-          typeof m.tokensTotal === "number"
-            ? Math.max(0, Math.round(m.tokensTotal))
-            : typeof m.tokensIn === "number" && typeof m.tokensOut === "number"
-              ? Math.max(0, Math.round(m.tokensIn + m.tokensOut))
-              : 0,
-        dollarsSpent: typeof m.dollarsSpent === "number" ? Math.max(0, m.dollarsSpent) : null,
-      });
-    }
-    return out;
-  }
-
-  // Fallback: one model per provider using the provider aggregate.
-  return providers.map((p) => ({
-    providerId: p.id,
-    modelId: "total",
-    modelName: p.displayName || null,
-    tokensIn: null,
-    tokensOut: null,
-    tokensTotal: p.tokensUsed,
-    dollarsSpent: p.dollarsSpent,
-  }));
 }
 
 function json(data: unknown, status = 200): Response {

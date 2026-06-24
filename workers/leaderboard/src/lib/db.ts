@@ -1,5 +1,16 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
+import {
+  delta,
+  METRIC_COL,
+  modelKey,
+  type LeaderboardEntry,
+  type LeaderboardMetric,
+  type ModelLeaderboardData,
+  type ModelUsageValue,
+  type UserUsage,
+} from "./leaderboard-helpers";
+
 export interface HacknightRow {
   id: number;
   number: number;
@@ -23,15 +34,6 @@ export interface ReportRow {
   providers_json: string;
 }
 
-export interface LeaderboardEntry {
-  rank: number;
-  handle: string;
-  tokens_used: number;
-  dollars_spent: number;
-  providers_active: number;
-  score: number;
-}
-
 export interface ModelUsageSnapshotRow {
   id: number;
   handle: string;
@@ -44,39 +46,6 @@ export interface ModelUsageSnapshotRow {
   tokens_total: number;
   dollars_spent: number;
   raw_json: string;
-}
-
-export interface ModelUsageValue {
-  provider_id: string;
-  model_id: string;
-  model_name: string | null;
-  tokens_total: number;
-  tokens_in: number | null;
-  tokens_out: number | null;
-  dollars_spent: number;
-}
-
-export interface UserUsage {
-  handle: string;
-  tokens_total: number;
-  tokens_in: number | null;
-  tokens_out: number | null;
-  dollars_spent: number;
-  providers_active: number;
-  score: number;
-  models: Record<string, ModelUsageValue>;
-}
-
-export interface ModelLeaderboardData {
-  modelKey: string;
-  provider_id: string;
-  model_id: string;
-  model_name: string | null;
-  tokens_total: number;
-  dollars_spent: number;
-  users: number;
-  topHandle: string | null;
-  topTokens: number;
 }
 
 // ─── Hacknights ──────────────────────────────────────────────────────────────
@@ -204,10 +173,6 @@ export async function insertModelUsageSnapshot(
     .run();
 }
 
-function modelKey(providerId: string, modelId: string): string {
-  return `${providerId}:${modelId}`;
-}
-
 async function fetchBoundarySnapshots(
   db: D1Database,
   hacknight: HacknightRow,
@@ -276,10 +241,6 @@ async function fetchBoundarySnapshots(
   addRows(current.results, "current");
 
   return out;
-}
-
-function delta(a: number, b: number): number {
-  return Math.max(0, a - b);
 }
 
 export interface HacknightUsage {
@@ -377,7 +338,9 @@ export async function getHacknightUsage(
     }
     modelAgg.tokens_total += tokensDelta;
     modelAgg.dollars_spent += modelValue.dollars_spent;
-    modelAgg.users += 1;
+    if (tokensDelta > 0 || modelValue.dollars_spent > 0) {
+      modelAgg.users += 1;
+    }
     if (tokensDelta > modelAgg.topTokens) {
       modelAgg.topTokens = tokensDelta;
       modelAgg.topHandle = row.handle;
@@ -444,15 +407,6 @@ export async function hasHacknightWinners(db: D1Database, hacknightId: number): 
     .first<{ present: number }>();
   return row?.present === 1;
 }
-
-export type LeaderboardMetric = "tokens" | "dollars" | "providers" | "score";
-
-const METRIC_COL: Record<LeaderboardMetric, string> = {
-  tokens: "tokens_used",
-  dollars: "dollars_spent",
-  providers: "providers_active",
-  score: "score",
-};
 
 // ─── Sync state ──────────────────────────────────────────────────────────────
 
