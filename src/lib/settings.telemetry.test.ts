@@ -25,7 +25,7 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: invokeMock,
 }));
 
-import { disableTelemetry, enableTelemetry, loadTelemetryOptIn } from "@/lib/settings";
+import { disableTelemetry, enableTelemetry, loadTelemetryOptIn } from "./settings";
 
 const ANON_ID_KEY = "telemetry.anonId";
 
