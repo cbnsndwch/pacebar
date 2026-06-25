@@ -362,6 +362,8 @@ interface SettingsPageProps {
   onGlobalShortcutChange: (value: GlobalShortcut) => void;
   startOnLogin: boolean;
   onStartOnLoginChange: (value: boolean) => void;
+  telemetryOptIn: boolean;
+  onTelemetryOptInChange: (value: boolean) => void;
   // Leaderboard
   leaderboardHandle: LeaderboardHandle;
   leaderboardToken: LeaderboardToken;
@@ -408,6 +410,8 @@ export function SettingsPage({
   onGlobalShortcutChange,
   startOnLogin,
   onStartOnLoginChange,
+  telemetryOptIn,
+  onTelemetryOptInChange,
   leaderboardHandle,
   leaderboardToken,
   leaderboardWorkerUrl,
@@ -615,6 +619,22 @@ export function SettingsPage({
             onCheckedChange={(checked) => onStartOnLoginChange(checked === true)}
           />
           Start on login
+        </label>
+      </section>
+      <section>
+        <h3 className="text-lg font-semibold mb-0">Anonymous Usage</h3>
+        <p className="text-sm text-muted-foreground mb-2">
+          Off by default. When on, PaceBar shares a random anonymous id plus your app version and OS
+          — once a day — so we can see which versions are in use. No account, no personal data.
+          Turning it off stops sharing immediately.
+        </p>
+        <label className="flex items-center gap-2 text-sm select-none text-foreground">
+          <Checkbox
+            key={`telemetry-opt-in-${telemetryOptIn}`}
+            checked={telemetryOptIn}
+            onCheckedChange={(checked) => onTelemetryOptInChange(checked === true)}
+          />
+          Share anonymous usage stats
         </label>
       </section>
       <section>

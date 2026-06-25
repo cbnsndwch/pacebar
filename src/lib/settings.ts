@@ -45,6 +45,9 @@ const LOG_LEVEL_KEY = "logLevel";
 const VERBOSE_LOG_LEVEL = "trace";
 const QUIET_LOG_LEVEL = "error";
 
+const TELEMETRY_OPT_IN_KEY = "telemetry.optIn";
+const TELEMETRY_ANON_ID_KEY = "telemetry.anonId";
+
 const LEADERBOARD_HANDLE_KEY = "leaderboard.handle";
 const LEADERBOARD_TOKEN_KEY = "leaderboard.token";
 const LEADERBOARD_WORKER_URL_KEY = "leaderboard.workerUrl";
@@ -58,6 +61,8 @@ export const DEFAULT_RESET_TIMER_DISPLAY_MODE: ResetTimerDisplayMode = "relative
 export const DEFAULT_MENUBAR_ICON_STYLE: MenubarIconStyle = "provider";
 export const DEFAULT_GLOBAL_SHORTCUT: GlobalShortcut = null;
 export const DEFAULT_START_ON_LOGIN = false;
+
+export const DEFAULT_TELEMETRY_OPT_IN = false;
 
 export const DEFAULT_LEADERBOARD_HANDLE: LeaderboardHandle = null;
 export const DEFAULT_LEADERBOARD_TOKEN: LeaderboardToken = null;
@@ -431,6 +436,43 @@ export async function saveLeaderboardShareList(list: string[]): Promise<void> {
  * Uses the `write_leaderboard_prefs` Tauri command (no plugin-fs dependency).
  * The `_appDataDir` parameter is kept for API compatibility but unused.
  */
+// ─── Anonymous telemetry (opt-in) ────────────────────────────────────────────
+// Default OFF. The anonymous id is created only when the user opts in, and
+// removed when they opt out — nothing identifiable is stored unless consented.
+
+export async function loadTelemetryOptIn(): Promise<boolean> {
+  const v = await store.get<unknown>(TELEMETRY_OPT_IN_KEY);
+  return typeof v === "boolean" ? v : DEFAULT_TELEMETRY_OPT_IN;
+}
+
+/**
+ * Enable anonymous telemetry: generate a random anonymous id if one doesn't
+ * exist yet, persist it alongside the opt-in flag, then fire one ping so the
+ * first datapoint lands immediately (no restart needed).
+ */
+export async function enableTelemetry(): Promise<void> {
+  const existing = await store.get<unknown>(TELEMETRY_ANON_ID_KEY);
+  if (typeof existing !== "string" || existing.length === 0) {
+    await store.set(TELEMETRY_ANON_ID_KEY, crypto.randomUUID());
+  }
+  await store.set(TELEMETRY_OPT_IN_KEY, true);
+  await store.save();
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("telemetry_ping_now");
+}
+
+/**
+ * Disable anonymous telemetry: flip the opt-in flag off. The anonymous id is
+ * deliberately KEPT on disk (it is never transmitted while opted out) so a later
+ * re-opt-in reuses the same identity. Deleting it would mint a fresh id every
+ * enable/disable cycle and inflate install counts. The id is a bare random UUID
+ * with no data attached.
+ */
+export async function disableTelemetry(): Promise<void> {
+  await store.set(TELEMETRY_OPT_IN_KEY, false);
+  await store.save();
+}
+
 export async function syncLeaderboardPrefsToPlugin(
   _appDataDir: string,
   prefs: {

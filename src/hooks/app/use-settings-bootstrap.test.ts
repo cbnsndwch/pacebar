@@ -16,6 +16,7 @@ const {
   loadPluginSettingsMock,
   loadResetTimerDisplayModeMock,
   loadStartOnLoginMock,
+  loadTelemetryOptInMock,
   loadThemeModeMock,
   migrateLegacyTraySettingsMock,
   migratePluginProfileInstancesEnabledMock,
@@ -43,6 +44,7 @@ const {
   loadPluginSettingsMock: vi.fn(),
   loadResetTimerDisplayModeMock: vi.fn(),
   loadStartOnLoginMock: vi.fn(),
+  loadTelemetryOptInMock: vi.fn(),
   loadThemeModeMock: vi.fn(),
   migrateLegacyTraySettingsMock: vi.fn(),
   migratePluginProfileInstancesEnabledMock: vi.fn(),
@@ -80,6 +82,7 @@ vi.mock("@/lib/settings", () => ({
   DEFAULT_MENUBAR_ICON_STYLE: "provider",
   DEFAULT_RESET_TIMER_DISPLAY_MODE: "relative",
   DEFAULT_START_ON_LOGIN: false,
+  DEFAULT_TELEMETRY_OPT_IN: false,
   DEFAULT_THEME_MODE: "system",
   DEFAULT_LEADERBOARD_HANDLE: null,
   DEFAULT_LEADERBOARD_TOKEN: null,
@@ -94,6 +97,7 @@ vi.mock("@/lib/settings", () => ({
   loadPluginSettings: loadPluginSettingsMock,
   loadResetTimerDisplayMode: loadResetTimerDisplayModeMock,
   loadStartOnLogin: loadStartOnLoginMock,
+  loadTelemetryOptIn: loadTelemetryOptInMock,
   loadThemeMode: loadThemeModeMock,
   loadLeaderboardHandle: loadLeaderboardHandleMock,
   loadLeaderboardToken: loadLeaderboardTokenMock,
@@ -120,6 +124,7 @@ function createArgs() {
     setGlobalShortcut: vi.fn(),
     setStartOnLogin: vi.fn(),
     setMenubarIconStyle: vi.fn(),
+    setTelemetryOptIn: vi.fn(),
     setLoadingForPlugins: vi.fn(),
     setErrorForPlugins: vi.fn(),
     startBatch: vi.fn().mockResolvedValue(undefined),
@@ -147,6 +152,7 @@ describe("useSettingsBootstrap", () => {
     loadPluginSettingsMock.mockReset();
     loadResetTimerDisplayModeMock.mockReset();
     loadStartOnLoginMock.mockReset();
+    loadTelemetryOptInMock.mockReset();
     loadThemeModeMock.mockReset();
     migrateLegacyTraySettingsMock.mockReset();
     migratePluginProfileInstancesEnabledMock.mockReset();
@@ -182,6 +188,7 @@ describe("useSettingsBootstrap", () => {
     loadGlobalShortcutMock.mockResolvedValue("CommandOrControl+Shift+O");
     loadMenubarIconStyleMock.mockResolvedValue("provider");
     loadStartOnLoginMock.mockResolvedValue(true);
+    loadTelemetryOptInMock.mockResolvedValue(false);
     migrateLegacyTraySettingsMock.mockResolvedValue(undefined);
     migratePluginProfileInstancesEnabledMock.mockResolvedValue(undefined);
     savePluginSettingsMock.mockResolvedValue(undefined);

@@ -20,6 +20,7 @@ import {
   DEFAULT_MENUBAR_ICON_STYLE,
   DEFAULT_RESET_TIMER_DISPLAY_MODE,
   DEFAULT_START_ON_LOGIN,
+  DEFAULT_TELEMETRY_OPT_IN,
   DEFAULT_THEME_MODE,
   getEnabledPluginIds,
   loadAutoUpdateInterval,
@@ -35,6 +36,7 @@ import {
   loadPluginSettings,
   loadResetTimerDisplayMode,
   loadStartOnLogin,
+  loadTelemetryOptIn,
   loadThemeMode,
   migratePluginProfileInstancesEnabled,
   normalizePluginSettings,
@@ -62,6 +64,7 @@ type UseSettingsBootstrapArgs = {
   setGlobalShortcut: (value: GlobalShortcut) => void;
   setStartOnLogin: (value: boolean) => void;
   setMenubarIconStyle: (value: MenubarIconStyle) => void;
+  setTelemetryOptIn: (value: boolean) => void;
   setLoadingForPlugins: (ids: string[]) => void;
   setErrorForPlugins: (ids: string[], error: string) => void;
   startBatch: (pluginIds?: string[]) => Promise<string[] | undefined>;
@@ -83,6 +86,7 @@ export function useSettingsBootstrap({
   setGlobalShortcut,
   setStartOnLogin,
   setMenubarIconStyle,
+  setTelemetryOptIn,
   setLoadingForPlugins,
   setErrorForPlugins,
   startBatch,
@@ -186,6 +190,13 @@ export function useSettingsBootstrap({
           console.error("Failed to load menubar icon style:", error);
         }
 
+        let storedTelemetryOptIn = DEFAULT_TELEMETRY_OPT_IN;
+        try {
+          storedTelemetryOptIn = await loadTelemetryOptIn();
+        } catch (error) {
+          console.error("Failed to load telemetry opt-in:", error);
+        }
+
         let storedLeaderboardHandle = DEFAULT_LEADERBOARD_HANDLE;
         try {
           storedLeaderboardHandle = await loadLeaderboardHandle();
@@ -230,6 +241,7 @@ export function useSettingsBootstrap({
           setGlobalShortcut(storedGlobalShortcut);
           setStartOnLogin(storedStartOnLogin);
           setMenubarIconStyle(storedMenubarIconStyle);
+          setTelemetryOptIn(storedTelemetryOptIn);
           setLeaderboardHandle(storedLeaderboardHandle);
           setLeaderboardToken(storedLeaderboardToken);
           setLeaderboardWorkerUrl(storedLeaderboardWorkerUrl);
@@ -289,6 +301,7 @@ export function useSettingsBootstrap({
     setPluginsMeta,
     setResetTimerDisplayMode,
     setStartOnLogin,
+    setTelemetryOptIn,
     setThemeMode,
     startBatch,
   ]);

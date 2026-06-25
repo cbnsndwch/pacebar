@@ -1,6 +1,8 @@
 import { useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
+  disableTelemetry,
+  enableTelemetry,
   getEnabledPluginIds,
   saveAutoUpdateInterval,
   saveGlobalShortcut,
@@ -16,6 +18,7 @@ type UseSettingsSystemActionsArgs = {
   setAutoUpdateNextAt: (value: number | null) => void;
   setGlobalShortcut: (value: GlobalShortcut) => void;
   setStartOnLogin: (value: boolean) => void;
+  setTelemetryOptIn: (value: boolean) => void;
   applyStartOnLogin: (value: boolean) => Promise<void>;
 };
 
@@ -25,6 +28,7 @@ export function useSettingsSystemActions({
   setAutoUpdateNextAt,
   setGlobalShortcut,
   setStartOnLogin,
+  setTelemetryOptIn,
   applyStartOnLogin,
 }: UseSettingsSystemActionsArgs) {
   const handleAutoUpdateIntervalChange = useCallback(
@@ -73,9 +77,21 @@ export function useSettingsSystemActions({
     [applyStartOnLogin, setStartOnLogin],
   );
 
+  const handleTelemetryOptInChange = useCallback(
+    (value: boolean) => {
+      setTelemetryOptIn(value);
+      const task = value ? enableTelemetry() : disableTelemetry();
+      void task.catch((error) => {
+        console.error("Failed to update telemetry opt-in:", error);
+      });
+    },
+    [setTelemetryOptIn],
+  );
+
   return {
     handleAutoUpdateIntervalChange,
     handleGlobalShortcutChange,
     handleStartOnLoginChange,
+    handleTelemetryOptInChange,
   };
 }

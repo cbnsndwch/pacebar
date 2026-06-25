@@ -7,12 +7,16 @@ const {
   saveAutoUpdateIntervalMock,
   saveGlobalShortcutMock,
   saveStartOnLoginMock,
+  enableTelemetryMock,
+  disableTelemetryMock,
 } = vi.hoisted(() => ({
   getEnabledPluginIdsMock: vi.fn(),
   saveAutoUpdateIntervalMock: vi.fn(),
   saveGlobalShortcutMock: vi.fn(),
   saveStartOnLoginMock: vi.fn(),
   invokeMock: vi.fn(),
+  enableTelemetryMock: vi.fn(),
+  disableTelemetryMock: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -24,6 +28,8 @@ vi.mock("@/lib/settings", () => ({
   saveAutoUpdateInterval: saveAutoUpdateIntervalMock,
   saveGlobalShortcut: saveGlobalShortcutMock,
   saveStartOnLogin: saveStartOnLoginMock,
+  enableTelemetry: enableTelemetryMock,
+  disableTelemetry: disableTelemetryMock,
 }));
 
 import { useSettingsSystemActions } from "@/hooks/app/use-settings-system-actions";
@@ -35,6 +41,10 @@ describe("useSettingsSystemActions", () => {
     saveGlobalShortcutMock.mockReset();
     saveStartOnLoginMock.mockReset();
     invokeMock.mockReset();
+    enableTelemetryMock.mockReset();
+    disableTelemetryMock.mockReset();
+    enableTelemetryMock.mockResolvedValue(undefined);
+    disableTelemetryMock.mockResolvedValue(undefined);
 
     getEnabledPluginIdsMock.mockImplementation(
       (settings: { order: string[]; disabled: string[] }) =>
@@ -123,6 +133,35 @@ describe("useSettingsSystemActions", () => {
     expect(setStartOnLogin).toHaveBeenCalledWith(true);
     expect(saveStartOnLoginMock).toHaveBeenCalledWith(true);
     expect(applyStartOnLogin).toHaveBeenCalledWith(true);
+  });
+
+  it("enables telemetry and generates an id when opted in, clears it when opted out", () => {
+    const setTelemetryOptIn = vi.fn();
+
+    const { result } = renderHook(() =>
+      useSettingsSystemActions({
+        pluginSettings: null,
+        setAutoUpdateInterval: vi.fn(),
+        setAutoUpdateNextAt: vi.fn(),
+        setGlobalShortcut: vi.fn(),
+        setStartOnLogin: vi.fn(),
+        setTelemetryOptIn,
+        applyStartOnLogin: vi.fn().mockResolvedValue(undefined),
+      }),
+    );
+
+    act(() => {
+      result.current.handleTelemetryOptInChange(true);
+    });
+    expect(setTelemetryOptIn).toHaveBeenCalledWith(true);
+    expect(enableTelemetryMock).toHaveBeenCalledTimes(1);
+    expect(disableTelemetryMock).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.handleTelemetryOptInChange(false);
+    });
+    expect(setTelemetryOptIn).toHaveBeenCalledWith(false);
+    expect(disableTelemetryMock).toHaveBeenCalledTimes(1);
   });
 
   it("logs persistence/update failures", async () => {

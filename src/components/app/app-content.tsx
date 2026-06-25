@@ -40,6 +40,7 @@ export type AppContentActionProps = {
   traySettingsPreview: TraySettingsPreview;
   onGlobalShortcutChange: (value: GlobalShortcut) => void;
   onStartOnLoginChange: (value: boolean) => void;
+  onTelemetryOptInChange: (value: boolean) => void;
   onAvatarChange: (pluginId: string, dataUrl: string | null) => void;
   // Leaderboard
   onLeaderboardHandleChange: (value: LeaderboardHandle) => void;
@@ -67,6 +68,7 @@ export function AppContent({
   traySettingsPreview,
   onGlobalShortcutChange,
   onStartOnLoginChange,
+  onTelemetryOptInChange,
   onAvatarChange,
   onLeaderboardHandleChange,
   onLeaderboardTokenChange,
@@ -88,6 +90,7 @@ export function AppContent({
     globalShortcut,
     themeMode,
     startOnLogin,
+    telemetryOptIn,
     leaderboardHandle,
     leaderboardToken,
     leaderboardWorkerUrl,
@@ -102,6 +105,7 @@ export function AppContent({
       globalShortcut: state.globalShortcut,
       themeMode: state.themeMode,
       startOnLogin: state.startOnLogin,
+      telemetryOptIn: state.telemetryOptIn,
       leaderboardHandle: state.leaderboardHandle,
       leaderboardToken: state.leaderboardToken,
       leaderboardWorkerUrl: state.leaderboardWorkerUrl,
@@ -146,6 +150,8 @@ export function AppContent({
         onGlobalShortcutChange={onGlobalShortcutChange}
         startOnLogin={startOnLogin}
         onStartOnLoginChange={onStartOnLoginChange}
+        telemetryOptIn={telemetryOptIn}
+        onTelemetryOptInChange={onTelemetryOptInChange}
         leaderboardHandle={leaderboardHandle}
         leaderboardToken={leaderboardToken}
         leaderboardWorkerUrl={leaderboardWorkerUrl}

@@ -51,6 +51,7 @@ function App() {
     setResetTimerDisplayMode,
     setGlobalShortcut,
     setStartOnLogin,
+    setTelemetryOptIn,
     leaderboardHandle,
     leaderboardToken,
     leaderboardWorkerUrl,
@@ -75,6 +76,7 @@ function App() {
       setResetTimerDisplayMode: state.setResetTimerDisplayMode,
       setGlobalShortcut: state.setGlobalShortcut,
       setStartOnLogin: state.setStartOnLogin,
+      setTelemetryOptIn: state.setTelemetryOptIn,
       leaderboardHandle: state.leaderboardHandle,
       leaderboardToken: state.leaderboardToken,
       leaderboardWorkerUrl: state.leaderboardWorkerUrl,
@@ -133,6 +135,7 @@ function App() {
     setResetTimerDisplayMode,
     setGlobalShortcut,
     setStartOnLogin,
+    setTelemetryOptIn,
     setLoadingForPlugins,
     setErrorForPlugins,
     startBatch,
@@ -179,15 +182,20 @@ function App() {
     setLeaderboardShareList,
   });
 
-  const { handleAutoUpdateIntervalChange, handleGlobalShortcutChange, handleStartOnLoginChange } =
-    useSettingsSystemActions({
-      pluginSettings,
-      setAutoUpdateInterval,
-      setAutoUpdateNextAt,
-      setGlobalShortcut,
-      setStartOnLogin,
-      applyStartOnLogin,
-    });
+  const {
+    handleAutoUpdateIntervalChange,
+    handleGlobalShortcutChange,
+    handleStartOnLoginChange,
+    handleTelemetryOptInChange,
+  } = useSettingsSystemActions({
+    pluginSettings,
+    setAutoUpdateInterval,
+    setAutoUpdateNextAt,
+    setGlobalShortcut,
+    setStartOnLogin,
+    setTelemetryOptIn,
+    applyStartOnLogin,
+  });
 
   const { handleReorder, handleToggle } = useSettingsPluginActions({
     pluginSettings,
@@ -312,6 +320,7 @@ function App() {
         traySettingsPreview,
         onGlobalShortcutChange: handleGlobalShortcutChange,
         onStartOnLoginChange: handleStartOnLoginChange,
+        onTelemetryOptInChange: handleTelemetryOptInChange,
         onAvatarChange: handleAvatarChange,
         onLeaderboardHandleChange: handleLeaderboardHandleChange,
         onLeaderboardTokenChange: handleLeaderboardTokenChange,

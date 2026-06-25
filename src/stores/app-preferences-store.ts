@@ -6,6 +6,7 @@ import {
   DEFAULT_MENUBAR_ICON_STYLE,
   DEFAULT_RESET_TIMER_DISPLAY_MODE,
   DEFAULT_START_ON_LOGIN,
+  DEFAULT_TELEMETRY_OPT_IN,
   DEFAULT_THEME_MODE,
   DEFAULT_LEADERBOARD_HANDLE,
   DEFAULT_LEADERBOARD_TOKEN,
@@ -31,6 +32,7 @@ type AppPreferencesStore = {
   globalShortcut: GlobalShortcut;
   startOnLogin: boolean;
   menubarIconStyle: MenubarIconStyle;
+  telemetryOptIn: boolean;
   // Leaderboard
   leaderboardHandle: LeaderboardHandle;
   leaderboardToken: LeaderboardToken;
@@ -44,6 +46,7 @@ type AppPreferencesStore = {
   setGlobalShortcut: (value: GlobalShortcut) => void;
   setStartOnLogin: (value: boolean) => void;
   setMenubarIconStyle: (value: MenubarIconStyle) => void;
+  setTelemetryOptIn: (value: boolean) => void;
   setLeaderboardHandle: (value: LeaderboardHandle) => void;
   setLeaderboardToken: (value: LeaderboardToken) => void;
   setLeaderboardWorkerUrl: (value: LeaderboardWorkerUrl) => void;
@@ -60,6 +63,7 @@ const initialState = {
   globalShortcut: DEFAULT_GLOBAL_SHORTCUT,
   startOnLogin: DEFAULT_START_ON_LOGIN,
   menubarIconStyle: DEFAULT_MENUBAR_ICON_STYLE,
+  telemetryOptIn: DEFAULT_TELEMETRY_OPT_IN,
   leaderboardHandle: DEFAULT_LEADERBOARD_HANDLE,
   leaderboardToken: DEFAULT_LEADERBOARD_TOKEN,
   leaderboardWorkerUrl: DEFAULT_LEADERBOARD_WORKER_URL,
@@ -76,6 +80,7 @@ export const useAppPreferencesStore = create<AppPreferencesStore>((set) => ({
   setGlobalShortcut: (value) => set({ globalShortcut: value }),
   setStartOnLogin: (value) => set({ startOnLogin: value }),
   setMenubarIconStyle: (value) => set({ menubarIconStyle: value }),
+  setTelemetryOptIn: (value) => set({ telemetryOptIn: value }),
   setLeaderboardHandle: (value) => set({ leaderboardHandle: value }),
   setLeaderboardToken: (value) => set({ leaderboardToken: value }),
   setLeaderboardWorkerUrl: (value) => set({ leaderboardWorkerUrl: value }),
