@@ -1,0 +1,23 @@
+{
+    "account_id": "13871994064312e4422bf06e84b36513",
+    "name": "pacebar-telemetry",
+    "main": "src/index.ts",
+    "compatibility_date": "2024-09-23",
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
+    "routes": [
+        {
+            "pattern": "telemetry.pacebar.cbnsndwch.dev",
+            "custom_domain": true
+        }
+    ],
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "pacebar-telemetry",
+            // run `bun run db:create` then paste the returned id here
+            "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+        }
+    ]
+}

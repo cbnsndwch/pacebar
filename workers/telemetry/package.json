@@ -1,0 +1,19 @@
+{
+  "name": "pacebar-telemetry-worker",
+  "private": true,
+  "version": "0.14.1",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "db:create": "wrangler d1 create pacebar-telemetry",
+    "db:migrate": "wrangler d1 execute pacebar-telemetry --file schema.sql",
+    "db:migrate:local": "wrangler d1 execute pacebar-telemetry --local --file schema.sql"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "@cloudflare/workers-types": "^4.20260624.1",
+    "typescript": "~6.0.2",
+    "wrangler": "^4.104.0"
+  }
+}
