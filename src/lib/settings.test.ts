@@ -82,8 +82,8 @@ describe("settings", () => {
 
   it("normalizes order + disabled against known plugins", () => {
     const plugins: PluginMeta[] = [
-      { id: "a", name: "A", iconUrl: "", lines: [] },
-      { id: "b", name: "B", iconUrl: "", lines: [] },
+      { id: "a", name: "A", iconUrl: "", lines: [], primaryCandidates: [], supportsAvatar: false },
+      { id: "b", name: "B", iconUrl: "", lines: [], primaryCandidates: [], supportsAvatar: false },
     ];
     const normalized = normalizePluginSettings(
       { order: ["b", "b", "c"], disabled: ["c", "a"] },
@@ -94,9 +94,30 @@ describe("settings", () => {
 
   it("auto-disables new non-default plugins", () => {
     const plugins: PluginMeta[] = [
-      { id: "claude", name: "Claude", iconUrl: "", lines: [], primaryCandidates: [] },
-      { id: "copilot", name: "Copilot", iconUrl: "", lines: [], primaryCandidates: [] },
-      { id: "windsurf", name: "Windsurf", iconUrl: "", lines: [], primaryCandidates: [] },
+      {
+        id: "claude",
+        name: "Claude",
+        iconUrl: "",
+        lines: [],
+        primaryCandidates: [],
+        supportsAvatar: false,
+      },
+      {
+        id: "copilot",
+        name: "Copilot",
+        iconUrl: "",
+        lines: [],
+        primaryCandidates: [],
+        supportsAvatar: false,
+      },
+      {
+        id: "windsurf",
+        name: "Windsurf",
+        iconUrl: "",
+        lines: [],
+        primaryCandidates: [],
+        supportsAvatar: false,
+      },
     ];
     const result = normalizePluginSettings({ order: [], disabled: [] }, plugins);
     expect(result.order).toEqual(["claude", "copilot", "windsurf"]);
@@ -105,16 +126,38 @@ describe("settings", () => {
 
   it("inherits default-enabled status for profile-instance ids (e.g. claude:work)", () => {
     const plugins: PluginMeta[] = [
-      { id: "claude", name: "Claude", iconUrl: "", lines: [], primaryCandidates: [] },
-      { id: "claude:work", name: "Claude · work", iconUrl: "", lines: [], primaryCandidates: [] },
+      {
+        id: "claude",
+        name: "Claude",
+        iconUrl: "",
+        lines: [],
+        primaryCandidates: [],
+        supportsAvatar: false,
+      },
+      {
+        id: "claude:work",
+        name: "Claude · work",
+        iconUrl: "",
+        lines: [],
+        primaryCandidates: [],
+        supportsAvatar: false,
+      },
       {
         id: "claude:personal",
         name: "Claude · personal",
         iconUrl: "",
         lines: [],
         primaryCandidates: [],
+        supportsAvatar: false,
       },
-      { id: "copilot:acme", name: "Copilot · acme", iconUrl: "", lines: [], primaryCandidates: [] },
+      {
+        id: "copilot:acme",
+        name: "Copilot · acme",
+        iconUrl: "",
+        lines: [],
+        primaryCandidates: [],
+        supportsAvatar: false,
+      },
     ];
     const result = normalizePluginSettings({ order: [], disabled: [] }, plugins);
     expect(result.order).toEqual(["claude", "claude:work", "claude:personal", "copilot:acme"]);
@@ -342,7 +385,9 @@ describe("settings", () => {
 
   it("falls back to nulling legacy keys if delete is unavailable", async () => {
     const { LazyStore } = await import("@tauri-apps/plugin-store");
-    const prototype = LazyStore.prototype as { delete?: (key: string) => Promise<void> };
+    const prototype = LazyStore.prototype as unknown as {
+      delete?: (key: string) => Promise<void>;
+    };
     const originalDelete = prototype.delete;
 
     // Simulate older store implementation with no delete() method.

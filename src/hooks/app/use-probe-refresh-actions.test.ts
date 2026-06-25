@@ -101,6 +101,10 @@ describe("useProbeRefreshActions", () => {
     const startBatch = vi.fn();
     const resetAutoUpdateSchedule = vi.fn();
 
+    const initialProps: { settings: { order: string[]; disabled: string[] } | null } = {
+      settings: null,
+    };
+
     const { result, rerender } = renderHook(
       ({ settings }: { settings: { order: string[]; disabled: string[] } | null }) =>
         useProbeRefreshActions({
@@ -122,7 +126,7 @@ describe("useProbeRefreshActions", () => {
           setErrorForPlugins: vi.fn(),
           startBatch,
         }),
-      { initialProps: { settings: null } },
+      { initialProps },
     );
 
     act(() => {

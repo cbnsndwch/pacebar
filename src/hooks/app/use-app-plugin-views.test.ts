@@ -82,6 +82,7 @@ describe("useAppPluginViews", () => {
   it("does not fall back while plugin settings are still loading", async () => {
     const setActiveView = vi.fn();
     const pluginsMeta = [createPluginMeta("codex", "Codex")];
+    const initialProps: { pluginSettings: PluginSettings | null } = { pluginSettings: null };
     const { rerender } = renderHook(
       ({ pluginSettings }: { pluginSettings: PluginSettings | null }) =>
         useAppPluginViews({
@@ -91,7 +92,7 @@ describe("useAppPluginViews", () => {
           pluginsMeta,
           pluginStates: {},
         }),
-      { initialProps: { pluginSettings: null } },
+      { initialProps },
     );
 
     expect(setActiveView).not.toHaveBeenCalled();

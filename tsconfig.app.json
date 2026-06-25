@@ -1,0 +1,12 @@
+// App build/type-check project. Excludes tests. Used by `tsc -b tsconfig.app.json`
+// (the production type-check companion to `vite build`), so production stays green
+// independent of the test type-check backlog.
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test/**"]
+}

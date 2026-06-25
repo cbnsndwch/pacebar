@@ -48,6 +48,7 @@ function createProps(): AppContentProps {
         brandColor: "#000000",
         lines: [],
         primaryCandidates: [],
+        supportsAvatar: false,
       },
       data: null,
       loading: false,
@@ -63,8 +64,17 @@ function createProps(): AppContentProps {
     onDisplayModeChange: vi.fn(),
     onResetTimerDisplayModeChange: vi.fn(),
     onResetTimerDisplayModeToggle: vi.fn(),
+    onMenubarIconStyleChange: vi.fn(),
+    traySettingsPreview: { bars: [], providerBars: [], providerPercentText: "--%" },
     onGlobalShortcutChange: vi.fn(),
     onStartOnLoginChange: vi.fn(),
+    onTelemetryOptInChange: vi.fn(),
+    onAvatarChange: vi.fn(),
+    onLeaderboardHandleChange: vi.fn(),
+    onLeaderboardTokenChange: vi.fn(),
+    onLeaderboardWorkerUrlChange: vi.fn(),
+    onLeaderboardOptInChange: vi.fn(),
+    onLeaderboardShareListChange: vi.fn(),
   };
 }
 

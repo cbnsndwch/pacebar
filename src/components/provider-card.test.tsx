@@ -724,8 +724,8 @@ describe("ProviderCard", () => {
     const now = new Date("2026-02-02T00:00:00.000Z");
     vi.setSystemTime(now);
     const lastManualRefreshAt = now.getTime() - (REFRESH_COOLDOWN_MS - 1000);
-    const clearIntervalSpy = vi.spyOn(global, "clearInterval");
-    const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+    const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
+    const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
     const { unmount } = render(
       <ProviderCard
         name="Cooldown"

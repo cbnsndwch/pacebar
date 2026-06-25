@@ -68,6 +68,7 @@ describe("useSettingsSystemActions", () => {
         setAutoUpdateNextAt,
         setGlobalShortcut: vi.fn(),
         setStartOnLogin: vi.fn(),
+        setTelemetryOptIn: vi.fn(),
         applyStartOnLogin: vi.fn().mockResolvedValue(undefined),
       }),
     );
@@ -92,6 +93,7 @@ describe("useSettingsSystemActions", () => {
         setAutoUpdateNextAt,
         setGlobalShortcut: vi.fn(),
         setStartOnLogin: vi.fn(),
+        setTelemetryOptIn: vi.fn(),
         applyStartOnLogin: vi.fn().mockResolvedValue(undefined),
       }),
     );
@@ -115,6 +117,7 @@ describe("useSettingsSystemActions", () => {
         setAutoUpdateNextAt: vi.fn(),
         setGlobalShortcut,
         setStartOnLogin,
+        setTelemetryOptIn: vi.fn(),
         applyStartOnLogin,
       }),
     );
@@ -185,6 +188,7 @@ describe("useSettingsSystemActions", () => {
         setAutoUpdateNextAt: vi.fn(),
         setGlobalShortcut: vi.fn(),
         setStartOnLogin: vi.fn(),
+        setTelemetryOptIn: vi.fn(),
         applyStartOnLogin,
       }),
     );

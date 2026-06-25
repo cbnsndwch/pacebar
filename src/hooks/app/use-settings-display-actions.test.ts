@@ -39,6 +39,7 @@ describe("useSettingsDisplayActions", () => {
         setDisplayMode,
         resetTimerDisplayMode: "relative",
         setResetTimerDisplayMode,
+        setMenubarIconStyle: vi.fn(),
         scheduleTrayIconUpdate,
       }),
     );
@@ -62,6 +63,7 @@ describe("useSettingsDisplayActions", () => {
   it("toggles reset timer mode in both directions", () => {
     const setResetTimerDisplayMode = vi.fn();
 
+    const initialProps: { mode: "relative" | "absolute" } = { mode: "relative" };
     const { result, rerender } = renderHook(
       ({ mode }: { mode: "relative" | "absolute" }) =>
         useSettingsDisplayActions({
@@ -69,9 +71,10 @@ describe("useSettingsDisplayActions", () => {
           setDisplayMode: vi.fn(),
           resetTimerDisplayMode: mode,
           setResetTimerDisplayMode,
+          setMenubarIconStyle: vi.fn(),
           scheduleTrayIconUpdate: vi.fn(),
         }),
-      { initialProps: { mode: "relative" as const } },
+      { initialProps },
     );
 
     act(() => {
@@ -101,6 +104,7 @@ describe("useSettingsDisplayActions", () => {
         setDisplayMode: vi.fn(),
         resetTimerDisplayMode: "relative",
         setResetTimerDisplayMode: vi.fn(),
+        setMenubarIconStyle: vi.fn(),
         scheduleTrayIconUpdate: vi.fn(),
       }),
     );

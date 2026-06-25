@@ -287,7 +287,7 @@ describe("useAppUpdate", () => {
   });
 
   it("ignores download events after unmount", async () => {
-    let emitEvent: ((event: any) => void) | null = null;
+    let emitEvent!: (event: any) => void;
     let resolveDownload: (() => void) | null = null;
     const downloadMock = vi.fn((onEvent: (event: any) => void) => {
       emitEvent = onEvent;

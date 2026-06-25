@@ -84,7 +84,7 @@ describe("usePanel", () => {
 
   it("cleans first listener if hook unmounts before setup resolves", async () => {
     const unlistenNavigate = vi.fn();
-    let resolveNavigate: ((value: () => void) => void) | null = null;
+    let resolveNavigate!: (value: () => void) => void;
 
     listenMock
       .mockImplementationOnce(
@@ -116,7 +116,7 @@ describe("usePanel", () => {
   it("cleans second listener if hook unmounts between listener registrations", async () => {
     const unlistenNavigate = vi.fn();
     const unlistenShowAbout = vi.fn();
-    let resolveShowAbout: ((value: () => void) => void) | null = null;
+    let resolveShowAbout!: (value: () => void) => void;
 
     listenMock.mockResolvedValueOnce(unlistenNavigate).mockImplementationOnce(
       () =>

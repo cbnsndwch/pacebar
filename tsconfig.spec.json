@@ -1,0 +1,12 @@
+// Spec/type-check project for tests. Includes ALL of src (production + test files)
+// with no exclusions, so the editor's TS server assigns *.test.* files here and the
+// @/ alias + jest-dom matcher types (via src/test/setup.ts) resolve in-editor.
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.spec.tsbuildinfo"
+  },
+  "include": ["src"],
+  "exclude": []
+}

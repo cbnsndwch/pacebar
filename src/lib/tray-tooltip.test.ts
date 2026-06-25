@@ -29,8 +29,24 @@ describe("tray-tooltip", () => {
 
   describe("formatTrayTooltip", () => {
     const mockMeta: PluginMeta[] = [
-      { id: "p1", name: "Plugin 1", iconUrl: "", lines: [], links: [], primaryCandidates: [] },
-      { id: "p2", name: "Plugin 2", iconUrl: "", lines: [], links: [], primaryCandidates: [] },
+      {
+        id: "p1",
+        name: "Plugin 1",
+        iconUrl: "",
+        lines: [],
+        links: [],
+        primaryCandidates: [],
+        supportsAvatar: false,
+      },
+      {
+        id: "p2",
+        name: "Plugin 2",
+        iconUrl: "",
+        lines: [],
+        links: [],
+        primaryCandidates: [],
+        supportsAvatar: false,
+      },
     ];
 
     it("should show app name when no bars", () => {

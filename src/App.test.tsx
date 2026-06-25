@@ -1796,7 +1796,7 @@ describe("App", () => {
     vi.useFakeTimers();
 
     try {
-      let resolveFirstRender: ((value: unknown) => void) | null = null;
+      let resolveFirstRender!: (value: unknown) => void;
       const firstRender = new Promise<unknown>((resolve) => {
         resolveFirstRender = resolve;
       });
@@ -1844,7 +1844,7 @@ describe("App", () => {
   });
 
   it("waits for tray resource before initial provider tray update", async () => {
-    let resolveResourcePath: ((value: string) => void) | null = null;
+    let resolveResourcePath!: (value: string) => void;
     state.resolveResourceMock.mockReturnValueOnce(
       new Promise<string>((resolve) => {
         resolveResourcePath = resolve;

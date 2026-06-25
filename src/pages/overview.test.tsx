@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+
 import { OverviewPage } from "@/pages/overview";
 
 describe("OverviewPage", () => {
@@ -11,8 +12,20 @@ describe("OverviewPage", () => {
   it("renders provider cards", () => {
     const plugins = [
       {
-        meta: { id: "a", name: "Alpha", iconUrl: "icon", lines: [] },
-        data: { providerId: "a", displayName: "Alpha", lines: [], iconUrl: "icon" },
+        meta: {
+          id: "a",
+          name: "Alpha",
+          iconUrl: "icon",
+          lines: [],
+          primaryCandidates: [],
+          supportsAvatar: false,
+        },
+        data: {
+          providerId: "a",
+          displayName: "Alpha",
+          lines: [],
+          iconUrl: "icon",
+        },
         loading: false,
         error: null,
         lastManualRefreshAt: null,
@@ -31,16 +44,34 @@ describe("OverviewPage", () => {
           name: "Test",
           iconUrl: "icon",
           lines: [
-            { type: "text" as const, label: "Primary", scope: "overview" as const },
-            { type: "text" as const, label: "Secondary", scope: "detail" as const },
+            {
+              type: "text" as const,
+              label: "Primary",
+              scope: "overview" as const,
+            },
+            {
+              type: "text" as const,
+              label: "Secondary",
+              scope: "detail" as const,
+            },
           ],
+          primaryCandidates: [],
+          supportsAvatar: false,
         },
         data: {
           providerId: "test",
           displayName: "Test",
           lines: [
-            { type: "text" as const, label: "Primary", value: "Shown" },
-            { type: "text" as const, label: "Secondary", value: "Hidden" },
+            {
+              type: "text" as const,
+              label: "Primary",
+              value: "Shown",
+            },
+            {
+              type: "text" as const,
+              label: "Secondary",
+              value: "Hidden",
+            },
           ],
           iconUrl: "icon",
         },
@@ -66,8 +97,15 @@ describe("OverviewPage", () => {
           iconUrl: "icon",
           lines: [],
           links: [{ label: "Status", url: "https://status.example.com" }],
+          primaryCandidates: [],
+          supportsAvatar: false,
         },
-        data: { providerId: "alpha", displayName: "Alpha", lines: [], iconUrl: "icon" },
+        data: {
+          providerId: "alpha",
+          displayName: "Alpha",
+          lines: [],
+          iconUrl: "icon",
+        },
         loading: false,
         error: null,
         lastManualRefreshAt: null,
