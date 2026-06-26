@@ -41,7 +41,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: swatinem/rust-cache@v2.9.1
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: "./apps/desktop/src-tauri -> target"
           cache-on-failure: true
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -52,5 +52,5 @@ jobs:
       - name: Bundle plugins
         run: pnpm run bundle:plugins
       - name: Cargo check
-        working-directory: src-tauri
+        working-directory: apps/desktop/src-tauri
         run: cargo check

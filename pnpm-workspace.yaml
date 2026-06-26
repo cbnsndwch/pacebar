@@ -1,4 +1,7 @@
-# pnpm workspace. The repo root is the desktop app AND the implicit workspace root,
-# so it is not listed here. Only the Cloudflare workers are members.
+# pnpm workspace members. The desktop app lives in apps/desktop; the Cloudflare
+# workers in workers/*. The repo root is a pure workspace manager (it holds
+# pnpm.overrides/onlyBuiltDependencies, the package-manager pin, and the
+# cross-cutting format/lint/version scripts) and is not itself a member.
 packages:
+  - "apps/*"
   - "workers/*"

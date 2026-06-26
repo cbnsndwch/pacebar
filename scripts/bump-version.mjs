@@ -27,19 +27,19 @@ const repoRoot = path.resolve(scriptDir, "..");
 // Order is documentation only; all are required and must match exactly once.
 const targets = [
   {
-    file: "package.json",
+    file: "apps/desktop/package.json",
     regex: /("version":\s*")(\d+\.\d+\.\d+)(")/,
   },
   {
-    file: "src-tauri/Cargo.toml",
+    file: "apps/desktop/src-tauri/Cargo.toml",
     regex: /(^version = ")(\d+\.\d+\.\d+)(")/m,
   },
   {
-    file: "src-tauri/tauri.conf.json",
+    file: "apps/desktop/src-tauri/tauri.conf.json",
     regex: /("version":\s*")(\d+\.\d+\.\d+)(")/,
   },
   {
-    file: "src-tauri/Cargo.lock",
+    file: "apps/desktop/src-tauri/Cargo.lock",
     regex: /(name = "pacebar"\nversion = ")(\d+\.\d+\.\d+)(")/,
   },
   {

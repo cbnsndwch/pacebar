@@ -37,7 +37,7 @@ jobs:
           targets: ${{ matrix.rust-targets }}
       - uses: swatinem/rust-cache@v2.9.1
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: "./apps/desktop/src-tauri -> target"
           key: ${{ matrix.platform }}-${{ matrix.args }}
           cache-on-failure: true
 
@@ -52,7 +52,7 @@ jobs:
       - name: Verify bundled plugins
         shell: bash
         run: |
-          COUNT=$(find src-tauri/resources/bundled_plugins -maxdepth 2 -name plugin.json | wc -l | tr -d ' ')
+          COUNT=$(find apps/desktop/src-tauri/resources/bundled_plugins -maxdepth 2 -name plugin.json | wc -l | tr -d ' ')
           if [[ "$COUNT" -lt 1 ]]; then
             echo "No bundled plugins found under src-tauri/resources/bundled_plugins."
             exit 1
@@ -75,9 +75,9 @@ jobs:
         run: |
           TAG_VERSION="${RELEASE_TAG#v}"
 
-          TAURI_CONF_VERSION=$(node -p 'require("./src-tauri/tauri.conf.json").version')
-          CARGO_VERSION=$(awk -F'"' '/^version =/ { print $2; exit }' ./src-tauri/Cargo.toml)
-          PKG_VERSION=$(node -p 'require("./package.json").version')
+          TAURI_CONF_VERSION=$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").version')
+          CARGO_VERSION=$(awk -F'"' '/^version =/ { print $2; exit }' ./apps/desktop/src-tauri/Cargo.toml)
+          PKG_VERSION=$(node -p 'require("./apps/desktop/package.json").version')
 
           if [[ "$TAURI_CONF_VERSION" != "$TAG_VERSION" ]]; then
             echo "src-tauri/tauri.conf.json version ($TAURI_CONF_VERSION) != tag version ($TAG_VERSION)"
@@ -104,6 +104,7 @@ jobs:
           prerelease: false
           includeUpdaterJson: true
           tauriScript: pnpm exec tauri
+          projectPath: apps/desktop
           args: ${{ matrix.args }}
 
       - name: Verify updater assets uploaded

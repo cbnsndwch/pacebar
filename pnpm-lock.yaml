@@ -10,6 +10,18 @@ overrides:
 importers:
 
   .:
+    devDependencies:
+      npm-check-updates:
+        specifier: ^22.2.7
+        version: 22.2.7
+      oxfmt:
+        specifier: ^0.56.0
+        version: 0.56.0
+      oxlint:
+        specifier: ^1.71.0
+        version: 1.71.0
+
+  apps/desktop:
     dependencies:
       '@base-ui/react':
         specifier: ^1.6.0
@@ -108,15 +120,6 @@ importers:
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1
-      npm-check-updates:
-        specifier: ^22.2.7
-        version: 22.2.7
-      oxfmt:
-        specifier: ^0.56.0
-        version: 0.56.0
-      oxlint:
-        specifier: ^1.71.0
-        version: 1.71.0
       sharp:
         specifier: ^0.35.2
         version: 0.35.2

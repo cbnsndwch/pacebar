@@ -30,4 +30,4 @@ done
 [[actions]]
 name = "Dev Server"
 icon = "run"
-command = "pnpm exec tauri dev"
+command = "pnpm run tauri dev"

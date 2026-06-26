@@ -55,16 +55,16 @@ complete and verified.
 
 Files (manual edits, exact values):
 
-- `package.json` — `"name": "pacebar"`
-- `src-tauri/Cargo.toml` — `name = "pacebar"`, `description = "PaceBar — pace
+- `apps/desktop/package.json` — `"name": "pacebar"`
+- `apps/desktop/src-tauri/Cargo.toml` — `name = "pacebar"`, `description = "PaceBar — pace
   your AI subscription usage"`, `authors = ["Serge the Lion <oss@cbnsndwch.io>"]`,
   `[lib] name = "pacebar_lib"`
-- `src-tauri/src/main.rs` — change `openusage_lib::run()` →
+- `apps/desktop/src-tauri/src/main.rs` — change `openusage_lib::run()` →
   `pacebar_lib::run()`
-- `src-tauri/tauri.conf.json` — `productName: "PaceBar"`, `identifier:
+- `apps/desktop/src-tauri/tauri.conf.json` — `productName: "PaceBar"`, `identifier:
   "dev.cbnsndwch.pacebar"`, window `title: "PaceBar"`, updater endpoint →
   `https://github.com/cbnsndwch/pacebar/releases/latest/download/latest.json`
-- `index.html` — `<title>PaceBar</title>`
+- `apps/desktop/index.html` — `<title>PaceBar</title>`
 - `Cargo.lock`, `pnpm-lock.yaml` — regenerated on next build/install (don't hand-edit)
 
 **Migration note**: changing the bundle ID from `com.sunstory.openusage` to
@@ -82,10 +82,10 @@ JS plugin IIFE.
 **Mechanical find/replace** of `__openusage_plugin` → `__pacebar_plugin`
 across exactly 39 files:
 
-- `src-tauri/src/plugin_engine/runtime.rs` (host injection point)
-- `plugins/*/plugin.js` (19 plugin sources)
-- `plugins/*/plugin.test.js` (18 test files)
-- `plugins/test-helpers.js` (if it references the namespace — verify)
+- `apps/desktop/src-tauri/src/plugin_engine/runtime.rs` (host injection point)
+- `apps/desktop/plugins/*/plugin.js` (19 plugin sources)
+- `apps/desktop/plugins/*/plugin.test.js` (18 test files)
+- `apps/desktop/plugins/test-helpers.js` (if it references the namespace — verify)
 - `docs/plugins/schema.md` and `.cursor/commands/pr-review.md` (doc references)
 
 Verification: `grep -r __openusage_plugin` returns zero matches; full vitest
@@ -96,25 +96,25 @@ launch) loads at least one plugin (Claude is the canonical sanity check).
 
 Files with brand text shown to the user:
 
-- `src/components/about-dialog.tsx` — replace "OpenUsage" h2/alt with
+- `apps/desktop/src/components/about-dialog.tsx` — replace "OpenUsage" h2/alt with
   "PaceBar"; replace creator block with: maintainer line for
   `cbnsndwch` (linked to https://github.com/cbnsndwch), GitHub link to
   `https://github.com/cbnsndwch/pacebar`, and a small "Originally based on
   OpenUsage by Robin Ebers" attribution line linking to the original repo.
-- `src/components/about-dialog.test.tsx` — update assertions
-- `src/components/changelog-dialog.tsx` + test — update any "OpenUsage" copy
-- `src/components/panel-footer.tsx` + test — update brand strings
-- `src/components/side-nav.tsx` + test — update brand strings
-- `src/pages/settings.tsx` — update brand strings
-- `src/hooks/use-changelog.ts` + test — update any embedded brand strings
-- `src/hooks/app/use-tray-icon.ts` — update any brand strings
-- `src/lib/tray-tooltip.ts` + test — tooltip text shown by tray icon
-- `src/App.test.tsx` — assertion updates
-- `src-tauri/src/tray.rs` — tray menu / labels
-- `src-tauri/src/panel.rs` — any panel-rendered strings
-- `src-tauri/src/config.rs` — any embedded app-name strings
-- `src-tauri/src/local_http_api/cache.rs` — any cache-key/header references
-- `src-tauri/src/plugin_engine/profile_discovery.rs` — embedded references
+- `apps/desktop/src/components/about-dialog.test.tsx` — update assertions
+- `apps/desktop/src/components/changelog-dialog.tsx` + test — update any "OpenUsage" copy
+- `apps/desktop/src/components/panel-footer.tsx` + test — update brand strings
+- `apps/desktop/src/components/side-nav.tsx` + test — update brand strings
+- `apps/desktop/src/pages/settings.tsx` — update brand strings
+- `apps/desktop/src/hooks/use-changelog.ts` + test — update any embedded brand strings
+- `apps/desktop/src/hooks/app/use-tray-icon.ts` — update any brand strings
+- `apps/desktop/src/lib/tray-tooltip.ts` + test — tooltip text shown by tray icon
+- `apps/desktop/src/App.test.tsx` — assertion updates
+- `apps/desktop/src-tauri/src/tray.rs` — tray menu / labels
+- `apps/desktop/src-tauri/src/panel.rs` — any panel-rendered strings
+- `apps/desktop/src-tauri/src/config.rs` — any embedded app-name strings
+- `apps/desktop/src-tauri/src/local_http_api/cache.rs` — any cache-key/header references
+- `apps/desktop/src-tauri/src/plugin_engine/profile_discovery.rs` — embedded references
 
 For each: read the file, replace user-visible "OpenUsage" → "PaceBar". Where
 "openusage" is part of an internal identifier (cache key, log target, IPC
@@ -216,7 +216,7 @@ breaking on-disk identity via bundle ID change.
 
 ### Phase G — Test data scrubbing
 
-- `src-tauri/src/plugin_engine/host_api.rs` (lines 3137, 3145, 3311, 3319) —
+- `apps/desktop/src-tauri/src/plugin_engine/host_api.rs` (lines 3137, 3145, 3311, 3319) —
   replace test data `rob@sunstory.com` and the test name "Robin Ebers" with
   generic placeholders (`test@example.com`, `Test User`). These are PII-shaped
   test fixtures, not production strings; keeping them advertises the original
@@ -228,14 +228,14 @@ User will supply new artwork. Plan leaves the following as a **TODO checklist
 in the rebrand PR description** (do not block the metadata/text rebrand on
 icons; ship a placeholder build first if needed):
 
-- `src-tauri/icons/icon.icns` (macOS app icon)
-- `src-tauri/icons/icon.ico` (Windows app icon)
-- `src-tauri/icons/icon.png`, `tray-icon.png`, and all sized PNGs
+- `apps/desktop/src-tauri/icons/icon.icns` (macOS app icon)
+- `apps/desktop/src-tauri/icons/icon.ico` (Windows app icon)
+- `apps/desktop/src-tauri/icons/icon.png`, `tray-icon.png`, and all sized PNGs
   (32x32, 128x128, 128x128@2x, plus the iOS/Android subdirectories if mobile
   is in scope)
-- `public/icon.png` (used by the About dialog `<img src="/icon.png">`)
-- `public/favicon.svg`
-- Any files under `src-tauri/icons/Exported/` (design source exports — review
+- `apps/desktop/public/icon.png` (used by the About dialog `<img src="/icon.png">`)
+- `apps/desktop/public/favicon.svg`
+- Any files under `apps/desktop/src-tauri/icons/Exported/` (design source exports — review
   and replace)
 
 **Until new icons are dropped in**, mark the rebrand as "code complete,
@@ -368,13 +368,13 @@ Text integration: none.
    reference adherence keeps the dial consistent across all three assets.
 3. Rasterize each SVG to the PNG sizes the icon directory expects; bundle
    `.icns` (macOS) and `.ico` (Windows) from those PNGs.
-4. Drop assets into `src-tauri/icons/` and `public/` per the file list above
+4. Drop assets into `apps/desktop/src-tauri/icons/` and `apps/desktop/public/` per the file list above
    and run `pnpm tauri dev` to confirm the tray template image picks up
    light/dark mode correctly.
 
 ### Phase I — Version bump & release prep
 
-- `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` — bump
+- `apps/desktop/package.json`, `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/tauri.conf.json` — bump
   version to `1.0.0` (signals the rebrand is a major break: new bundle ID,
   new product identity, no auto-update path from 0.7.x).
 - Add a top-of-CHANGELOG.md entry describing the rebrand and the manual
@@ -398,12 +398,12 @@ These are the files where a missed change has the highest blast radius:
 
 | File | Why it matters |
 |---|---|
-| `src-tauri/tauri.conf.json` | Bundle ID, updater endpoint, window title — wrong values brick auto-update or installer |
-| `src-tauri/Cargo.toml` | Lib name change must match the import in `main.rs` or build fails |
-| `src-tauri/src/main.rs` | Imports `pacebar_lib` (formerly `openusage_lib`) |
-| `src-tauri/src/plugin_engine/runtime.rs` | Host side of the `__pacebar_plugin` contract — must match all 19 plugin scripts |
-| `plugins/*/plugin.js` (19 files) | Client side of the namespace contract |
-| `package.json` | npm package name |
+| `apps/desktop/src-tauri/tauri.conf.json` | Bundle ID, updater endpoint, window title — wrong values brick auto-update or installer |
+| `apps/desktop/src-tauri/Cargo.toml` | Lib name change must match the import in `main.rs` or build fails |
+| `apps/desktop/src-tauri/src/main.rs` | Imports `pacebar_lib` (formerly `openusage_lib`) |
+| `apps/desktop/src-tauri/src/plugin_engine/runtime.rs` | Host side of the `__pacebar_plugin` contract — must match all 19 plugin scripts |
+| `apps/desktop/plugins/*/plugin.js` (19 files) | Client side of the namespace contract |
+| `apps/desktop/package.json` | npm package name |
 | `LICENSE` + `NOTICE.md` | Legal compliance with MIT + upstream trademark policy |
 | `.github/workflows/*` | CI release artifact paths and updater publishing |
 
@@ -420,7 +420,7 @@ These are the files where a missed change has the highest blast radius:
 - `grep -r rob@sunstory.com` → zero matches
 
 **Build-level**:
-- `cargo check` from `src-tauri/` succeeds (lib rename didn't break imports)
+- `cargo check` from `apps/desktop/src-tauri/` succeeds (lib rename didn't break imports)
 - `pnpm test` — full vitest suite green
 - `pnpm tauri build --debug` succeeds and produces a signed installer with the
   new bundle ID
