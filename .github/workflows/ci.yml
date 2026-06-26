@@ -20,17 +20,18 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: oven-sh/setup-bun@v2.2.0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          bun-version: latest
-
-      - run: bun install
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
 
       - name: Type-check and build
-        run: bun run build
+        run: pnpm run build
 
       - name: Run tests
-        run: bun run test
+        run: pnpm run test
 
   cargo-check:
     name: Cargo check (Windows)
@@ -42,12 +43,14 @@ jobs:
         with:
           workspaces: "./src-tauri -> target"
           cache-on-failure: true
-      - uses: oven-sh/setup-bun@v2.2.0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          bun-version: latest
-      - run: bun install
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Bundle plugins
-        run: bun run bundle:plugins
+        run: pnpm run bundle:plugins
       - name: Cargo check
         working-directory: src-tauri
         run: cargo check

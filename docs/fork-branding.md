@@ -65,7 +65,7 @@ Files (manual edits, exact values):
   "dev.cbnsndwch.pacebar"`, window `title: "PaceBar"`, updater endpoint →
   `https://github.com/cbnsndwch/pacebar/releases/latest/download/latest.json`
 - `index.html` — `<title>PaceBar</title>`
-- `Cargo.lock`, `bun.lock` — regenerated on next build/install (don't hand-edit)
+- `Cargo.lock`, `pnpm-lock.yaml` — regenerated on next build/install (don't hand-edit)
 
 **Migration note**: changing the bundle ID from `com.sunstory.openusage` to
 `dev.cbnsndwch.pacebar` means existing installs of this fork (any 0.7.x build
@@ -89,7 +89,7 @@ across exactly 39 files:
 - `docs/plugins/schema.md` and `.cursor/commands/pr-review.md` (doc references)
 
 Verification: `grep -r __openusage_plugin` returns zero matches; full vitest
-suite passes; bundled plugin smoke test (`bun run bundle:plugins` then app
+suite passes; bundled plugin smoke test (`pnpm run bundle:plugins` then app
 launch) loads at least one plugin (Claude is the canonical sanity check).
 
 ### Phase C — User-facing UI strings
@@ -387,7 +387,7 @@ Text integration: none.
 3. Phase C + D + E in parallel — these are independent text edits.
 4. Phase F + G — small, focused.
 5. Run full test suite (`pnpm test`).
-6. Run `bun run bundle:plugins` and launch the dev app (`pnpm tauri dev`) to
+6. Run `pnpm run bundle:plugins` and launch the dev app (`pnpm tauri dev`) to
    sanity-check tray icon, About dialog, plugin loading.
 7. Phase H (icons) when artwork lands.
 8. Phase I (version bump) immediately before the release commit.

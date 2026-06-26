@@ -90,25 +90,25 @@ Originally based on [OpenUsage](https://github.com/robinebers/openusage) by Robi
 
 ### Stack
 
-Tauri v2 (Rust + React + TypeScript), Vite, Tailwind v4, Bun.
+Tauri v2 (Rust + React + TypeScript), Vite, Tailwind v4, pnpm.
 
 ### Prerequisites
 
-- **Both:** [Rust stable](https://rustup.rs) (1.88+), [Bun](https://bun.sh).
+- **Both:** [Rust stable](https://rustup.rs) (1.88+), [Node.js](https://nodejs.org) (22+), [pnpm](https://pnpm.io) (10+, via `corepack enable`).
 - **macOS:** Xcode Command Line Tools.
 - **Windows:** "Desktop development with C++" workload from Visual Studio Build Tools (provides MSVC). [WebView2 runtime](https://developer.microsoft.com/microsoft-edge/webview2/) is preinstalled on Windows 11.
 
 ### Run locally
 
 ```sh
-bun install
-bun run tauri dev
+pnpm install
+pnpm run tauri dev
 ```
 
 ### Build a release locally
 
 ```sh
-bun run tauri build
+pnpm run tauri build
 ```
 
 Artifacts land under `src-tauri/target/release/bundle/` (`.dmg`/`.app` on macOS; `.msi` and NSIS `.exe` on Windows).

@@ -4,9 +4,9 @@
   "version": "0.14.1",
   "identifier": "dev.cbnsndwch.pacebar",
   "build": {
-    "beforeDevCommand": "bun run bundle:plugins && bun run dev",
+    "beforeDevCommand": "pnpm run bundle:plugins && pnpm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run bundle:plugins && bun run build",
+    "beforeBuildCommand": "pnpm run bundle:plugins && pnpm run build",
     "frontendDist": "../dist"
   },
   "app": {

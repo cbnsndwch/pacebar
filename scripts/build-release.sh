@@ -19,7 +19,7 @@ fi
 rm -rf src-tauri/target/release/bundle
 
 # Build
-bun tauri build "$@"
+pnpm exec tauri build "$@"
 
 echo ""
 echo "✓ Build complete! Output:"

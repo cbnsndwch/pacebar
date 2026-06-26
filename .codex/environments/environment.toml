@@ -8,7 +8,7 @@ script = '''
 set -euo pipefail
 
 # Install dependencies
-bun install
+pnpm install
 
 # Sync config directories from source tree into the worktree
 for d in .agents .claude .codex .cursor; do
@@ -30,4 +30,4 @@ done
 [[actions]]
 name = "Dev Server"
 icon = "run"
-command = "bun tauri dev"
+command = "pnpm exec tauri dev"

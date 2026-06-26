@@ -41,12 +41,14 @@ jobs:
           key: ${{ matrix.platform }}-${{ matrix.args }}
           cache-on-failure: true
 
-      - uses: oven-sh/setup-bun@v2.2.0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          bun-version: "latest"
-      - run: bun install
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Bundle plugins
-        run: bun run bundle:plugins
+        run: pnpm run bundle:plugins
       - name: Verify bundled plugins
         shell: bash
         run: |
@@ -101,7 +103,7 @@ jobs:
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
-          tauriScript: bunx tauri
+          tauriScript: pnpm exec tauri
           args: ${{ matrix.args }}
 
       - name: Verify updater assets uploaded

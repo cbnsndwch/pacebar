@@ -16,7 +16,7 @@ module.exports = {
     "turbo",
   ],
 
-  packageManager: "bun",
+  packageManager: "pnpm",
 
   // workspaces mode (deep won't work here)
   workspaces: true,

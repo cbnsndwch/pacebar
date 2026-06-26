@@ -17,9 +17,9 @@
 
 ## Testing
 
-- [ ] I ran `bun run build` and it succeeded
-- [ ] I ran `bun run test` and all tests pass
-- [ ] I tested the change locally with `bun tauri dev`
+- [ ] I ran `pnpm run build` and it succeeded
+- [ ] I ran `pnpm run test` and all tests pass
+- [ ] I tested the change locally with `pnpm exec tauri dev`
 
 ## Screenshots
 

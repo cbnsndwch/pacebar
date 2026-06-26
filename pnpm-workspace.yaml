@@ -1,0 +1,4 @@
+# pnpm workspace. The repo root is the desktop app AND the implicit workspace root,
+# so it is not listed here. Only the Cloudflare workers are members.
+packages:
+  - "workers/*"
