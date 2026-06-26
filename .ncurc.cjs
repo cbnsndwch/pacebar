@@ -11,9 +11,6 @@ module.exports = {
 
     // it takes time...
     "typescript",
-
-    // turbo ships with a custom update codemod
-    "turbo",
   ],
 
   packageManager: "pnpm",

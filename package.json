@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter pacebar dev",
-    "build": "pnpm --filter pacebar build",
-    "typecheck": "pnpm --filter pacebar typecheck",
-    "test": "pnpm --filter pacebar test",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
     "bundle:plugins": "pnpm --filter pacebar bundle:plugins",
     "tauri": "pnpm --filter pacebar exec tauri",
     "build:release": "./scripts/build-release.sh",
@@ -22,13 +22,18 @@
   "devDependencies": {
     "npm-check-updates": "^22.2.7",
     "oxfmt": "^0.56.0",
-    "oxlint": "^1.71.0"
+    "oxlint": "^1.71.0",
+    "turbo": "^2.10.0"
   },
   "pnpm": {
     "overrides": {
       "undici": "^7.28.0"
     },
-    "onlyBuiltDependencies": ["esbuild", "sharp", "workerd"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "workerd"
+    ]
   },
   "devEngines": {
     "packageManager": {
