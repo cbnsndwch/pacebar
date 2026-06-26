@@ -27,7 +27,13 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      - name: Type-check and build
+      - name: Lint and format
+        run: pnpm run format:check && pnpm run lint:ts
+
+      - name: Type-check
+        run: pnpm run typecheck
+
+      - name: Build
         run: pnpm run build
 
       - name: Run tests
