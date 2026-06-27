@@ -1,0 +1,20 @@
+# Normalize line endings to LF on checkout for every platform so the formatter
+# (oxfmt) and tests behave identically on Windows, macOS, and Linux runners.
+# Without this, Windows CI checks out CRLF and oxfmt --check flags every file.
+* text=auto eol=lf
+
+# Explicit binary types (never line-ending converted; redundant with text=auto
+# detection but keeps intent clear for the icon/asset heavy tree).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.dmg binary
+*.lockb binary
