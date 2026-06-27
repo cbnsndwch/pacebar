@@ -1,0 +1,252 @@
+name: Publish RC
+
+# Release-candidate (rc) channel. Additive overlay on top of the prod release:
+# it never touches publish.yml, the base tauri.conf.json, or the prod
+# releases/latest feed. RC builds embed the SAME signing pubkey as prod but use
+# a different identifier (dev.cbnsndwch.pacebar.rc), product name ("PaceBar RC"),
+# and updater endpoint so they install side-by-side with their own data dir.
+
+on:
+  push:
+    tags:
+      # Trigger on rc-MAJOR.MINOR.PATCH[-N] tags (e.g. rc-0.15.0-3).
+      # NOTE: the fixed rolling release tag is exactly "rc", which does NOT
+      # match "rc-*" (no hyphen), so updating that release never re-triggers.
+      - "rc-*"
+  workflow_dispatch:
+    inputs:
+      rc_version:
+        description: "Explicit RC version, e.g. 0.15.0-rc.3. Leave blank to derive from base tauri.conf.json version + run number."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+# Serialize separate RC publishes so two runs can't race while updating the
+# single rolling "rc" release. Matrix jobs WITHIN one run still run in parallel
+# and merge into that release's latest.json (same as the prod workflow).
+concurrency:
+  group: publish-rc
+  cancel-in-progress: false
+
+jobs:
+  publish-rc:
+    # Run on rc-* tag pushes and on manual dispatch (from any branch).
+    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/rc-') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+          - platform: macos-latest
+            args: "--target x86_64-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+          - platform: windows-latest
+            args: ""
+            rust-targets: "x86_64-pc-windows-msvc"
+    runs-on: ${{ matrix.platform }}
+    steps:
+      # On a tag push this checks out the rc-* tag; on workflow_dispatch it
+      # checks out the selected branch. Either way that's the ref we want.
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+      - uses: swatinem/rust-cache@v2.9.1
+        with:
+          workspaces: "./apps/desktop/src-tauri -> target"
+          key: rc-${{ matrix.platform }}-${{ matrix.args }}
+          cache-on-failure: true
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Bundle plugins
+        run: pnpm run bundle:plugins
+      - name: Verify bundled plugins
+        shell: bash
+        run: |
+          COUNT=$(find apps/desktop/src-tauri/resources/bundled_plugins -maxdepth 2 -name plugin.json | wc -l | tr -d ' ')
+          if [[ "$COUNT" -lt 1 ]]; then
+            echo "No bundled plugins found under src-tauri/resources/bundled_plugins."
+            exit 1
+          fi
+
+      - name: Resolve RC version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            INPUT_VERSION="${{ github.event.inputs.rc_version }}"
+            if [[ -n "$INPUT_VERSION" ]]; then
+              # Manual override must be a valid prerelease semver: MAJOR.MINOR.PATCH-rc.N
+              if [[ ! "$INPUT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
+                echo "Invalid rc_version input: $INPUT_VERSION (expected MAJOR.MINOR.PATCH-rc.N)"
+                exit 1
+              fi
+              RC_VERSION="$INPUT_VERSION"
+            else
+              # Derive from the base prod version + the run number so repeated
+              # manual builds keep increasing (e.g. 0.14.1-rc.42).
+              BASE=$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").version')
+              RC_VERSION="${BASE}-rc.${{ github.run_number }}"
+            fi
+          else
+            # Tag push: rc-MAJOR.MINOR.PATCH[-N]  ->  MAJOR.MINOR.PATCH-rc.N
+            #   rc-0.15.0-3 -> 0.15.0-rc.3        rc-0.15.0 -> 0.15.0-rc.0
+            TAG="${GITHUB_REF_NAME}"
+            if [[ ! "$TAG" =~ ^rc-[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]]; then
+              echo "Invalid RC tag: $TAG (expected rc-MAJOR.MINOR.PATCH[-N])"
+              exit 1
+            fi
+            REST="${TAG#rc-}"
+            BASE_VERSION="${REST%%-*}"
+            if [[ "$REST" == *-* ]]; then
+              N="${REST#*-}"
+            else
+              N="0"
+            fi
+            RC_VERSION="${BASE_VERSION}-rc.${N}"
+          fi
+          echo "RC_VERSION=$RC_VERSION" >> "$GITHUB_ENV"
+          echo "Resolved RC_VERSION=$RC_VERSION"
+
+      - name: Build RC config overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Inject the resolved RC_VERSION into the checked-in overlay. The
+          # overlay also flips productName, identifier, and the updater endpoint;
+          # everything else (incl. the signing pubkey) is inherited from the base
+          # tauri.conf.json via Tauri's deep config merge.
+          node -e '
+            const fs = require("fs");
+            const path = "apps/desktop/src-tauri/tauri.rc.conf.json";
+            const cfg = JSON.parse(fs.readFileSync(path, "utf8"));
+            cfg.version = process.env.RC_VERSION;
+            fs.writeFileSync(path, JSON.stringify(cfg, null, 2) + "\n");
+            console.log("RC overlay config:\n" + JSON.stringify(cfg, null, 2));
+          '
+
+      - name: Assert RC identity in merged config
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Gap A (pre-build half): replicate Tauri's RFC 7396 deep-merge of the
+          # overlay onto the base config and assert the EFFECTIVE config is the RC
+          # identity. Catches a broken/empty overlay or a regressed endpoint that
+          # filenames alone can't reveal (identifier, endpoint, inherited pubkey).
+          node -e '
+            const fs = require("fs");
+            const base = JSON.parse(fs.readFileSync("apps/desktop/src-tauri/tauri.conf.json", "utf8"));
+            const overlay = JSON.parse(fs.readFileSync("apps/desktop/src-tauri/tauri.rc.conf.json", "utf8"));
+            const merge = (t, p) => {
+              if (p === null || typeof p !== "object" || Array.isArray(p)) return p;
+              if (typeof t !== "object" || t === null || Array.isArray(t)) t = {};
+              for (const [k, v] of Object.entries(p)) {
+                if (v === null) delete t[k]; else t[k] = merge(t[k], v);
+              }
+              return t;
+            };
+            const m = merge(base, overlay);
+            const fail = (msg) => { console.error("RC identity assertion FAILED: " + msg); process.exit(1); };
+            const u = (m.plugins || {}).updater || {};
+            const eps = u.endpoints || [];
+            if (m.identifier !== "dev.cbnsndwch.pacebar.rc") fail("identifier=" + m.identifier);
+            if (m.productName !== "PaceBar RC") fail("productName=" + m.productName);
+            if (!eps.length || !eps.every((e) => e.includes("/releases/download/rc/"))) fail("endpoints=" + JSON.stringify(eps));
+            if (!u.pubkey) fail("missing inherited updater pubkey");
+            if (!m.version || !/-rc\./.test(m.version)) fail("version=" + m.version);
+            console.log("RC identity OK: " + m.productName + " / " + m.identifier + " / " + m.version);
+            console.log("endpoints: " + JSON.stringify(eps));
+          '
+
+      - id: tauri
+        uses: tauri-apps/tauri-action@v0.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Same signing key as prod: RC artifacts are signed with the same
+          # private key, so the embedded (inherited) pubkey verifies them.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          # FIXED rolling tag: every RC run updates the one "rc" release, which
+          # keeps the endpoint URL stable and merges latest.json across the matrix.
+          tagName: rc
+          releaseName: "PaceBar RC"
+          releaseDraft: false
+          # Marked prerelease so it never becomes GitHub's "latest" release and
+          # the prod releases/latest/download/latest.json feed stays clean.
+          prerelease: true
+          includeUpdaterJson: true
+          tauriScript: pnpm exec tauri
+          projectPath: apps/desktop
+          # Merge the RC overlay onto the base config at build time. Path is
+          # relative to projectPath (apps/desktop).
+          args: ${{ matrix.args }} --config src-tauri/tauri.rc.conf.json
+
+      - name: Assert built bundles carry RC identity
+        shell: bash
+        env:
+          ARTIFACT_PATHS: ${{ steps.tauri.outputs.artifactPaths }}
+        run: |
+          set -euo pipefail
+          # Gap A (post-build half): prove tauri-action actually consumed the
+          # --config overlay. RC bundles are named "PaceBar RC_<ver>..."; a
+          # silent merge skip would emit prod-named "PaceBar_<ver>..." / "PaceBar.app"
+          # bundles. Fail hard so a prod-identity build never ships on the rc feed.
+          echo "$ARTIFACT_PATHS" | node -e '
+            const fs = require("fs");
+            const paths = JSON.parse(fs.readFileSync(0, "utf8"));
+            const base = (p) => p.split(/[\\/]/).pop();
+            const bundles = paths.map(base).filter((b) => b.startsWith("PaceBar"));
+            const rc = bundles.filter((b) => b.startsWith("PaceBar RC"));
+            const prod = bundles.filter((b) => !b.startsWith("PaceBar RC"));
+            if (rc.length === 0) { console.error("No PaceBar RC bundles produced; built: " + JSON.stringify(bundles)); process.exit(1); }
+            if (prod.length > 0) { console.error("Prod-identity bundles produced on rc build: " + prod.join(", ")); process.exit(1); }
+            console.log("All " + rc.length + " bundle(s) carry RC identity:");
+            for (const b of rc) console.log("  " + b);
+          '
+
+      - name: Verify updater assets uploaded
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # The macOS matrix jobs publish to the same rolling "rc" release in
+          # parallel, and tauri-action briefly removes latest.json while
+          # re-uploading the merged manifest. Retry so a transient absence isn't
+          # a hard failure.
+          # Gap B (defense-in-depth): the prerelease flag — not signing (key is
+          # shared with prod) — is what keeps the rc release out of prod's
+          # releases/latest feed. Assert it stays true so a flipped flag fails CI.
+          IS_PRERELEASE=$(gh release view "rc" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq '.isPrerelease' | tr -d '\r')
+          if [[ "$IS_PRERELEASE" != "true" ]]; then
+            echo "SECURITY: the 'rc' release is not flagged prerelease (isPrerelease=$IS_PRERELEASE)."
+            echo "A non-prerelease rc release would hijack prod's releases/latest feed. Failing."
+            exit 1
+          fi
+
+          ASSETS=""
+          for attempt in $(seq 1 15); do
+            ASSETS=$(gh release view "rc" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | tr -d '\r')
+            if printf '%s\n' "$ASSETS" | grep -Fxq 'latest.json' \
+               && printf '%s\n' "$ASSETS" | grep -Eq '\.sig$'; then
+              echo "Updater assets present (attempt $attempt)."
+              exit 0
+            fi
+            echo "Updater assets not ready yet (attempt $attempt); retrying in 8s..."
+            sleep 8
+          done
+
+          echo "Updater assets still missing after retries. Current assets:"
+          printf '%s\n' "$ASSETS"
+          exit 1

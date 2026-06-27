@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "PaceBar RC",
+  "identifier": "dev.cbnsndwch.pacebar.rc",
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/cbnsndwch/pacebar/releases/download/rc/latest.json"
+      ]
+    }
+  }
+}
