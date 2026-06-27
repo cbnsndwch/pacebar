@@ -1,19 +1,20 @@
+import { Trophy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { Trophy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
+import { ErrorReport } from "@/components/error-report";
 import { LeaderboardTable } from "@/components/leaderboard-table";
+import { Button } from "@/components/ui/button";
 import { useNowTicker } from "@/hooks/use-now-ticker";
 import {
-  fetchCurrentHacknight,
-  fetchLeaderboard,
-  type HacknightCurrentResponse,
-  type LeaderboardEntry,
-  type LeaderboardMetric,
-  type LeaderboardWindow,
+    fetchCurrentHacknight,
+    fetchLeaderboard,
+    type HacknightCurrentResponse,
+    type LeaderboardEntry,
+    type LeaderboardMetric,
+    type LeaderboardWindow,
 } from "@/lib/leaderboard-api";
 import { cn } from "@/lib/utils";
-import { ErrorReport } from "@/components/error-report";
 import { useAppPreferencesStore } from "@/stores/app-preferences-store";
 
 const WINDOW_OPTIONS: { value: LeaderboardWindow; label: string }[] = [
