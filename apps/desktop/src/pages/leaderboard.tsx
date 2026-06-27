@@ -7,12 +7,12 @@ import { LeaderboardTable } from "@/components/leaderboard-table";
 import { Button } from "@/components/ui/button";
 import { useNowTicker } from "@/hooks/use-now-ticker";
 import {
-    fetchCurrentHacknight,
-    fetchLeaderboard,
-    type HacknightCurrentResponse,
-    type LeaderboardEntry,
-    type LeaderboardMetric,
-    type LeaderboardWindow,
+  fetchCurrentHacknight,
+  fetchLeaderboard,
+  type HacknightCurrentResponse,
+  type LeaderboardEntry,
+  type LeaderboardMetric,
+  type LeaderboardWindow,
 } from "@/lib/leaderboard-api";
 import { cn } from "@/lib/utils";
 import { useAppPreferencesStore } from "@/stores/app-preferences-store";
