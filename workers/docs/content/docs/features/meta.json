@@ -6,6 +6,7 @@
     "global-shortcut",
     "multi-profile",
     "leaderboard",
+    "privacy",
     "local-http-api",
     "proxy",
     "logging"

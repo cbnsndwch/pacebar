@@ -1,0 +1,46 @@
+---
+title: Privacy & data
+description: What PaceBar sends, and what it never sends.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+PaceBar runs locally. Two small bits of data leave your machine, described
+below. Neither includes your account, your credentials, or how you use the app.
+
+<Callout type="info">
+  Both flows talk only to PaceBar's own self-hosted Cloudflare Workers. No
+  third-party analytics, no ad networks.
+</Callout>
+
+## Update checks
+
+PaceBar checks for new versions about every 15 minutes. The check goes through a
+small proxy that records, anonymously:
+
+- Release channel (stable or rc)
+- OS and CPU architecture
+- Current app version
+- A coarse country code (from your IP region, via Cloudflare)
+
+There is **no opt-in toggle, no stable identifier, and no account or personal
+data**. The check has to happen for updates to work at all, and all it tells us
+is which builds are still in use so we know what to keep supporting. If the proxy
+is ever unreachable, the app falls back to checking GitHub directly, so updates
+keep working either way.
+
+## Anonymous install ping (opt-in)
+
+If you turn it on in **Settings**, PaceBar also sends a periodic ping with a
+**random** install id, app version, OS, CPU architecture, and coarse country
+code. The id is random (not tied to any account or personal data) and the ping
+stops the moment you opt out. Unlike update checks, this one is **off until you
+enable it**.
+
+## Future telemetry (opt-in)
+
+Later on, we may add other measurements to understand how PaceBar is used — for
+example, which AI providers you connect and how heavily you use them. Anything
+like this would be **off by default**, described here before it ships, and just
+as anonymous as everything above: no personal details, and never shared with
+third parties. The only goal is making PaceBar better.
