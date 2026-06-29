@@ -55,6 +55,9 @@ jobs:
       # On a tag push this checks out the rc-* tag; on workflow_dispatch it
       # checks out the selected branch. Either way that's the ref we want.
       - uses: actions/checkout@v7
+        with:
+          # Full history + tags so the release-notes step can diff from the last tag.
+          fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -178,6 +181,34 @@ jobs:
             console.log("endpoints: " + JSON.stringify(eps));
           '
 
+      - name: Generate release notes
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Notes since the last STABLE tag = what this RC adds toward the next release.
+          PREV=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || echo "")
+          RANGE="${PREV:+$PREV..}HEAD"
+          echo "Notes range: $RANGE (prev stable: ${PREV:-none})"
+          BODY=$(git log "$RANGE" --no-merges --pretty=format:'%s' | node -e '
+            const lines = require("fs").readFileSync(0, "utf8").split("\n").filter(Boolean);
+            const g = { feat: [], fix: [] };
+            for (const s of lines) {
+              const m = s.match(/^(feat|fix)(\([^)]*\))?!?:\s*(.+)/);
+              if (m) g[m[1]].push(m[3]);
+            }
+            const out = [];
+            if (g.feat.length) out.push("### Features", ...g.feat.map((x) => "- " + x), "");
+            if (g.fix.length) out.push("### Bug fixes", ...g.fix.map((x) => "- " + x));
+            process.stdout.write(out.join("\n").trim() || "Maintenance and dependency updates.");
+          ')
+          printf "Generated notes:\n%s\n" "$BODY"
+          {
+            echo "body<<__NOTES_EOF__"
+            printf "%s\n" "$BODY"
+            echo "__NOTES_EOF__"
+          } >> "$GITHUB_OUTPUT"
+
       - id: tauri
         uses: tauri-apps/tauri-action@v0.6.0
         env:
@@ -191,6 +222,7 @@ jobs:
           # keeps the endpoint URL stable and merges latest.json across the matrix.
           tagName: rc
           releaseName: "PaceBar RC"
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           # Marked prerelease so it never becomes GitHub's "latest" release and
           # the prod releases/latest/download/latest.json feed stays clean.
