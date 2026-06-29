@@ -45,7 +45,10 @@ jobs:
             args: "--target x86_64-apple-darwin"
             rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
           - platform: windows-latest
-            args: ""
+            # NSIS only: WiX/MSI rejects non-numeric pre-release identifiers
+            # (e.g. 0.15.0-rc.1), which fails the rc Windows bundle. The Windows
+            # updater uses the NSIS setup anyway, so MSI is unneeded on the rc feed.
+            args: "--bundles nsis"
             rust-targets: "x86_64-pc-windows-msvc"
     runs-on: ${{ matrix.platform }}
     steps:
