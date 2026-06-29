@@ -161,7 +161,14 @@ jobs:
             const eps = u.endpoints || [];
             if (m.identifier !== "dev.cbnsndwch.pacebar.rc") fail("identifier=" + m.identifier);
             if (m.productName !== "PaceBar RC") fail("productName=" + m.productName);
-            if (!eps.length || !eps.every((e) => e.includes("/releases/download/rc/"))) fail("endpoints=" + JSON.stringify(eps));
+            // Every endpoint must target the rc channel (the OTA proxy /rc/ path
+            // or the GitHub rc feed) and NONE may target the prod/stable feed, so
+            // an rc build can never poll the prod channel.
+            const isRc = (e) => e.includes("/releases/download/rc/") || e.includes("/rc/");
+            const isProd = (e) => e.includes("/releases/latest/") || e.includes("/stable/");
+            if (!eps.length) fail("no endpoints");
+            if (!eps.every(isRc)) fail("non-rc endpoint in " + JSON.stringify(eps));
+            if (eps.some(isProd)) fail("prod/stable endpoint in rc build: " + JSON.stringify(eps));
             if (!u.pubkey) fail("missing inherited updater pubkey");
             if (!m.version || !/-rc\./.test(m.version)) fail("version=" + m.version);
             console.log("RC identity OK: " + m.productName + " / " + m.identifier + " / " + m.version);
