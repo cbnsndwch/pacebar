@@ -74,6 +74,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDIwM0FDNEI1NzUxRkY2ODQKUldTRTloOTF0Y1E2SURwRldzbXV5eHRjMmthdjMwdUIzZGlHUjl6VG1wTitYbzJpcC9sTHh0OE8K",
       "endpoints": [
+        "https://pacebar-ota.cbnsndwch.dev/stable/{{target}}/{{arch}}/{{current_version}}",
         "https://github.com/cbnsndwch/pacebar/releases/latest/download/latest.json"
       ]
     }

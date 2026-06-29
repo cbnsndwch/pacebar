@@ -5,6 +5,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
+        "https://pacebar-ota.cbnsndwch.dev/rc/{{target}}/{{arch}}/{{current_version}}",
         "https://github.com/cbnsndwch/pacebar/releases/download/rc/latest.json"
       ]
     }
