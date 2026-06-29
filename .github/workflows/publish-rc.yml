@@ -54,7 +54,7 @@ jobs:
     steps:
       # On a tag push this checks out the rc-* tag; on workflow_dispatch it
       # checks out the selected branch. Either way that's the ref we want.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -65,8 +65,8 @@ jobs:
           key: rc-${{ matrix.platform }}-${{ matrix.args }}
           cache-on-failure: true
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: pnpm
