@@ -1,0 +1,22 @@
+{
+    "account_id": "13871994064312e4422bf06e84b36513",
+    "name": "pacebar-updates",
+    "main": "src/index.ts",
+    "compatibility_date": "2024-09-23",
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
+    "routes": [
+        {
+            "pattern": "pacebar-ota.cbnsndwch.dev",
+            "custom_domain": true
+        }
+    ],
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "pacebar-updates",
+            "database_id": "3002a4fd-340e-4b83-8dc9-848ad0490fd4"
+        }
+    ]
+}
