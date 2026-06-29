@@ -23,24 +23,29 @@
         const user = ctx.util.tryParseJson(raw) || {};
         return Object.assign({}, defaults, user);
       }
-    } catch (e) {}
+    } catch {
+      // TODO: handle errors gracefully
+    }
     return defaults;
   }
 
-  function saveConfig(ctx, cfg) {
-    try {
-      const configPath = ctx.app.pluginDataDir + "/config.json";
-      ctx.host.fs.writeText(configPath, JSON.stringify(cfg, null, 2));
-    } catch (e) {
-      ctx.host.log.warn("Failed to save config: " + String(e));
-    }
-  }
+  // function saveConfig(ctx, cfg) {
+  //   try {
+  //     const configPath = ctx.app.pluginDataDir + "/config.json";
+  //     ctx.host.fs.writeText(configPath, JSON.stringify(cfg, null, 2));
+  //   } catch (e) {
+  //     ctx.host.log.warn("Failed to save config: " + String(e));
+  //   }
+  // }
 
   function getGatewayUrl(ctx) {
     let url = null;
     try {
       url = ctx.host.env.get("CF_GATEWAY_URL");
-    } catch (e) {}
+    } catch {
+      // TODO: handle errors gracefully
+    }
+
     if (url) {
       url = String(url).trim();
       if (url) return url.replace(/\/+$/, "");
@@ -57,7 +62,9 @@
           if (base) return base;
         }
       }
-    } catch (e) {}
+    } catch {
+      // TODO: handle errors gracefully
+    }
 
     // Try ~/.config/opencode/opencode.json first
     try {
@@ -77,7 +84,9 @@
           if (base) return base;
         }
       }
-    } catch (e) {}
+    } catch {
+      // TODO: handle errors gracefully
+    }
 
     // Fallback to ~/cloudflare-ai/opencode.json
     try {
@@ -97,7 +106,9 @@
           if (base) return base;
         }
       }
-    } catch (e) {}
+    } catch {
+      // TODO: handle errors gracefully
+    }
 
     return null;
   }
@@ -109,7 +120,7 @@
       if (m) {
         try {
           return String(ctx.host.env.get(m[1]) || "").trim();
-        } catch (e) {
+        } catch {
           return "";
         }
       }
@@ -133,7 +144,9 @@
           return resolveEnvPlaceholders(ctx, key);
         }
       }
-    } catch (e) {}
+    } catch {
+      // TODO: handle errors gracefully
+    }
     return null;
   }
 
@@ -141,7 +154,9 @@
     let token = null;
     try {
       token = ctx.host.env.get("CF_ROUTER_KEY");
-    } catch (e) {}
+    } catch {
+      // TODO: handle errors gracefully
+    }
     if (token) return String(token).trim();
 
     // Check plugin config.json (set via Pacebar settings UI).
@@ -155,7 +170,9 @@
           return String(config.routerKey).trim();
         }
       }
-    } catch (e) {}
+    } catch {
+      // TODO: handle errors gracefully
+    }
 
     token = readOpenCodeApiKey(ctx, "~/.config/opencode/opencode.json");
     if (token) return token;
@@ -259,7 +276,7 @@
           },
           timeoutMs: 10000,
         });
-      } catch (e) {
+      } catch {
         return {
           lines: [
             ctx.line.badge({ label: "Status", text: "Offline", color: "#ef4444" }),
@@ -390,12 +407,12 @@
         );
       }
 
-      const reqs = Number(data.total_requests);
-      if (Number.isFinite(reqs) && reqs > 0) {
+      const requests = Number(data.total_requests);
+      if (Number.isFinite(requests) && requests > 0) {
         lines.push(
           ctx.line.text({
             label: "Requests",
-            value: String(reqs) + " \u00b7 " + fmtTokens(totalTokens) + " tokens",
+            value: String(requests) + " \u00b7 " + fmtTokens(totalTokens) + " tokens",
             subtitle: windowLabel,
           }),
         );
