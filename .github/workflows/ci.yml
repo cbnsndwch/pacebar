@@ -20,7 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - name: Provision pnpm via corepack
+        run: |
+          npm install --global corepack@latest
+          corepack enable
+        shell: bash
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -49,7 +53,11 @@ jobs:
         with:
           workspaces: "./apps/desktop/src-tauri -> target"
           cache-on-failure: true
-      - uses: pnpm/action-setup@v4
+      - name: Provision pnpm via corepack
+        run: |
+          npm install --global corepack@latest
+          corepack enable
+        shell: bash
       - uses: actions/setup-node@v6
         with:
           node-version: 24

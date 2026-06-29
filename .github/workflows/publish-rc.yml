@@ -68,7 +68,11 @@ jobs:
           key: rc-${{ matrix.platform }}-${{ matrix.args }}
           cache-on-failure: true
 
-      - uses: pnpm/action-setup@v4
+      - name: Provision pnpm via corepack
+        run: |
+          npm install --global corepack@latest
+          corepack enable
+        shell: bash
       - uses: actions/setup-node@v6
         with:
           node-version: 24
