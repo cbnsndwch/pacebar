@@ -46,6 +46,10 @@ const targets = [
     file: "workers/leaderboard/package.json",
     regex: /("version":\s*")(\d+\.\d+\.\d+)(")/,
   },
+  {
+    file: "workers/updates/package.json",
+    regex: /("version":\s*")(\d+\.\d+\.\d+)(")/,
+  },
 ];
 
 const updated = [];
