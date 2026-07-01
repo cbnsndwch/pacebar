@@ -3,19 +3,22 @@ import type { D1Database, ExecutionContext } from "@cloudflare/workers-types";
 interface Env {
   DB: D1Database;
   REPORT_TOKEN?: string; // if set, GET /report requires X-Report-Token to match
+  GITHUB_TOKEN?: string; // optional: raises the GitHub API rate limit for rc resolution
 }
 
-// Map each release channel to its upstream GitHub static update manifest.
-// stable = the rolling "latest" release; rc = the fixed "rc" prerelease.
-// A channel that isn't here resolves to 404 (non-2XX) so the Tauri client falls
-// through to its own baked-in GitHub fallback endpoint — see handleProxy.
-// Note: the rc feed 404s until the first rc-* release exists; until then RC
-// checks return non-2XX here AND on the client's GitHub fallback, which the
-// updater treats as "no update" — benign recurring check errors, not a bug.
-const FEEDS: Record<string, string> = {
-  stable: "https://github.com/cbnsndwch/pacebar/releases/latest/download/latest.json",
-  rc: "https://github.com/cbnsndwch/pacebar/releases/download/rc/latest.json",
-};
+const REPO = "cbnsndwch/pacebar";
+
+// stable = GitHub's built-in "latest" (newest non-prerelease) release manifest,
+// served from a stable per-version release URL.
+const STABLE_FEED = `https://github.com/${REPO}/releases/latest/download/latest.json`;
+
+// The rc channel has no built-in "latest prerelease" pointer, so we resolve the
+// newest rc-MAJOR.MINOR.PATCH[-N] prerelease dynamically (see resolveRcManifest)
+// and serve its per-version latest.json. Each rc release is immutable with
+// unique asset URLs, which avoids the stale-CDN update loop that a reused
+// rolling "rc" release caused (unversioned macOS artifacts at a stable URL).
+const RC_TAG_RE = /^rc-(\d+)\.(\d+)\.(\d+)(?:-(\d+))?$/;
+const RC_MANIFEST_TTL_SECONDS = 120;
 
 const ACTIVE_WINDOW_DAYS = 30;
 
@@ -69,8 +72,101 @@ async function logCheck(
     .run();
 }
 
+interface GitHubAsset {
+  name: string;
+  browser_download_url: string;
+}
+interface GitHubRelease {
+  tag_name: string;
+  prerelease: boolean;
+  assets: GitHubAsset[];
+}
+
+function ghHeaders(env: Env): Record<string, string> {
+  const h: Record<string, string> = {
+    "User-Agent": "pacebar-ota",
+    Accept: "application/vnd.github+json",
+  };
+  if (env.GITHUB_TOKEN) h.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
+  return h;
+}
+
+/** Parse an rc tag ("rc-1.2.3" or "rc-1.2.3-4") into a comparable tuple. */
+function parseRcTag(tag: string): [number, number, number, number] | null {
+  const m = tag.match(RC_TAG_RE);
+  if (!m) return null;
+  return [Number(m[1]), Number(m[2]), Number(m[3]), m[4] ? Number(m[4]) : 0];
+}
+
+function cmpVer(a: number[], b: number[]): number {
+  for (let i = 0; i < 4; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
 /**
- * Proxy the channel's upstream latest.json verbatim, logging the poll first.
+ * Resolve the newest rc-* prerelease and return its latest.json body, or null if
+ * no rc release exists yet. Throws on network/API errors (caller fails open).
+ */
+async function resolveRcManifest(env: Env): Promise<string | null> {
+  const listRes = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=50`, {
+    headers: ghHeaders(env),
+  });
+  if (!listRes.ok) throw new Error(`releases list ${listRes.status}`);
+  const releases = (await listRes.json()) as GitHubRelease[];
+
+  let best: GitHubRelease | null = null;
+  let bestVer: number[] | null = null;
+  for (const r of releases) {
+    if (!r.prerelease) continue;
+    const v = parseRcTag(r.tag_name);
+    if (!v) continue;
+    if (!bestVer || cmpVer(v, bestVer) > 0) {
+      best = r;
+      bestVer = v;
+    }
+  }
+  if (!best) return null;
+
+  const asset = (best.assets || []).find((a) => a.name === "latest.json");
+  if (!asset) throw new Error(`no latest.json asset on ${best.tag_name}`);
+
+  const manRes = await fetch(asset.browser_download_url, {
+    headers: { "User-Agent": "pacebar-ota", Accept: "application/octet-stream" },
+  });
+  if (!manRes.ok) throw new Error(`manifest fetch ${manRes.status}`);
+  return await manRes.text();
+}
+
+/**
+ * Cached wrapper around resolveRcManifest. Caches the resolved manifest at the
+ * edge for RC_MANIFEST_TTL_SECONDS so per-poll GitHub API calls stay well under
+ * the rate limit no matter how many installs are polling.
+ */
+async function getRcManifest(env: Env, ctx: ExecutionContext): Promise<string | null> {
+  const cacheKey = new Request("https://pacebar-ota.internal/rc/latest.json");
+  const cache = caches.default;
+  const hit = await cache.match(cacheKey);
+  if (hit) return await hit.text();
+
+  const body = await resolveRcManifest(env);
+  if (body == null) return null;
+
+  const cached = new Response(body, {
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": `max-age=${RC_MANIFEST_TTL_SECONDS}`,
+    },
+  });
+  ctx.waitUntil(cache.put(cacheKey, cached));
+  return body;
+}
+
+/**
+ * Serve the channel's latest.json, logging the poll first. stable = the static
+ * "latest release" manifest; rc = the newest rc-* prerelease (resolved
+ * dynamically, edge-cached).
  * FAIL-OPEN CONTRACT: every failure path returns a non-2XX status so the Tauri
  * updater falls through to the client's own direct-GitHub fallback endpoint.
  * Never return 204 or an empty 200 here — a 2XX stops fallthrough, and 204 means
@@ -85,8 +181,9 @@ async function handleProxy(
   env: Env,
   ctx: ExecutionContext,
 ): Promise<Response> {
-  const upstream = FEEDS[channel];
-  if (!upstream) return json({ error: "unknown channel" }, 404);
+  if (channel !== "stable" && channel !== "rc") {
+    return json({ error: "unknown channel" }, 404);
+  }
 
   // Log the poll (fire-and-forget). The fields come from the URL the client
   // built, independent of whether an update is actually available.
@@ -100,22 +197,24 @@ async function handleProxy(
 
   // Manifest-only passthrough: the per-platform asset URLs are absolute GitHub
   // links and the signature is embedded, so the bundle + .sig downloads bypass
-  // this worker entirely. Stream the upstream bytes through unmodified.
-  let upstreamRes: Response;
-  try {
-    upstreamRes = await fetch(upstream, { headers: { Accept: "application/json" } });
-  } catch {
-    return json({ error: "upstream unreachable" }, 502); // non-2XX → client falls through
-  }
-  if (!upstreamRes.ok) {
-    return json({ error: "upstream error", status: upstreamRes.status }, 502);
-  }
-
+  // this worker entirely. Stream the manifest bytes through unmodified.
   let body: string;
   try {
-    body = await upstreamRes.text();
+    if (channel === "rc") {
+      const rc = await getRcManifest(env, ctx);
+      // No rc release yet → non-2XX so the client falls through (treated as
+      // "no update"), never a 2XX/204 that would suppress a real update.
+      if (rc == null) return json({ error: "no rc release" }, 404);
+      body = rc;
+    } else {
+      const upstreamRes = await fetch(STABLE_FEED, { headers: { Accept: "application/json" } });
+      if (!upstreamRes.ok) {
+        return json({ error: "upstream error", status: upstreamRes.status }, 502);
+      }
+      body = await upstreamRes.text();
+    }
   } catch {
-    return json({ error: "upstream read failed" }, 502); // non-2XX → client falls through
+    return json({ error: "resolve failed" }, 502); // non-2XX → client falls through
   }
   return cors(new Response(body, { status: 200, headers: { "Content-Type": "application/json" } }));
 }
