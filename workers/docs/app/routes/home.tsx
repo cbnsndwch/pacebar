@@ -215,6 +215,9 @@ function Footer() {
           <Link className="hover:text-fd-foreground" to="/docs">
             Docs
           </Link>
+          <Link className="hover:text-fd-foreground" to="/changelog">
+            Changelog
+          </Link>
           <a className="hover:text-fd-foreground" href={githubUrl}>
             GitHub
           </a>

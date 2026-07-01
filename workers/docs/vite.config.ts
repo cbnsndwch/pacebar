@@ -9,4 +9,11 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  server: {
+    // Allow the dev server to read the repo-root CHANGELOG.md (imported via ?raw
+    // on the /changelog route), which lives above this package.
+    fs: {
+      allow: ["../.."],
+    },
+  },
 });

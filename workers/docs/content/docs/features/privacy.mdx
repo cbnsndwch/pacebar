@@ -29,18 +29,31 @@ is which builds are still in use so we know what to keep supporting. If the prox
 is ever unreachable, the app falls back to checking GitHub directly, so updates
 keep working either way.
 
-## Anonymous install ping (opt-in)
+## Anonymous telemetry (opt-in)
 
-If you turn it on in **Settings**, PaceBar also sends a periodic ping with a
-**random** install id, app version, OS, CPU architecture, and coarse country
-code. The id is random (not tied to any account or personal data) and the ping
-stops the moment you opt out. Unlike update checks, this one is **off until you
-enable it**.
+As of **v0.15.0**, PaceBar includes optional anonymous telemetry. It is
+**off by default** and shares nothing unless you turn it on under **Settings**.
+
+When enabled, the app sends — **at most once per day** — exactly:
+
+- A **random install id** (a UUID generated on your device, not tied to any
+  account or personal data)
+- The app version
+- Your OS
+- Your CPU architecture
+
+That's the entire payload. There's **no account, no credentials, and no
+information about how you use the app** — nothing about which providers you
+connect or your usage numbers. On receipt, the Cloudflare Worker additionally
+derives a **coarse country code** (from your IP region, via Cloudflare) and
+records **first-seen and last-seen timestamps** for the install id.
+
+Turning the toggle off **stops sharing immediately**.
 
 ## Future telemetry (opt-in)
 
-Later on, we may add other measurements to understand how PaceBar is used — for
-example, which AI providers you connect and how heavily you use them. Anything
-like this would be **off by default**, described here before it ships, and just
-as anonymous as everything above: no personal details, and never shared with
-third parties. The only goal is making PaceBar better.
+If we ever add genuinely new measurements — for example, which AI providers you
+connect or how heavily you use them — they would follow the same rules: **off by
+default**, documented here before they ship, and just as anonymous as everything
+above. No personal details, and never shared with third parties. The only goal
+is making PaceBar better.

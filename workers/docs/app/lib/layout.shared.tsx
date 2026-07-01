@@ -21,6 +21,11 @@ export function baseOptions(): BaseLayoutProps {
         active: "nested-url",
       },
       {
+        text: "Changelog",
+        url: "/changelog",
+        active: "url",
+      },
+      {
         text: "Download",
         url: releasesUrl,
         external: true,
