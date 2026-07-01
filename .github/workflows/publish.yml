@@ -93,6 +93,21 @@ jobs:
             exit 1
           fi
 
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        shell: bash
+        run: |
+          BODY_FILE="$RUNNER_TEMP/release_notes.md"
+          node scripts/extract-release-notes.mjs "$RELEASE_TAG" > "$BODY_FILE"
+          echo "----- release body -----"
+          cat "$BODY_FILE"
+          echo "------------------------"
+          {
+            echo "body<<RELEASE_NOTES_EOF"
+            cat "$BODY_FILE"
+            echo "RELEASE_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - uses: tauri-apps/tauri-action@v0.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -101,6 +116,7 @@ jobs:
         with:
           tagName: ${{ env.RELEASE_TAG }}
           releaseName: ${{ env.RELEASE_TAG }}
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
