@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { AboutDialog } from "@/components/about-dialog";
+import { WhatsNewDialog } from "@/components/whats-new-dialog";
 import type { UpdateStatus } from "@/hooks/use-app-update";
 import { useNowTicker } from "@/hooks/use-now-ticker";
 
@@ -136,6 +137,7 @@ export function PanelFooter({
         )}
       </div>
       {showAbout && <AboutDialog version={version} onClose={onCloseAbout} />}
+      <WhatsNewDialog version={version} />
     </>
   );
 }

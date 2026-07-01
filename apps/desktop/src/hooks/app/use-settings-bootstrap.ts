@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { getVersion } from "@tauri-apps/api/app";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { appDataDir } from "@tauri-apps/api/path";
 import {
@@ -7,6 +8,7 @@ import {
   isEnabled as isAutostartEnabled,
 } from "@tauri-apps/plugin-autostart";
 import type { PluginMeta } from "@/lib/plugin-types";
+import { useAppUiStore } from "@/stores/app-ui-store";
 import {
   arePluginSettingsEqual,
   DEFAULT_AUTO_UPDATE_INTERVAL,
@@ -37,6 +39,10 @@ import {
   loadResetTimerDisplayMode,
   loadStartOnLogin,
   loadTelemetryOptIn,
+  loadTelemetryNoticeAcknowledged,
+  hasTelemetryBeenConfigured,
+  loadLastSeenVersion,
+  saveLastSeenVersion,
   loadThemeMode,
   migratePluginProfileInstancesEnabled,
   normalizePluginSettings,
@@ -271,6 +277,40 @@ export function useSettingsBootstrap({
             if (isMounted) {
               setErrorForPlugins(enabledIds, "Failed to start probe");
             }
+          }
+
+          // ── What's New + one-time telemetry notice ──────────────────────
+          // Show this version's release notes once per upgrade, and surface the
+          // opt-in telemetry disclosure until the user acknowledges it (or has
+          // already made a choice). Best-effort: never block startup.
+          try {
+            const runningVersion = await getVersion();
+            const lastSeenVersion = await loadLastSeenVersion();
+            const [noticeAcknowledged, telemetryConfigured] = await Promise.all([
+              loadTelemetryNoticeAcknowledged(),
+              hasTelemetryBeenConfigured(),
+            ]);
+
+            if (isMounted) {
+              const ui = useAppUiStore.getState();
+              // Real upgrade (not first-ever run) → show this version's notes.
+              if (lastSeenVersion !== null && lastSeenVersion !== runningVersion) {
+                ui.setShowWhatsNew(true);
+              }
+              // Inform about opt-in telemetry unless the user already decided.
+              if (!noticeAcknowledged && !telemetryConfigured) {
+                ui.setShowTelemetryNotice(true);
+              }
+            }
+
+            // Fresh install: nothing to catch up on, so record the running
+            // version now to avoid mistaking the first run for an upgrade later.
+            // On upgrades the surface persists lastSeenVersion when dismissed.
+            if (lastSeenVersion === null) {
+              await saveLastSeenVersion(runningVersion);
+            }
+          } catch (error) {
+            console.error("Failed to evaluate What's New / telemetry notice:", error);
           }
         }
       } catch (e) {

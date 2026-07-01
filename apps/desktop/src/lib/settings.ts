@@ -47,6 +47,9 @@ const QUIET_LOG_LEVEL = "error";
 
 const TELEMETRY_OPT_IN_KEY = "telemetry.optIn";
 const TELEMETRY_ANON_ID_KEY = "telemetry.anonId";
+const TELEMETRY_NOTICE_ACK_KEY = "telemetry.noticeAcknowledged";
+
+const LAST_SEEN_VERSION_KEY = "lastSeenVersion";
 
 const LEADERBOARD_HANDLE_KEY = "leaderboard.handle";
 const LEADERBOARD_TOKEN_KEY = "leaderboard.token";
@@ -470,6 +473,48 @@ export async function enableTelemetry(): Promise<void> {
  */
 export async function disableTelemetry(): Promise<void> {
   await store.set(TELEMETRY_OPT_IN_KEY, false);
+  await store.save();
+}
+
+/**
+ * Whether the user has ever configured telemetry (opted in at least once). The
+ * anonymous id is minted only on first opt-in and kept thereafter, so its
+ * presence means the user already made an explicit choice — used to avoid
+ * re-prompting them with the one-time telemetry notice.
+ */
+export async function hasTelemetryBeenConfigured(): Promise<boolean> {
+  const id = await store.get<unknown>(TELEMETRY_ANON_ID_KEY);
+  return typeof id === "string" && id.length > 0;
+}
+
+/**
+ * Whether the one-time telemetry disclosure notice has been acknowledged.
+ * Defaults to false so users upgrading into the telemetry release see it once.
+ */
+export async function loadTelemetryNoticeAcknowledged(): Promise<boolean> {
+  const v = await store.get<unknown>(TELEMETRY_NOTICE_ACK_KEY);
+  return typeof v === "boolean" ? v : false;
+}
+
+export async function saveTelemetryNoticeAcknowledged(value = true): Promise<void> {
+  await store.set(TELEMETRY_NOTICE_ACK_KEY, value);
+  await store.save();
+}
+
+// ─── What's New (release notes shown once per new version) ────────────────────
+
+/**
+ * The app version last recorded as "seen" by the What's New surface, or `null`
+ * when never recorded (fresh install). Used to detect upgrades so release notes
+ * are shown once per new version.
+ */
+export async function loadLastSeenVersion(): Promise<string | null> {
+  const v = await store.get<unknown>(LAST_SEEN_VERSION_KEY);
+  return typeof v === "string" && v.length > 0 ? v : null;
+}
+
+export async function saveLastSeenVersion(version: string): Promise<void> {
+  await store.set(LAST_SEEN_VERSION_KEY, version);
   await store.save();
 }
 

@@ -1,231 +1,114 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import type { ChangelogEntry } from "@/lib/changelog";
 
 const openerState = vi.hoisted(() => ({
   openUrlMock: vi.fn(() => Promise.resolve()),
 }));
 
 const changelogState = vi.hoisted(() => ({
-  releases: [] as import("@/hooks/use-changelog").Release[],
-  loading: false,
-  error: null as string | null,
+  entries: [] as ChangelogEntry[],
 }));
 
 vi.mock("@tauri-apps/plugin-opener", () => ({
   openUrl: openerState.openUrlMock,
 }));
 
-vi.mock("@/hooks/use-changelog", () => ({
-  useChangelog: () => changelogState,
+vi.mock("@/lib/changelog", () => ({
+  getChangelogEntries: () => changelogState.entries,
+  normalizeVersion: (v: string) => v.trim().replace(/^v/i, ""),
 }));
 
 import { ChangelogDialog } from "@/components/changelog-dialog";
 
 describe("ChangelogDialog", () => {
   beforeEach(() => {
-    changelogState.releases = [];
-    changelogState.loading = false;
-    changelogState.error = null;
+    changelogState.entries = [];
     openerState.openUrlMock.mockClear();
   });
 
-  it("renders loading state", () => {
-    changelogState.loading = true;
-
+  it("renders the empty state and links to GitHub when there are no entries", async () => {
     render(<ChangelogDialog currentVersion="1.0.0" onBack={() => {}} onClose={() => {}} />);
 
-    expect(screen.getByText("Fetching release info...")).toBeInTheDocument();
+    expect(screen.getByText("No release notes found")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "View all releases on GitHub" }));
+    expect(openerState.openUrlMock).toHaveBeenCalledWith(
+      "https://github.com/cbnsndwch/pacebar/releases",
+    );
   });
 
-  it("renders error state and shows retry button", async () => {
-    changelogState.error = "something went wrong";
-
-    render(<ChangelogDialog currentVersion="1.0.0" onBack={() => {}} onClose={() => {}} />);
-
-    expect(screen.getByText("Failed to load release notes")).toBeInTheDocument();
-    expect(screen.getByText("something went wrong")).toBeInTheDocument();
-
-    const retryButton = screen.getByRole("button", { name: "Try again" });
-    expect(retryButton).toBeInTheDocument();
-  });
-
-  it("renders current release with markdown content and GitHub link", async () => {
-    const body =
-      "Intro\n\n" +
-      "## Heading\n" +
-      "- item\n" +
-      "PR #123 by @user in commit abcdef1\n" +
-      "See [docs](https://example.com/docs) and https://example.com/plain";
-
-    changelogState.releases = [
+  it("renders every entry, marks the current version, and formats markdown", async () => {
+    changelogState.entries = [
       {
-        id: 1,
-        tag_name: "v1.2.3",
-        name: "v1.2.3",
-        body,
-        published_at: "2024-01-02T00:00:00Z",
-        html_url: "https://github.com/cbnsndwch/pacebar/releases/tag/v1.2.3",
+        version: "1.2.3",
+        heading: "v1.2.3",
+        body:
+          "## Heading\n" +
+          "- item\n" +
+          "PR #123 by @user in commit abcdef1\n" +
+          "See [docs](https://example.com/docs)",
       },
+      { version: "1.0.0", heading: "v1.0.0", body: "older notes" },
     ];
 
     render(<ChangelogDialog currentVersion="1.2.3" onBack={() => {}} onClose={() => {}} />);
 
+    // Both versions rendered (full history).
     expect(screen.getByText("v1.2.3")).toBeInTheDocument();
-    expect(screen.getByText("Intro")).toBeInTheDocument();
+    expect(screen.getByText("v1.0.0")).toBeInTheDocument();
+    // Only the running version is marked current.
+    expect(screen.getAllByText("Current")).toHaveLength(1);
+    // Markdown rendered.
     expect(screen.getByText("Heading")).toBeInTheDocument();
     expect(screen.getByText("item")).toBeInTheDocument();
 
-    // GitHub button opens the release URL.
-    await userEvent.click(screen.getByRole("button", { name: "GitHub" }));
-    expect(openerState.openUrlMock).toHaveBeenCalledWith(
-      "https://github.com/cbnsndwch/pacebar/releases/tag/v1.2.3",
-    );
-
-    openerState.openUrlMock.mockClear();
-
-    // Markdown link button.
     await userEvent.click(screen.getByRole("button", { name: "docs" }));
     expect(openerState.openUrlMock).toHaveBeenCalledWith("https://example.com/docs");
 
     openerState.openUrlMock.mockClear();
-
-    // PR, user, and commit buttons.
     await userEvent.click(screen.getByRole("button", { name: "#123" }));
     expect(openerState.openUrlMock).toHaveBeenCalledWith(
       "https://github.com/cbnsndwch/pacebar/pull/123",
     );
 
     openerState.openUrlMock.mockClear();
-
-    await userEvent.click(screen.getByRole("button", { name: "@user" }));
-    expect(openerState.openUrlMock).toHaveBeenCalledWith("https://github.com/user");
-
-    openerState.openUrlMock.mockClear();
-
     await userEvent.click(screen.getByRole("button", { name: "abcdef1" }));
     expect(openerState.openUrlMock).toHaveBeenCalledWith(
       "https://github.com/cbnsndwch/pacebar/commit/abcdef1",
     );
-
-    openerState.openUrlMock.mockClear();
-
-    await userEvent.click(screen.getByRole("button", { name: "https://example.com/plain" }));
-    expect(openerState.openUrlMock).toHaveBeenCalledWith("https://example.com/plain");
   });
 
-  it("handles null body without crashing", () => {
-    changelogState.releases = [
-      {
-        id: 1,
-        tag_name: "v1.0.0",
-        name: "v1.0.0",
-        body: null as any,
-        published_at: "2024-01-02T00:00:00Z",
-        html_url: "https://github.com/cbnsndwch/pacebar/releases/tag/v1.0.0",
-      },
-    ];
-
-    render(<ChangelogDialog currentVersion="1.0.0" onBack={() => {}} onClose={() => {}} />);
-
-    // If it renders the title, we know it didn't crash when rendering the markdown.
-    expect(screen.getByText("v1.0.0")).toBeInTheDocument();
-  });
-
-  it("handles null published_at gracefully", () => {
-    changelogState.releases = [
-      {
-        id: 1,
-        tag_name: "v1.0.1",
-        name: "v1.0.1",
-        body: "body",
-        published_at: null,
-        html_url: "https://github.com/cbnsndwch/pacebar/releases/tag/v1.0.1",
-      },
-    ];
-
-    render(<ChangelogDialog currentVersion="1.0.1" onBack={() => {}} onClose={() => {}} />);
-
-    expect(screen.getByText("v1.0.1")).toBeInTheDocument();
-    expect(screen.getByText("Unpublished release")).toBeInTheDocument();
-  });
-
-  it("shows link to full changelog when multiple releases exist", async () => {
-    changelogState.releases = [
-      {
-        id: 1,
-        tag_name: "v1.0.0",
-        name: "v1.0.0",
-        body: "body",
-        published_at: "2024-01-02T00:00:00Z",
-        html_url: "https://github.com/cbnsndwch/pacebar/releases/tag/v1.0.0",
-      },
-      {
-        id: 2,
-        tag_name: "v0.9.0",
-        name: "v0.9.0",
-        body: "older",
-        published_at: "2024-01-01T00:00:00Z",
-        html_url: "https://github.com/cbnsndwch/pacebar/releases/tag/v0.9.0",
-      },
-    ];
-
-    render(<ChangelogDialog currentVersion="1.0.0" onBack={() => {}} onClose={() => {}} />);
-
-    const fullChangelogButton = screen.getByRole("button", { name: "full changelog" });
-    await userEvent.click(fullChangelogButton);
-
-    expect(openerState.openUrlMock).toHaveBeenCalledWith(
-      "https://github.com/cbnsndwch/pacebar/releases",
-    );
-  });
-
-  it("renders fallback when no current release is found", async () => {
-    changelogState.releases = [
-      {
-        id: 1,
-        tag_name: "v0.1.0",
-        name: "v0.1.0",
-        body: "old",
-        published_at: "2023-01-01T00:00:00Z",
-        html_url: "https://github.com/cbnsndwch/pacebar/releases/tag/v0.1.0",
-      },
-    ];
+  it("handles a currentVersion that isn't in the list (no Current badge)", () => {
+    changelogState.entries = [{ version: "0.1.0", heading: "v0.1.0", body: "old" }];
 
     render(<ChangelogDialog currentVersion="9.9.9" onBack={() => {}} onClose={() => {}} />);
 
-    expect(screen.getByText("No specific notes for v9.9.9")).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "View all releases on GitHub" }));
-
-    expect(openerState.openUrlMock).toHaveBeenCalledWith(
-      "https://github.com/cbnsndwch/pacebar/releases",
-    );
+    expect(screen.getByText("v0.1.0")).toBeInTheDocument();
+    expect(screen.queryByText("Current")).not.toBeInTheDocument();
   });
 
   it("invokes navigation callbacks and closes on Escape", async () => {
     const onBack = vi.fn();
     const onClose = vi.fn();
-
-    changelogState.releases = [
-      {
-        id: 1,
-        tag_name: "v1.0.0",
-        name: "v1.0.0",
-        body: "body",
-        published_at: "2024-01-02T00:00:00Z",
-        html_url: "https://github.com/cbnsndwch/pacebar/releases/tag/v1.0.0",
-      },
-    ];
+    changelogState.entries = [{ version: "1.0.0", heading: "v1.0.0", body: "body" }];
 
     render(<ChangelogDialog currentVersion="1.0.0" onBack={onBack} onClose={onClose} />);
 
-    // Back goes to previous view
     await userEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(onBack).toHaveBeenCalled();
 
-    // Escape should trigger onClose once
     await userEvent.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the web changelog link", async () => {
+    changelogState.entries = [{ version: "1.0.0", heading: "v1.0.0", body: "body" }];
+
+    render(<ChangelogDialog currentVersion="1.0.0" onBack={() => {}} onClose={() => {}} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "web changelog" }));
+    expect(openerState.openUrlMock).toHaveBeenCalledWith("https://pacebar.cbnsndwch.dev/changelog");
   });
 });

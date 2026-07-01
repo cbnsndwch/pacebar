@@ -25,7 +25,16 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: invokeMock,
 }));
 
-import { disableTelemetry, enableTelemetry, loadTelemetryOptIn } from "@/lib/settings";
+import {
+  disableTelemetry,
+  enableTelemetry,
+  hasTelemetryBeenConfigured,
+  loadLastSeenVersion,
+  loadTelemetryNoticeAcknowledged,
+  loadTelemetryOptIn,
+  saveLastSeenVersion,
+  saveTelemetryNoticeAcknowledged,
+} from "@/lib/settings";
 
 const ANON_ID_KEY = "telemetry.anonId";
 
@@ -57,5 +66,31 @@ describe("telemetry opt-in id lifecycle", () => {
     await enableTelemetry();
     // Same identity reused, not regenerated.
     expect(storeData.get(ANON_ID_KEY)).toBe(original);
+  });
+});
+
+describe("what's-new + telemetry notice persistence", () => {
+  beforeEach(() => {
+    storeData.clear();
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue(undefined);
+  });
+
+  it("round-trips the last seen version (null by default)", async () => {
+    expect(await loadLastSeenVersion()).toBeNull();
+    await saveLastSeenVersion("0.15.0");
+    expect(await loadLastSeenVersion()).toBe("0.15.0");
+  });
+
+  it("round-trips the telemetry notice acknowledgement (false by default)", async () => {
+    expect(await loadTelemetryNoticeAcknowledged()).toBe(false);
+    await saveTelemetryNoticeAcknowledged();
+    expect(await loadTelemetryNoticeAcknowledged()).toBe(true);
+  });
+
+  it("reports telemetry as configured only once an anon id exists", async () => {
+    expect(await hasTelemetryBeenConfigured()).toBe(false);
+    await enableTelemetry();
+    expect(await hasTelemetryBeenConfigured()).toBe(true);
   });
 });

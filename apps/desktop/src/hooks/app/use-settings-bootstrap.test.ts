@@ -29,6 +29,11 @@ const {
   loadLeaderboardShareListMock,
   syncLeaderboardPrefsToPluginMock,
   appDataDirMock,
+  getVersionMock,
+  loadLastSeenVersionMock,
+  saveLastSeenVersionMock,
+  loadTelemetryNoticeAcknowledgedMock,
+  hasTelemetryBeenConfiguredMock,
 } = vi.hoisted(() => ({
   invokeMock: vi.fn(),
   isTauriMock: vi.fn(),
@@ -57,6 +62,11 @@ const {
   loadLeaderboardShareListMock: vi.fn(),
   syncLeaderboardPrefsToPluginMock: vi.fn(),
   appDataDirMock: vi.fn(),
+  getVersionMock: vi.fn(),
+  loadLastSeenVersionMock: vi.fn(),
+  saveLastSeenVersionMock: vi.fn(),
+  loadTelemetryNoticeAcknowledgedMock: vi.fn(),
+  hasTelemetryBeenConfiguredMock: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/path", () => ({
@@ -66,6 +76,10 @@ vi.mock("@tauri-apps/api/path", () => ({
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: invokeMock,
   isTauri: isTauriMock,
+}));
+
+vi.mock("@tauri-apps/api/app", () => ({
+  getVersion: getVersionMock,
 }));
 
 vi.mock("@tauri-apps/plugin-autostart", () => ({
@@ -109,9 +123,14 @@ vi.mock("@/lib/settings", () => ({
   migratePluginProfileInstancesEnabled: migratePluginProfileInstancesEnabledMock,
   normalizePluginSettings: normalizePluginSettingsMock,
   savePluginSettings: savePluginSettingsMock,
+  loadTelemetryNoticeAcknowledged: loadTelemetryNoticeAcknowledgedMock,
+  hasTelemetryBeenConfigured: hasTelemetryBeenConfiguredMock,
+  loadLastSeenVersion: loadLastSeenVersionMock,
+  saveLastSeenVersion: saveLastSeenVersionMock,
 }));
 
 import { useSettingsBootstrap } from "@/hooks/app/use-settings-bootstrap";
+import { useAppUiStore } from "@/stores/app-ui-store";
 
 function createArgs() {
   return {
@@ -200,6 +219,18 @@ describe("useSettingsBootstrap", () => {
     loadLeaderboardShareListMock.mockResolvedValue([]);
     syncLeaderboardPrefsToPluginMock.mockResolvedValue(undefined);
     appDataDirMock.mockResolvedValue("/tmp/appdata");
+
+    getVersionMock.mockReset();
+    loadLastSeenVersionMock.mockReset();
+    saveLastSeenVersionMock.mockReset();
+    loadTelemetryNoticeAcknowledgedMock.mockReset();
+    hasTelemetryBeenConfiguredMock.mockReset();
+    getVersionMock.mockResolvedValue("0.15.0");
+    loadLastSeenVersionMock.mockResolvedValue("0.15.0");
+    saveLastSeenVersionMock.mockResolvedValue(undefined);
+    loadTelemetryNoticeAcknowledgedMock.mockResolvedValue(true);
+    hasTelemetryBeenConfiguredMock.mockResolvedValue(true);
+    useAppUiStore.getState().resetState();
   });
 
   it("disables autostart when applyStartOnLogin receives false", async () => {
@@ -229,5 +260,51 @@ describe("useSettingsBootstrap", () => {
     });
 
     errorSpy.mockRestore();
+  });
+
+  it("shows What's New when the running version differs from the last seen", async () => {
+    loadLastSeenVersionMock.mockResolvedValue("0.14.1");
+    getVersionMock.mockResolvedValue("0.15.0");
+
+    renderHook(() => useSettingsBootstrap(createArgs()));
+
+    await waitFor(() => {
+      expect(useAppUiStore.getState().showWhatsNew).toBe(true);
+    });
+  });
+
+  it("suppresses What's New on a fresh install and records the version", async () => {
+    loadLastSeenVersionMock.mockResolvedValue(null);
+    getVersionMock.mockResolvedValue("0.15.0");
+
+    renderHook(() => useSettingsBootstrap(createArgs()));
+
+    await waitFor(() => {
+      expect(saveLastSeenVersionMock).toHaveBeenCalledWith("0.15.0");
+    });
+    expect(useAppUiStore.getState().showWhatsNew).toBe(false);
+  });
+
+  it("shows the telemetry notice when unacknowledged and not yet configured", async () => {
+    loadTelemetryNoticeAcknowledgedMock.mockResolvedValue(false);
+    hasTelemetryBeenConfiguredMock.mockResolvedValue(false);
+
+    renderHook(() => useSettingsBootstrap(createArgs()));
+
+    await waitFor(() => {
+      expect(useAppUiStore.getState().showTelemetryNotice).toBe(true);
+    });
+  });
+
+  it("does not show the telemetry notice when telemetry is already configured", async () => {
+    loadTelemetryNoticeAcknowledgedMock.mockResolvedValue(false);
+    hasTelemetryBeenConfiguredMock.mockResolvedValue(true);
+
+    renderHook(() => useSettingsBootstrap(createArgs()));
+
+    await waitFor(() => {
+      expect(getVersionMock).toHaveBeenCalled();
+    });
+    expect(useAppUiStore.getState().showTelemetryNotice).toBe(false);
   });
 });

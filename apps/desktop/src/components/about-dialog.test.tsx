@@ -8,18 +8,15 @@ const openerState = vi.hoisted(() => ({
   openUrlMock: vi.fn(() => Promise.resolve()),
 }));
 
-const changelogState = vi.hoisted(() => ({
-  releases: [] as import("@/hooks/use-changelog").Release[],
-  loading: false,
-  error: null as string | null,
-}));
-
 vi.mock("@tauri-apps/plugin-opener", () => ({
   openUrl: openerState.openUrlMock,
 }));
 
-vi.mock("@/hooks/use-changelog", () => ({
-  useChangelog: () => changelogState,
+// The changelog view now reads the bundled CHANGELOG.md; stub it so this test
+// stays focused on AboutDialog navigation.
+vi.mock("@/lib/changelog", () => ({
+  getChangelogEntries: () => [],
+  normalizeVersion: (v: string) => v.trim().replace(/^v/i, ""),
 }));
 
 describe("AboutDialog", () => {
