@@ -125,6 +125,17 @@ jobs:
           echo "RC_VERSION=$RC_VERSION" >> "$GITHUB_ENV"
           echo "Resolved RC_VERSION=$RC_VERSION"
 
+          # Each rc build publishes to its OWN immutable per-version release
+          # (rc-X.Y.Z-N), not a reused rolling "rc" release. On a tag push that's
+          # the pushed tag; on dispatch, derive rc-X.Y.Z-N from RC_VERSION.
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            RELEASE_TAG="rc-$(echo "$RC_VERSION" | sed 's/-rc\./-/')"
+          else
+            RELEASE_TAG="$GITHUB_REF_NAME"
+          fi
+          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+          echo "Resolved RELEASE_TAG=$RELEASE_TAG"
+
       - name: Build RC config overlay
         shell: bash
         run: |
@@ -219,10 +230,14 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          # FIXED rolling tag: every RC run updates the one "rc" release, which
-          # keeps the endpoint URL stable and merges latest.json across the matrix.
-          tagName: rc
-          releaseName: "PaceBar RC"
+          # PER-VERSION immutable release (rc-X.Y.Z-N). Every asset — including
+          # the unversioned macOS .app.tar.gz — gets a unique, immutable URL, so
+          # the OTA proxy (which resolves the newest rc-* prerelease) always
+          # serves a manifest whose downloads match its signatures. Reusing one
+          # rolling "rc" release overwrote the macOS artifact in place and GitHub's
+          # CDN could serve stale bytes → signature mismatch → update loop.
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: "PaceBar RC ${{ env.RC_VERSION }}"
           releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           # Marked prerelease so it never becomes GitHub's "latest" release and
@@ -271,7 +286,7 @@ jobs:
           # Gap B (defense-in-depth): the prerelease flag — not signing (key is
           # shared with prod) — is what keeps the rc release out of prod's
           # releases/latest feed. Assert it stays true so a flipped flag fails CI.
-          IS_PRERELEASE=$(gh release view "rc" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq '.isPrerelease' | tr -d '\r')
+          IS_PRERELEASE=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq '.isPrerelease' | tr -d '\r')
           if [[ "$IS_PRERELEASE" != "true" ]]; then
             echo "SECURITY: the 'rc' release is not flagged prerelease (isPrerelease=$IS_PRERELEASE)."
             echo "A non-prerelease rc release would hijack prod's releases/latest feed. Failing."
@@ -280,7 +295,7 @@ jobs:
 
           ASSETS=""
           for attempt in $(seq 1 15); do
-            ASSETS=$(gh release view "rc" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | tr -d '\r')
+            ASSETS=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | tr -d '\r')
             if printf '%s\n' "$ASSETS" | grep -Fxq 'latest.json' \
                && printf '%s\n' "$ASSETS" | grep -Eq '\.sig$'; then
               echo "Updater assets present (attempt $attempt)."
