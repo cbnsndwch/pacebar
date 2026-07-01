@@ -1,5 +1,201 @@
 # Changelog
 
+## v0.15.0
+
+### Features
+
+- **Opt-in anonymous telemetry (off by default).** You can now optionally share a random install id, app version, OS, and CPU architecture — once a day — so we can see which versions are in use. No account, no personal data, and it stays off unless you turn it on in Settings. See the [privacy page](https://pacebar.cbnsndwch.dev/docs/features/privacy).
+- **OTA update proxy.** Update checks now route through a hosted proxy worker with a direct fallback, so the updater keeps working even if an endpoint is unavailable.
+- **Side-by-side RC release channel.** A separate release-candidate build can be installed alongside the stable app for early testing.
+- **Published release notes.** Release notes are now published as a public changelog and surfaced in the app's built-in changelog viewer.
+- feat(scripts): add release adoption stats CLI and skill
+
+### Bug Fixes
+
+- fix(release): build NSIS instead of MSI for the RC Windows bundle
+- fix(release): give the RC build a distinct binary name for side-by-side installs
+- fix(updates): host the OTA worker on the cbnsndwch account/zone
+- fix(docs): drop react-router AppLoadContext type
+
+### Refactor
+
+- refactor: relocate desktop app to `apps/desktop`
+
+### Chores
+
+- build: migrate package manager from bun to pnpm
+- build: adopt turbo for task orchestration
+- build(scripts): track updates worker version in bump script
+- docs: add privacy page for update checks and telemetry
+
+### CI
+
+- ci: enforce lint, format, and full type-check in the check job
+- ci: enforce LF line endings via .gitattributes
+- ci: auto-generate RC release notes from conventional commits
+- ci: provision pnpm via corepack instead of pnpm/action-setup
+- ci: bump deprecated GitHub Actions off the node20 runtime
+- ci: add GitHub Actions ecosystem to dependabot settings
+
+---
+
+**Full Changelog**: [v0.14.1...v0.15.0](https://github.com/cbnsndwch/pacebar/compare/v0.14.1...v0.15.0)
+
+## v0.14.1
+
+### Bug Fixes
+
+- fix: increase ccusage timeout to 60s
+
+---
+
+**Full Changelog**: [v0.14.0...v0.14.1](https://github.com/cbnsndwch/pacebar/compare/v0.14.0...v0.14.1)
+
+## v0.14.0
+
+### Features
+
+- feat: add verbose debug logging toggle in settings
+- feat: log ccusage result summary for diagnostics
+
+### Chores
+
+- chore(deps): upgrade wrangler to v4
+- chore(deps): update Tauri, React, Tailwind, and Vite/Vitest packages
+- chore(deps): update base-ui, zustand, cloudflare workers-types, isbot, and npm-check-updates
+
+---
+
+**Full Changelog**: [v0.13.0...v0.14.0](https://github.com/cbnsndwch/pacebar/compare/v0.13.0...v0.14.0)
+
+## v0.13.0
+
+### Features
+
+- feat(docs-site): add landing page, docs layout, and search
+- feat(settings): Cloudflare AI gateway URL, key, and token window
+- feat(tray): render capless count metrics as menu-bar text
+- feat(cloudflare-ai): configurable gateway + windowed token count
+- feat(cloudflare-ai): read gateway URL and auth from `~/.config/opencode/opencode.json`
+
+### Bug Fixes
+
+- fix(cloudflare-ai): keep settings-configured gateway URL and key paired
+- fix(leaderboard): stop the board from listing itself as a provider
+
+### Chores
+
+- build(docs-site): scaffold Fumadocs worker on React Router + Cloudflare
+- docs(docs-site): add migrated provider docs and new feature pages
+- docs: link README to pacebar.cbnsndwch.dev docs site
+- docs(cloudflare-ai): settings setup, worker code, token windowing
+- chore(workers/leaderboard): set CF account id explicitly
+- chore: run clippy from src-tauri so the toolchain pin is honored
+
+### CI
+
+- ci(publish): retry updater asset verification to tolerate parallel uploads
+
+---
+
+**Full Changelog**: [v0.12.0...v0.13.0](https://github.com/cbnsndwch/pacebar/compare/v0.12.0...v0.13.0)
+
+## v0.12.0
+
+### Features
+
+- feat(leaderboard): copy a support diagnostic blob on error
+
+### Bug Fixes
+
+- fix(tray): only toggle the panel on left-click
+
+### Chores
+
+- build(leaderboard): also route the legacy token-maxxing custom domain
+
+---
+
+**Full Changelog**: [v0.11.0...v0.12.0](https://github.com/cbnsndwch/pacebar/compare/v0.11.0...v0.12.0)
+
+## v0.11.0
+
+### Features
+
+- feat(leaderboard): drive hack night windows from published events
+- feat(leaderboard): track sync health and add ad-hoc sync endpoint
+
+### Bug Fixes
+
+- fix(leaderboard): sync from the current public Luma ics feed
+
+---
+
+**Full Changelog**: [v0.10.1...v0.11.0](https://github.com/cbnsndwch/pacebar/compare/v0.10.1...v0.11.0)
+
+## v0.10.1
+
+### Bug Fixes
+
+- fix(leaderboard): single cup icon with Hack Night badge and clearer empty state
+
+### Chores
+
+- build(leaderboard): migrate worker config to jsonc and set d1 + custom domain
+
+### CI
+
+- ci: improve rust build cache hit rate
+
+---
+
+**Full Changelog**: [v0.10.0...v0.10.1](https://github.com/cbnsndwch/pacebar/compare/v0.10.0...v0.10.1)
+
+## v0.10.0
+
+### Features
+
+- feat: Hack Night Leaderboard — CF Worker + plugin + frontend view
+- feat: add Cloudflare AI Gateway plugin
+- feat(cloudflare-ai): add settings UI for display mode and cap
+- feat(cloudflare-ai): configurable display and limit
+- feat(cloudflare-ai): add file-based auth fallback
+
+### Bug Fixes
+
+- fix(cloudflare-ai): show dollar amount as text instead of a progress bar
+
+### Chores
+
+- build(repo): switch package manager to bun and add oxfmt
+- build(repo): add bun workspaces and version:bump tooling
+- build(repo): add lint command orchestrating oxlint and clippy
+- chore(deps): bump vite to 8.0.16 and pin undici >=7.28.0
+- chore(deps): bump Rust crates to patch security advisories
+- docs(cloudflare-ai): clarify self-hosted gateway requirement
+- docs(changelog): reformat and update repo URLs to pacebar
+- test(cloudflare-ai): cover status-line probe and config display modes
+
+---
+
+**Full Changelog**: [v0.9.0...v0.10.0](https://github.com/cbnsndwch/pacebar/compare/v0.9.0...v0.10.0)
+
+## v0.9.0
+
+### CI
+
+- ci(publish): drop Apple code-signing — ship unsigned macOS builds
+- ci: restore macOS publish matrix (aarch64 + x86_64)
+
+### Chores
+
+- chore: pin Rust toolchain to stable
+- chore: update packages
+
+---
+
+**Full Changelog**: [v0.8.0...v0.9.0](https://github.com/cbnsndwch/pacebar/compare/v0.8.0...v0.9.0)
+
 ## v0.8.0
 
 ### Rebrand
