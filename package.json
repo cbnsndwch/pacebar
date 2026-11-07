@@ -20,10 +20,10 @@
     "lint:rust": "cd apps/desktop/src-tauri && cargo clippy --all-targets -- -D warnings"
   },
   "devDependencies": {
-    "npm-check-updates": "^22.2.7",
+    "npm-check-updates": "^22.2.9",
     "oxfmt": "^0.56.0",
-    "oxlint": "^1.71.0",
-    "turbo": "^2.10.0"
+    "oxlint": "^1.92.0",
+    "turbo": "^2.11.10"
   },
   "pnpm": {
     "overrides": {
